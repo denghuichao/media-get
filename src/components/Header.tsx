@@ -1,6 +1,6 @@
 import React from 'react';
 import { Download, Home, LayoutDashboard } from 'lucide-react';
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 
 export default function Header() {
   return (
@@ -26,32 +26,23 @@ export default function Header() {
                 <Home className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 <span>Home</span>
               </a>
-              <SignedIn>
-                <a 
-                  href="#dashboard" 
-                  className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
-                >
-                  <LayoutDashboard className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                  <span>Dashboard</span>
-                </a>
-              </SignedIn>
+              <a 
+                href="#dashboard" 
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
+              >
+                <LayoutDashboard className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <span>Dashboard</span>
+              </a>
             </nav>
 
             {/* Authentication */}
             <div className="flex items-center space-x-4">
               <SignedOut>
-                <div className="flex items-center space-x-3">
-                  <SignInButton mode="modal">
-                    <button className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
-                      Sign In
-                    </button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
-                      Sign Up
-                    </button>
-                  </SignUpButton>
-                </div>
+                <SignInButton mode="modal">
+                  <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
+                    Sign In
+                  </button>
+                </SignInButton>
               </SignedOut>
               <SignedIn>
                 <UserButton 
