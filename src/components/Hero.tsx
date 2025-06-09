@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
 import { apiService, MediaInfo } from '../services/api';
 
 export default function Hero() {
@@ -180,23 +181,41 @@ export default function Hero() {
                 </div>
               </div>
 
-              <button
-                onClick={handleDownload}
-                disabled={isDownloading || !selectedFormat}
-                className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-              >
-                {isDownloading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                    <span>Downloading...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="h-5 w-5" />
-                    <span>Download Now</span>
-                  </>
-                )}
-              </button>
+              {/* Download Button - Protected by Authentication */}
+              <SignedIn>
+                <button
+                  onClick={handleDownload}
+                  disabled={isDownloading || !selectedFormat}
+                  className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                >
+                  {isDownloading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                      <span>Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-5 w-5" />
+                      <span>Download Now</span>
+                    </>
+                  )}
+                </button>
+              </SignedIn>
+
+              <SignedOut>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                  <Lock className="h-8 w-8 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Sign in to Download</h3>
+                  <p className="text-gray-600 mb-4">
+                    Create a free account to download media files and access your download history.
+                  </p>
+                  <SignInButton mode="modal">
+                    <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
+                      Sign In to Download
+                    </button>
+                  </SignInButton>
+                </div>
+              </SignedOut>
             </div>
           )}
         </div>
@@ -204,8 +223,8 @@ export default function Hero() {
         <div className="mt-8 text-center">
           <p className="text-gray-600 mb-4">Powered by you-get - Trusted by thousands of users worldwide</p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
-            <span>✓ No registration required</span>
-            <span>✓ Free to use</span>
+            <span>✓ Free account required</span>
+            <span>✓ Secure downloads</span>
             <span>✓ High quality downloads</span>
           </div>
         </div>
