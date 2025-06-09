@@ -223,9 +223,9 @@ export default function Hero() {
         <div className="mt-8 text-center">
           <p className="text-gray-600 mb-4">Powered by you-get - Trusted by thousands of users worldwide</p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
-            <span>✓ Free account required</span>
-            <span>✓ Secure downloads</span>
-            <span>✓ High quality downloads</span>
+            <span>✓ 100+ supported platforms</span>
+            <span>✓ Multiple format options</span>
+            <span>✓ Lightning fast downloads</span>
           </div>
         </div>
       </div>
