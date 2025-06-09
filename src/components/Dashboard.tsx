@@ -4,7 +4,6 @@ import {
   Clock, 
   CheckCircle, 
   XCircle, 
-  Settings, 
   Trash2, 
   ExternalLink,
   Filter,
@@ -399,80 +398,6 @@ export default function Dashboard() {
                 </div>
               ))
             )}
-          </div>
-        </div>
-
-        {/* Settings Panel */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <Settings className="h-6 w-6 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Download Settings</h2>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Default Download Quality
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-                <option>Best Available</option>
-                <option>1080p</option>
-                <option>720p</option>
-                <option>480p</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Default Audio Format
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-                <option>MP3</option>
-                <option>M4A</option>
-                <option>FLAC</option>
-                <option>OGG</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Concurrent Downloads
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-                <option>1</option>
-                <option>2</option>
-                <option>3</option>
-                <option>5</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Auto-retry Failed Downloads
-              </label>
-              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
-                <option>Enabled</option>
-                <option>Disabled</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">Download Notifications</h3>
-                <p className="text-sm text-gray-600">Get notified when downloads complete</p>
-              </div>
-              <button className="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-blue-600 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                <span className="translate-x-5 inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"></span>
-              </button>
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-end">
-            <button className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
-              Save Settings
-            </button>
           </div>
         </div>
       </div>
