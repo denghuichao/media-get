@@ -5,7 +5,7 @@ export default function Footer() {
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
@@ -31,22 +31,13 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Resources</h4>
-            <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">API Reference</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Supported Sites</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">FAQ</a></li>
-            </ul>
-          </div>
-
-          <div>
             <h4 className="font-semibold mb-4">Support</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Report Issues</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Feature Requests</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
+              <li>
+                <a href="mailto:support@mediaget.com" className="hover:text-white transition-colors">
+                  Contact Us
+                </a>
+              </li>
             </ul>
           </div>
         </div>
