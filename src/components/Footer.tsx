@@ -2,6 +2,10 @@ import React from 'react';
 import { Download, Github, Twitter, Mail } from 'lucide-react';
 
 export default function Footer() {
+  const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'support@mediaget.com';
+  const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com';
+  const twitterUrl = import.meta.env.VITE_TWITTER_URL || 'https://twitter.com';
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -18,13 +22,29 @@ export default function Footer() {
           
           <div className="flex items-center space-x-6">
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a 
+                href={githubUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="GitHub"
+              >
                 <Github className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a 
+                href={twitterUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Twitter"
+              >
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="mailto:support@mediaget.com" className="text-gray-400 hover:text-white transition-colors">
+              <a 
+                href={`mailto:${contactEmail}`} 
+                className="text-gray-400 hover:text-white transition-colors"
+                aria-label="Contact Email"
+              >
                 <Mail className="h-5 w-5" />
               </a>
             </div>
