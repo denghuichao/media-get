@@ -1,0 +1,230 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "download": "Download",
+    "play": "Play",
+    "pause": "Pause",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "close": "Close",
+    "save": "Save",
+    "edit": "Edit",
+    "view": "View",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "help": "Help",
+    "about": "About",
+    "contact": "Contact",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "profile": "Profile",
+    "account": "Account"
+  },
+  "header": {
+    "title": "MediaGet",
+    "subtitle": "Powered by you-get",
+    "nav": {
+      "home": "Home",
+      "dashboard": "Dashboard"
+    },
+    "auth": {
+      "signIn": "Sign In",
+      "signOut": "Sign Out"
+    }
+  },
+  "hero": {
+    "title": "Download Media from",
+    "titleHighlight": "Anywhere",
+    "subtitle": "Extract videos, audio, and images from 100+ popular websites with just a URL",
+    "placeholder": "Paste any video, audio, or image URL here...",
+    "analyze": "Analyze",
+    "analyzing": "Analyzing...",
+    "downloadNow": "Download Now",
+    "downloading": "Downloading...",
+    "selectFormat": "Choose Format & Quality",
+    "authRequired": {
+      "title": "Sign in to Download",
+      "description": "Create a free account to download media files and access your download history.",
+      "button": "Sign In to Download",
+      "benefits": "Free account • No credit card required • Download history included"
+    },
+    "authStatus": {
+      "signedIn": "Signed in as {{name}} • Ready to download",
+      "signedOut": "Sign in required for downloads • Analysis available without account"
+    },
+    "poweredBy": "Powered by you-get - Trusted by thousands of users worldwide",
+    "features": [
+      "100+ supported platforms",
+      "Multiple format options",
+      "Lightning fast downloads"
+    ]
+  },
+  "features": {
+    "title": "Powerful Features for Every Need",
+    "subtitle": "Built on the robust you-get engine with additional web interface enhancements",
+    "items": {
+      "multipleFormats": {
+        "title": "Multiple Formats",
+        "description": "Download in various formats and quality levels - from 144p to 4K, MP4 to WebM, MP3 to FLAC."
+      },
+      "lightningFast": {
+        "title": "Lightning Fast",
+        "description": "Powered by you-get's optimized extraction engine for quick analysis and high-speed downloads."
+      },
+      "privacyFirst": {
+        "title": "Privacy First",
+        "description": "No tracking, no data collection. All processing happens on our servers without storing your information."
+      },
+      "advancedOptions": {
+        "title": "Advanced Options",
+        "description": "Proxy support, custom output paths, subtitle downloads, and batch processing capabilities."
+      },
+      "streamDownload": {
+        "title": "Stream & Download",
+        "description": "Preview content before downloading or stream directly to your preferred media player."
+      },
+      "mobileFriendly": {
+        "title": "Mobile Friendly",
+        "description": "Fully responsive design that works perfectly on all devices - desktop, tablet, and mobile."
+      }
+    },
+    "status": "All features available now"
+  },
+  "supportedSites": {
+    "title": "100+ Supported Platforms",
+    "subtitle": "Download from the most popular video, audio, and image sharing platforms worldwide",
+    "types": {
+      "video": "Video Downloads",
+      "audio": "Audio Downloads",
+      "image": "Image Downloads"
+    },
+    "universal": {
+      "title": "Universal Extractor",
+      "description": "Don't see your platform? Our universal extractor can handle most websites with downloadable content",
+      "features": [
+        "Automatic detection",
+        "Smart extraction",
+        "Multiple formats"
+      ]
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome back, {{name}}!",
+    "subtitle": "Manage your downloads and view download history",
+    "stats": {
+      "total": "Total Downloads",
+      "completed": "Completed",
+      "downloading": "Downloading",
+      "pending": "Pending",
+      "failed": "Failed"
+    },
+    "filters": {
+      "search": "Search downloads...",
+      "allStatus": "All Status",
+      "sortBy": "Sort by:",
+      "newest": "Newest First",
+      "oldest": "Oldest First",
+      "title": "Title A-Z",
+      "size": "File Size"
+    },
+    "history": {
+      "title": "Download History",
+      "empty": {
+        "title": "No downloads found",
+        "description": "Try adjusting your search or filter criteria",
+        "noDownloads": "Start downloading media to see your history here"
+      }
+    },
+    "actions": {
+      "play": "Play media",
+      "download": "Download file",
+      "delete": "Delete from history",
+      "retry": "Retry download"
+    },
+    "status": {
+      "completed": "Completed",
+      "failed": "Failed",
+      "downloading": "Downloading",
+      "pending": "Pending"
+    },
+    "timeAgo": {
+      "justNow": "Just now",
+      "minutesAgo": "{{minutes}}m ago",
+      "hoursAgo": "{{hours}}h ago",
+      "daysAgo": "{{days}}d ago"
+    },
+    "authRequired": {
+      "title": "Access Restricted",
+      "description": "You need to sign in to access your download dashboard and view your download history.",
+      "button": "Sign In to Continue",
+      "note": "Don't have an account? Sign up is free and takes less than a minute."
+    }
+  },
+  "mediaPlayer": {
+    "downloadFile": "Download File",
+    "controls": {
+      "play": "Play",
+      "pause": "Pause",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "fullscreen": "Fullscreen",
+      "volume": "Volume"
+    }
+  },
+  "systemStatus": {
+    "checking": "Checking system status...",
+    "ready": "System ready - you-get {{version}} is installed and working",
+    "notMet": {
+      "title": "System Requirements Not Met",
+      "description": "you-get is not installed or not accessible",
+      "install": "To use this service, please install you-get:",
+      "visitGithub": "Or visit github.com/soimort/you-get for installation instructions.",
+      "recheck": "Recheck Status"
+    }
+  },
+  "footer": {
+    "copyright": "© 2025 MediaGet"
+  },
+  "errors": {
+    "urlRequired": "URL is required",
+    "invalidUrl": "Invalid URL format",
+    "noMediaFound": "No media found at this URL",
+    "analysisError": "Failed to analyze URL. Please check if the URL is valid and supported.",
+    "downloadError": "Download failed. Please try again.",
+    "networkError": "Network error occurred",
+    "serverError": "Server error occurred",
+    "authRequired": "Authentication required",
+    "permissionDenied": "Permission denied",
+    "fileNotFound": "File not found",
+    "unsupportedFormat": "Unsupported format",
+    "quotaExceeded": "Download quota exceeded"
+  },
+  "success": {
+    "downloadCompleted": "Download completed! File: {{filename}}",
+    "downloadStarted": "Download started successfully",
+    "analysisCompleted": "Analysis completed successfully",
+    "fileDeleted": "File deleted successfully",
+    "settingsSaved": "Settings saved successfully"
+  },
+  "language": {
+    "current": "English",
+    "switch": "Switch Language",
+    "english": "English",
+    "chinese": "中文"
+  }
+}

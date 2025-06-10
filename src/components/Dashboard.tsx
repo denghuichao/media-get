@@ -5,7 +5,6 @@ import {
   CheckCircle, 
   XCircle, 
   Trash2, 
-  ExternalLink,
   Filter,
   Search,
   FileText,
@@ -23,6 +22,7 @@ import {
   X
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
+import { useTranslation } from 'react-i18next';
 import { apiService, DownloadRecord } from '../services/api';
 
 interface MediaPlayerProps {
@@ -31,6 +31,7 @@ interface MediaPlayerProps {
 }
 
 function MediaPlayer({ download, onClose }: MediaPlayerProps) {
+  const { t } = useTranslation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -203,6 +204,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                       <button
                         onClick={togglePlay}
                         className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                        title={isPlaying ? t('mediaPlayer.controls.pause') : t('mediaPlayer.controls.play')}
                       >
                         {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                       </button>
@@ -211,6 +213,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                         <button
                           onClick={toggleMute}
                           className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                          title={isMuted ? t('mediaPlayer.controls.unmute') : t('mediaPlayer.controls.mute')}
                         >
                           {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         </button>
@@ -222,6 +225,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                           value={isMuted ? 0 : volume}
                           onChange={handleVolumeChange}
                           className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                          title={t('mediaPlayer.controls.volume')}
                         />
                       </div>
                     </div>
@@ -231,6 +235,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                         <button
                           onClick={toggleFullscreen}
                           className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                          title={t('mediaPlayer.controls.fullscreen')}
                         >
                           <Maximize className="h-4 w-4" />
                         </button>
@@ -256,7 +261,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
               className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
             >
               <Download className="h-4 w-4" />
-              <span>Download File</span>
+              <span>{t('mediaPlayer.downloadFile')}</span>
             </button>
           </div>
         </div>
@@ -266,6 +271,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
 }
 
 function DashboardContent() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -291,7 +297,7 @@ function DashboardContent() {
       const userDownloads = await apiService.getUserDownloads(user.id);
       setDownloads(userDownloads);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load downloads');
+      setError(err instanceof Error ? err.message : t('errors.networkError'));
     } finally {
       setLoading(false);
     }
@@ -304,7 +310,7 @@ function DashboardContent() {
       await apiService.deleteDownload(user.id, downloadId);
       setDownloads(downloads.filter(d => d.id !== downloadId));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete download');
+      setError(err instanceof Error ? err.message : t('errors.serverError'));
     }
   };
 
@@ -370,10 +376,10 @@ function DashboardContent() {
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (minutes < 1) return 'Just now';
-    if (minutes < 60) return `${minutes}m ago`;
-    if (hours < 24) return `${hours}h ago`;
-    return `${days}d ago`;
+    if (minutes < 1) return t('dashboard.timeAgo.justNow');
+    if (minutes < 60) return t('dashboard.timeAgo.minutesAgo', { minutes });
+    if (hours < 24) return t('dashboard.timeAgo.hoursAgo', { hours });
+    return t('dashboard.timeAgo.daysAgo', { days });
   };
 
   const handleDownloadFile = (download: DownloadRecord) => {
@@ -398,7 +404,7 @@ function DashboardContent() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading your downloads...</p>
+          <p className="text-gray-600">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -410,9 +416,9 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back, {user?.firstName || 'User'}!
+            {t('dashboard.welcome', { name: user?.firstName || 'User' })}
           </h1>
-          <p className="text-gray-600">Manage your downloads and view download history</p>
+          <p className="text-gray-600">{t('dashboard.subtitle')}</p>
         </div>
 
         {/* Error Message */}
@@ -435,7 +441,7 @@ function DashboardContent() {
             <div className="flex items-center">
               <Download className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Downloads</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.total')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
               </div>
             </div>
@@ -445,7 +451,7 @@ function DashboardContent() {
             <div className="flex items-center">
               <CheckCircle className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Completed</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.completed')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
               </div>
             </div>
@@ -455,7 +461,7 @@ function DashboardContent() {
             <div className="flex items-center">
               <RefreshCw className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Downloading</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.downloading')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.downloading}</p>
               </div>
             </div>
@@ -465,7 +471,7 @@ function DashboardContent() {
             <div className="flex items-center">
               <Clock className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.pending')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
               </div>
             </div>
@@ -475,7 +481,7 @@ function DashboardContent() {
             <div className="flex items-center">
               <XCircle className="h-8 w-8 text-red-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Failed</p>
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.failed')}</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.failed}</p>
               </div>
             </div>
@@ -491,7 +497,7 @@ function DashboardContent() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search downloads..."
+                  placeholder={t('dashboard.filters.search')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
@@ -506,11 +512,11 @@ function DashboardContent() {
                   onChange={(e) => setFilter(e.target.value as any)}
                   className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none bg-white"
                 >
-                  <option value="all">All Status</option>
-                  <option value="completed">Completed</option>
-                  <option value="downloading">Downloading</option>
-                  <option value="pending">Pending</option>
-                  <option value="failed">Failed</option>
+                  <option value="all">{t('dashboard.filters.allStatus')}</option>
+                  <option value="completed">{t('dashboard.status.completed')}</option>
+                  <option value="downloading">{t('dashboard.status.downloading')}</option>
+                  <option value="pending">{t('dashboard.status.pending')}</option>
+                  <option value="failed">{t('dashboard.status.failed')}</option>
                 </select>
               </div>
             </div>
@@ -518,23 +524,23 @@ function DashboardContent() {
             {/* Sort and Refresh */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Sort by:</span>
+                <span className="text-sm text-gray-600">{t('dashboard.filters.sortBy')}</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="title">Title A-Z</option>
-                  <option value="size">File Size</option>
+                  <option value="newest">{t('dashboard.filters.newest')}</option>
+                  <option value="oldest">{t('dashboard.filters.oldest')}</option>
+                  <option value="title">{t('dashboard.filters.title')}</option>
+                  <option value="size">{t('dashboard.filters.size')}</option>
                 </select>
               </div>
               
               <button
                 onClick={loadDownloads}
                 className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                title="Refresh downloads"
+                title={t('common.refresh')}
               >
                 <RefreshCw className="h-4 w-4" />
               </button>
@@ -545,18 +551,18 @@ function DashboardContent() {
         {/* Downloads List */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Download History</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.history.title')}</h2>
           </div>
           
           <div className="divide-y divide-gray-200">
             {filteredDownloads.length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <Download className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No downloads found</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">{t('dashboard.history.empty.title')}</h3>
                 <p className="text-gray-600">
                   {searchTerm || filter !== 'all' 
-                    ? 'Try adjusting your search or filter criteria'
-                    : 'Start downloading media to see your history here'
+                    ? t('dashboard.history.empty.description')
+                    : t('dashboard.history.empty.noDownloads')
                   }
                 </p>
               </div>
@@ -578,7 +584,7 @@ function DashboardContent() {
                           </h3>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(download.status)}`}>
                             {getStatusIcon(download.status)}
-                            <span className="ml-1 capitalize">{download.status}</span>
+                            <span className="ml-1 capitalize">{t(`dashboard.status.${download.status}`)}</span>
                           </span>
                         </div>
                         
@@ -603,7 +609,7 @@ function DashboardContent() {
                         <button 
                           onClick={() => setSelectedDownload(download)}
                           className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                          title="Play media"
+                          title={t('dashboard.actions.play')}
                         >
                           <Play className="h-4 w-4" />
                         </button>
@@ -614,7 +620,7 @@ function DashboardContent() {
                         <button 
                           onClick={() => handleDownloadFile(download)}
                           className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                          title="Download file"
+                          title={t('dashboard.actions.download')}
                         >
                           <Download className="h-4 w-4" />
                         </button>
@@ -624,7 +630,7 @@ function DashboardContent() {
                       <button 
                         onClick={() => deleteDownload(download.id)}
                         className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                        title="Delete from history"
+                        title={t('dashboard.actions.delete')}
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -653,6 +659,8 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation();
+
   return (
     <>
       <SignedIn>
@@ -664,20 +672,20 @@ export default function Dashboard() {
             <div>
               <Lock className="mx-auto h-16 w-16 text-gray-400" />
               <h2 className="mt-6 text-3xl font-bold text-gray-900">
-                Access Restricted
+                {t('dashboard.authRequired.title')}
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                You need to sign in to access your download dashboard and view your download history.
+                {t('dashboard.authRequired.description')}
               </p>
             </div>
             <div className="mt-8 space-y-4">
               <SignInButton mode="modal">
                 <button className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
-                  Sign In to Continue
+                  {t('dashboard.authRequired.button')}
                 </button>
               </SignInButton>
               <p className="text-xs text-gray-500">
-                Don't have an account? Sign up is free and takes less than a minute.
+                {t('dashboard.authRequired.note')}
               </p>
             </div>
           </div>

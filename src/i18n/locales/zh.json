@@ -1,0 +1,230 @@
+{
+  "common": {
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "cancel": "取消",
+    "confirm": "确认",
+    "delete": "删除",
+    "download": "下载",
+    "play": "播放",
+    "pause": "暂停",
+    "retry": "重试",
+    "refresh": "刷新",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序",
+    "close": "关闭",
+    "save": "保存",
+    "edit": "编辑",
+    "view": "查看",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "home": "首页",
+    "dashboard": "仪表板",
+    "settings": "设置",
+    "help": "帮助",
+    "about": "关于",
+    "contact": "联系",
+    "privacy": "隐私",
+    "terms": "条款",
+    "signIn": "登录",
+    "signOut": "退出",
+    "signUp": "注册",
+    "profile": "个人资料",
+    "account": "账户"
+  },
+  "header": {
+    "title": "MediaGet",
+    "subtitle": "基于 you-get 构建",
+    "nav": {
+      "home": "首页",
+      "dashboard": "仪表板"
+    },
+    "auth": {
+      "signIn": "登录",
+      "signOut": "退出"
+    }
+  },
+  "hero": {
+    "title": "从",
+    "titleHighlight": "任何地方",
+    "subtitle": "仅需一个链接，即可从100多个热门网站提取视频、音频和图片",
+    "placeholder": "在此粘贴任何视频、音频或图片链接...",
+    "analyze": "分析",
+    "analyzing": "分析中...",
+    "downloadNow": "立即下载",
+    "downloading": "下载中...",
+    "selectFormat": "选择格式和质量",
+    "authRequired": {
+      "title": "登录以下载",
+      "description": "创建免费账户以下载媒体文件并访问您的下载历史记录。",
+      "button": "登录以下载",
+      "benefits": "免费账户 • 无需信用卡 • 包含下载历史"
+    },
+    "authStatus": {
+      "signedIn": "已登录为 {{name}} • 准备下载",
+      "signedOut": "下载需要登录 • 分析功能无需账户"
+    },
+    "poweredBy": "基于 you-get 构建 - 受到全球数千用户信赖",
+    "features": [
+      "支持100多个平台",
+      "多种格式选项",
+      "闪电般快速下载"
+    ]
+  },
+  "features": {
+    "title": "满足各种需求的强大功能",
+    "subtitle": "基于强大的 you-get 引擎构建，并增加了额外的网页界面增强功能",
+    "items": {
+      "multipleFormats": {
+        "title": "多种格式",
+        "description": "支持各种格式和质量级别的下载 - 从144p到4K，从MP4到WebM，从MP3到FLAC。"
+      },
+      "lightningFast": {
+        "title": "闪电般快速",
+        "description": "基于 you-get 优化的提取引擎，实现快速分析和高速下载。"
+      },
+      "privacyFirst": {
+        "title": "隐私优先",
+        "description": "无跟踪，无数据收集。所有处理都在我们的服务器上进行，不存储您的信息。"
+      },
+      "advancedOptions": {
+        "title": "高级选项",
+        "description": "代理支持、自定义输出路径、字幕下载和批处理功能。"
+      },
+      "streamDownload": {
+        "title": "流媒体和下载",
+        "description": "下载前预览内容或直接流式传输到您首选的媒体播放器。"
+      },
+      "mobileFriendly": {
+        "title": "移动友好",
+        "description": "完全响应式设计，在所有设备上都能完美运行 - 桌面、平板和手机。"
+      }
+    },
+    "status": "所有功能现已可用"
+  },
+  "supportedSites": {
+    "title": "支持100多个平台",
+    "subtitle": "从全球最受欢迎的视频、音频和图片分享平台下载",
+    "types": {
+      "video": "视频下载",
+      "audio": "音频下载",
+      "image": "图片下载"
+    },
+    "universal": {
+      "title": "通用提取器",
+      "description": "没看到您的平台？我们的通用提取器可以处理大多数包含可下载内容的网站",
+      "features": [
+        "自动检测",
+        "智能提取",
+        "多种格式"
+      ]
+    }
+  },
+  "dashboard": {
+    "welcome": "欢迎回来，{{name}}！",
+    "subtitle": "管理您的下载并查看下载历史",
+    "stats": {
+      "total": "总下载数",
+      "completed": "已完成",
+      "downloading": "下载中",
+      "pending": "等待中",
+      "failed": "失败"
+    },
+    "filters": {
+      "search": "搜索下载...",
+      "allStatus": "所有状态",
+      "sortBy": "排序方式：",
+      "newest": "最新优先",
+      "oldest": "最旧优先",
+      "title": "标题 A-Z",
+      "size": "文件大小"
+    },
+    "history": {
+      "title": "下载历史",
+      "empty": {
+        "title": "未找到下载",
+        "description": "尝试调整您的搜索或筛选条件",
+        "noDownloads": "开始下载媒体以在此查看您的历史记录"
+      }
+    },
+    "actions": {
+      "play": "播放媒体",
+      "download": "下载文件",
+      "delete": "从历史中删除",
+      "retry": "重试下载"
+    },
+    "status": {
+      "completed": "已完成",
+      "failed": "失败",
+      "downloading": "下载中",
+      "pending": "等待中"
+    },
+    "timeAgo": {
+      "justNow": "刚刚",
+      "minutesAgo": "{{minutes}}分钟前",
+      "hoursAgo": "{{hours}}小时前",
+      "daysAgo": "{{days}}天前"
+    },
+    "authRequired": {
+      "title": "访问受限",
+      "description": "您需要登录才能访问下载仪表板并查看下载历史。",
+      "button": "登录以继续",
+      "note": "没有账户？注册是免费的，只需不到一分钟。"
+    }
+  },
+  "mediaPlayer": {
+    "downloadFile": "下载文件",
+    "controls": {
+      "play": "播放",
+      "pause": "暂停",
+      "mute": "静音",
+      "unmute": "取消静音",
+      "fullscreen": "全屏",
+      "volume": "音量"
+    }
+  },
+  "systemStatus": {
+    "checking": "检查系统状态...",
+    "ready": "系统就绪 - you-get {{version}} 已安装并正常工作",
+    "notMet": {
+      "title": "系统要求未满足",
+      "description": "you-get 未安装或无法访问",
+      "install": "要使用此服务，请安装 you-get：",
+      "visitGithub": "或访问 github.com/soimort/you-get 获取安装说明。",
+      "recheck": "重新检查状态"
+    }
+  },
+  "footer": {
+    "copyright": "© 2025 MediaGet"
+  },
+  "errors": {
+    "urlRequired": "需要URL",
+    "invalidUrl": "无效的URL格式",
+    "noMediaFound": "在此URL未找到媒体",
+    "analysisError": "分析URL失败。请检查URL是否有效且受支持。",
+    "downloadError": "下载失败。请重试。",
+    "networkError": "网络错误",
+    "serverError": "服务器错误",
+    "authRequired": "需要身份验证",
+    "permissionDenied": "权限被拒绝",
+    "fileNotFound": "文件未找到",
+    "unsupportedFormat": "不支持的格式",
+    "quotaExceeded": "下载配额已超出"
+  },
+  "success": {
+    "downloadCompleted": "下载完成！文件：{{filename}}",
+    "downloadStarted": "下载开始成功",
+    "analysisCompleted": "分析完成成功",
+    "fileDeleted": "文件删除成功",
+    "settingsSaved": "设置保存成功"
+  },
+  "language": {
+    "current": "中文",
+    "switch": "切换语言",
+    "english": "English",
+    "chinese": "中文"
+  }
+}

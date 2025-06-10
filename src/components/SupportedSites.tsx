@@ -1,5 +1,6 @@
 import React from 'react';
 import { ExternalLink, Video, Music, Image } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const sites = [
   // Popular International Sites
@@ -98,28 +99,30 @@ const getTypeIcon = (type: string) => {
 };
 
 export default function SupportedSites() {
+  const { t } = useTranslation();
+
   return (
-    <section id="supported\" className="py-20 bg-gray-50">
+    <section id="supported" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            100+ Supported Platforms
+            {t('supportedSites.title')}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Download from the most popular video, audio, and image sharing platforms worldwide
+            {t('supportedSites.subtitle')}
           </p>
           <div className="mt-6 flex justify-center space-x-6 text-sm text-gray-600">
             <div className="flex items-center space-x-2">
               <Video className="h-4 w-4 text-blue-600" />
-              <span>Video Downloads</span>
+              <span>{t('supportedSites.types.video')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Music className="h-4 w-4 text-green-600" />
-              <span>Audio Downloads</span>
+              <span>{t('supportedSites.types.audio')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Image className="h-4 w-4 text-purple-600" />
-              <span>Image Downloads</span>
+              <span>{t('supportedSites.types.image')}</span>
             </div>
           </div>
         </div>
@@ -160,14 +163,14 @@ export default function SupportedSites() {
 
         <div className="text-center mt-12">
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-center text-white">
-            <h3 className="text-2xl font-bold mb-2">Universal Extractor</h3>
+            <h3 className="text-2xl font-bold mb-2">{t('supportedSites.universal.title')}</h3>
             <p className="text-blue-100 mb-4">
-              Don't see your platform? Our universal extractor can handle most websites with downloadable content
+              {t('supportedSites.universal.description')}
             </p>
             <div className="flex justify-center space-x-4 text-sm text-blue-100">
-              <span>✓ Automatic detection</span>
-              <span>✓ Smart extraction</span>
-              <span>✓ Multiple formats</span>
+              {t('supportedSites.universal.features', { returnObjects: true }).map((feature: string, index: number) => (
+                <span key={index}>✓ {feature}</span>
+              ))}
             </div>
           </div>
         </div>

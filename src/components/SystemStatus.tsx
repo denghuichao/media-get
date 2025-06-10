@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { apiService } from '../services/api';
 
 export default function SystemStatus() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<{
     yougetInstalled: boolean;
     version?: string;
@@ -27,7 +29,7 @@ export default function SystemStatus() {
     } catch (error) {
       setStatus({
         yougetInstalled: false,
-        error: 'Cannot connect to backend server',
+        error: t('errors.networkError'),
         loading: false
       });
     }
@@ -42,7 +44,7 @@ export default function SystemStatus() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="flex items-center space-x-2">
           <RefreshCw className="h-5 w-5 text-blue-500 animate-spin" />
-          <span className="text-blue-700">Checking system status...</span>
+          <span className="text-blue-700">{t('systemStatus.checking')}</span>
         </div>
       </div>
     );
@@ -54,17 +56,17 @@ export default function SystemStatus() {
         <div className="flex items-start space-x-3">
           <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5" />
           <div className="flex-1">
-            <h4 className="font-medium text-red-800">System Requirements Not Met</h4>
+            <h4 className="font-medium text-red-800">{t('systemStatus.notMet.title')}</h4>
             <p className="text-red-700 text-sm mt-1">
-              {status.error || 'you-get is not installed or not accessible'}
+              {status.error || t('systemStatus.notMet.description')}
             </p>
             <div className="mt-3 text-sm text-red-600">
-              <p className="font-medium">To use this service, please install you-get:</p>
+              <p className="font-medium">{t('systemStatus.notMet.install')}</p>
               <code className="block bg-red-100 p-2 rounded mt-2 text-xs">
                 pip install you-get
               </code>
               <p className="mt-2">
-                Or visit{' '}
+                {t('systemStatus.notMet.visitGithub')}{' '}
                 <a 
                   href="https://github.com/soimort/you-get" 
                   target="_blank" 
@@ -72,15 +74,14 @@ export default function SystemStatus() {
                   className="underline hover:no-underline"
                 >
                   github.com/soimort/you-get
-                </a>{' '}
-                for installation instructions.
+                </a>
               </p>
             </div>
             <button
               onClick={checkStatus}
               className="mt-3 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
             >
-              Recheck Status
+              {t('systemStatus.notMet.recheck')}
             </button>
           </div>
         </div>
@@ -93,7 +94,7 @@ export default function SystemStatus() {
       <div className="flex items-center space-x-2">
         <CheckCircle className="h-5 w-5 text-green-500" />
         <span className="text-green-700">
-          System ready - you-get {status.version} is installed and working
+          {t('systemStatus.ready', { version: status.version })}
         </span>
       </div>
     </div>

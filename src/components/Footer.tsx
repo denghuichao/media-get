@@ -1,7 +1,9 @@
 import React from 'react';
 import { Download, Github, Twitter, Mail } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
   const contactEmail = import.meta.env.VITE_CONTACT_EMAIL || 'support@mediaget.com';
   const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com';
   const twitterUrl = import.meta.env.VITE_TWITTER_URL || 'https://twitter.com';
@@ -15,8 +17,8 @@ export default function Footer() {
               <Download className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">MediaGet</h3>
-              <p className="text-xs text-gray-400">Powered by you-get</p>
+              <h3 className="text-lg font-bold">{t('header.title')}</h3>
+              <p className="text-xs text-gray-400">{t('header.subtitle')}</p>
             </div>
           </div>
           
@@ -48,7 +50,7 @@ export default function Footer() {
                 <Mail className="h-5 w-5" />
               </a>
             </div>
-            <span className="text-gray-400 text-sm">© 2025 MediaGet</span>
+            <span className="text-gray-400 text-sm">{t('footer.copyright')}</span>
           </div>
         </div>
       </div>

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
+import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo } from '../services/api';
 
 export default function Hero() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +32,7 @@ export default function Hero() {
         setSelectedFormat(info.formats[0].itag);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to analyze URL');
+      setError(err instanceof Error ? err.message : t('errors.analysisError'));
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +49,7 @@ export default function Hero() {
       const result = await apiService.downloadMedia(url, user.id, selectedFormat);
       
       if (result.success && result.downloadUrl) {
-        setDownloadSuccess(`Download completed! File: ${result.filename}`);
+        setDownloadSuccess(t('success.downloadCompleted', { filename: result.filename }));
         
         // Trigger file download
         const link = document.createElement('a');
@@ -58,7 +60,7 @@ export default function Hero() {
         document.body.removeChild(link);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Download failed');
+      setError(err instanceof Error ? err.message : t('errors.downloadError'));
     } finally {
       setIsDownloading(false);
     }
@@ -78,11 +80,11 @@ export default function Hero() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Download Media from
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Anywhere</span>
+            {t('hero.title')}
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> {t('hero.titleHighlight')}</span>
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Extract videos, audio, and images from 100+ popular websites with just a URL
+            {t('hero.subtitle')}
           </p>
         </div>
 
@@ -93,7 +95,7 @@ export default function Hero() {
                 type="url"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Paste any video, audio, or image URL here..."
+                placeholder={t('hero.placeholder')}
                 className="w-full px-6 py-4 text-lg border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
               />
             </div>
@@ -105,12 +107,12 @@ export default function Hero() {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                  <span>Analyzing...</span>
+                  <span>{t('hero.analyzing')}</span>
                 </>
               ) : (
                 <>
                   <Search className="h-5 w-5" />
-                  <span>Analyze</span>
+                  <span>{t('hero.analyze')}</span>
                 </>
               )}
             </button>
@@ -138,14 +140,14 @@ export default function Hero() {
                 <Info className="h-5 w-5 text-blue-600" />
                 <div>
                   <h3 className="font-semibold text-gray-900">{mediaInfo.title}</h3>
-                  <p className="text-sm text-gray-500">Source: {mediaInfo.site}</p>
+                  <p className="text-sm text-gray-500">{t('common.source')}: {mediaInfo.site}</p>
                 </div>
               </div>
 
               <div className="grid gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Choose Format & Quality
+                    {t('hero.selectFormat')}
                   </label>
                   <select
                     value={selectedFormat}
@@ -194,12 +196,12 @@ export default function Hero() {
                     {isDownloading ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                        <span>Downloading...</span>
+                        <span>{t('hero.downloading')}</span>
                       </>
                     ) : (
                       <>
                         <Download className="h-5 w-5" />
-                        <span>Download Now</span>
+                        <span>{t('hero.downloadNow')}</span>
                       </>
                     )}
                   </button>
@@ -209,19 +211,19 @@ export default function Hero() {
                   {/* Non-authenticated users see login prompt */}
                   <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
                     <Lock className="h-8 w-8 text-blue-600 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign in to Download</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('hero.authRequired.title')}</h3>
                     <p className="text-gray-600 mb-4">
-                      Create a free account to download media files and access your download history.
+                      {t('hero.authRequired.description')}
                     </p>
                     <div className="space-y-3">
                       <SignInButton mode="modal">
                         <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium flex items-center justify-center space-x-2">
                           <Download className="h-5 w-5" />
-                          <span>Sign In to Download</span>
+                          <span>{t('hero.authRequired.button')}</span>
                         </button>
                       </SignInButton>
                       <p className="text-xs text-gray-500">
-                        Free account • No credit card required • Download history included
+                        {t('hero.authRequired.benefits')}
                       </p>
                     </div>
                   </div>
@@ -235,24 +237,24 @@ export default function Hero() {
             <SignedIn>
               <div className="flex items-center space-x-2 text-sm text-green-600">
                 <CheckCircle className="h-4 w-4" />
-                <span>Signed in as {user?.firstName || user?.emailAddresses?.[0]?.emailAddress} • Ready to download</span>
+                <span>{t('hero.authStatus.signedIn', { name: user?.firstName || user?.emailAddresses?.[0]?.emailAddress })}</span>
               </div>
             </SignedIn>
             <SignedOut>
               <div className="flex items-center space-x-2 text-sm text-gray-500">
                 <Lock className="h-4 w-4" />
-                <span>Sign in required for downloads • Analysis available without account</span>
+                <span>{t('hero.authStatus.signedOut')}</span>
               </div>
             </SignedOut>
           </div>
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-600 mb-4">Powered by you-get - Trusted by thousands of users worldwide</p>
+          <p className="text-gray-600 mb-4">{t('hero.poweredBy')}</p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
-            <span>✓ 100+ supported platforms</span>
-            <span>✓ Multiple format options</span>
-            <span>✓ Lightning fast downloads</span>
+            {t('hero.features', { returnObjects: true }).map((feature: string, index: number) => (
+              <span key={index}>✓ {feature}</span>
+            ))}
           </div>
         </div>
       </div>

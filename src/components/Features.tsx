@@ -1,49 +1,52 @@
 import React from 'react';
 import { Shield, Zap, Settings, Download, PlayCircle, Smartphone } from 'lucide-react';
-
-const features = [
-  {
-    icon: <Download className="h-8 w-8" />,
-    title: 'Multiple Formats',
-    description: 'Download in various formats and quality levels - from 144p to 4K, MP4 to WebM, MP3 to FLAC.'
-  },
-  {
-    icon: <Zap className="h-8 w-8" />,
-    title: 'Lightning Fast',
-    description: 'Powered by you-get\'s optimized extraction engine for quick analysis and high-speed downloads.'
-  },
-  {
-    icon: <Shield className="h-8 w-8" />,
-    title: 'Privacy First',
-    description: 'No tracking, no data collection. All processing happens on our servers without storing your information.'
-  },
-  {
-    icon: <Settings className="h-8 w-8" />,
-    title: 'Advanced Options',
-    description: 'Proxy support, custom output paths, subtitle downloads, and batch processing capabilities.'
-  },
-  {
-    icon: <PlayCircle className="h-8 w-8" />,
-    title: 'Stream & Download',
-    description: 'Preview content before downloading or stream directly to your preferred media player.'
-  },
-  {
-    icon: <Smartphone className="h-8 w-8" />,
-    title: 'Mobile Friendly',
-    description: 'Fully responsive design that works perfectly on all devices - desktop, tablet, and mobile.'
-  }
-];
+import { useTranslation } from 'react-i18next';
 
 export default function Features() {
+  const { t } = useTranslation();
+
+  const features = [
+    {
+      icon: <Download className="h-8 w-8" />,
+      title: t('features.items.multipleFormats.title'),
+      description: t('features.items.multipleFormats.description')
+    },
+    {
+      icon: <Zap className="h-8 w-8" />,
+      title: t('features.items.lightningFast.title'),
+      description: t('features.items.lightningFast.description')
+    },
+    {
+      icon: <Shield className="h-8 w-8" />,
+      title: t('features.items.privacyFirst.title'),
+      description: t('features.items.privacyFirst.description')
+    },
+    {
+      icon: <Settings className="h-8 w-8" />,
+      title: t('features.items.advancedOptions.title'),
+      description: t('features.items.advancedOptions.description')
+    },
+    {
+      icon: <PlayCircle className="h-8 w-8" />,
+      title: t('features.items.streamDownload.title'),
+      description: t('features.items.streamDownload.description')
+    },
+    {
+      icon: <Smartphone className="h-8 w-8" />,
+      title: t('features.items.mobileFriendly.title'),
+      description: t('features.items.mobileFriendly.description')
+    }
+  ];
+
   return (
     <section className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Powerful Features for Every Need
+            {t('features.title')}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Built on the robust you-get engine with additional web interface enhancements
+            {t('features.subtitle')}
           </p>
         </div>
 
@@ -69,7 +72,7 @@ export default function Features() {
         <div className="mt-16 text-center">
           <div className="inline-flex items-center space-x-2 bg-green-100 text-green-800 px-4 py-2 rounded-full">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium">All features available now</span>
+            <span className="text-sm font-medium">{t('features.status')}</span>
           </div>
         </div>
       </div>

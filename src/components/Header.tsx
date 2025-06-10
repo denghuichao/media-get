@@ -1,8 +1,12 @@
 import React from 'react';
 import { Download, Home, LayoutDashboard } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Header() {
+  const { t } = useTranslation();
+
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,8 +16,8 @@ export default function Header() {
               <Download className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">MediaGet</h1>
-              <p className="text-xs text-gray-500">Powered by you-get</p>
+              <h1 className="text-xl font-bold text-gray-900">{t('header.title')}</h1>
+              <p className="text-xs text-gray-500">{t('header.subtitle')}</p>
             </div>
           </div>
           
@@ -24,23 +28,26 @@ export default function Header() {
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
               >
                 <Home className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                <span>Home</span>
+                <span>{t('header.nav.home')}</span>
               </a>
               <a 
                 href="#dashboard" 
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
               >
                 <LayoutDashboard className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                <span>Dashboard</span>
+                <span>{t('header.nav.dashboard')}</span>
               </a>
             </nav>
+
+            {/* Language Switcher */}
+            <LanguageSwitcher />
 
             {/* Authentication */}
             <div className="flex items-center space-x-4">
               <SignedOut>
                 <SignInButton mode="modal">
                   <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
-                    Sign In
+                    {t('header.auth.signIn')}
                   </button>
                 </SignInButton>
               </SignedOut>
