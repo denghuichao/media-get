@@ -33,7 +33,8 @@
     "signOut": "Sign Out",
     "signUp": "Sign Up",
     "profile": "Profile",
-    "account": "Account"
+    "account": "Account",
+    "source": "Source"
   },
   "header": {
     "title": "MediaGet",
@@ -67,7 +68,6 @@
       "signedIn": "Signed in as {{name}} • Ready to download",
       "signedOut": "Sign in required for downloads • Analysis available without account"
     },
-    "poweredBy": "Powered by you-get - Trusted by thousands of users worldwide",
     "features": [
       "100+ supported platforms",
       "Multiple format options",
