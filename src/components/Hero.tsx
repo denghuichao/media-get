@@ -182,43 +182,69 @@ export default function Hero() {
                 </div>
               </div>
 
-              {/* Download Button - Protected by Authentication */}
-              <SignedIn>
-                <button
-                  onClick={handleDownload}
-                  disabled={isDownloading || !selectedFormat}
-                  className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                >
-                  {isDownloading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      <span>Downloading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-5 w-5" />
-                      <span>Download Now</span>
-                    </>
-                  )}
-                </button>
-              </SignedIn>
+              {/* Download Section - Always visible but behavior changes based on auth */}
+              <div className="space-y-4">
+                <SignedIn>
+                  {/* Authenticated users can download directly */}
+                  <button
+                    onClick={handleDownload}
+                    disabled={isDownloading || !selectedFormat}
+                    className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {isDownloading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        <span>Downloading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-5 w-5" />
+                        <span>Download Now</span>
+                      </>
+                    )}
+                  </button>
+                </SignedIn>
 
-              <SignedOut>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
-                  <Lock className="h-8 w-8 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Sign in to Download</h3>
-                  <p className="text-gray-600 mb-4">
-                    Create a free account to download media files and access your download history.
-                  </p>
-                  <SignInButton mode="modal">
-                    <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
-                      Sign In to Download
-                    </button>
-                  </SignInButton>
-                </div>
-              </SignedOut>
+                <SignedOut>
+                  {/* Non-authenticated users see login prompt */}
+                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
+                    <Lock className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Sign in to Download</h3>
+                    <p className="text-gray-600 mb-4">
+                      Create a free account to download media files and access your download history.
+                    </p>
+                    <div className="space-y-3">
+                      <SignInButton mode="modal">
+                        <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium flex items-center justify-center space-x-2">
+                          <Download className="h-5 w-5" />
+                          <span>Sign In to Download</span>
+                        </button>
+                      </SignInButton>
+                      <p className="text-xs text-gray-500">
+                        Free account • No credit card required • Download history included
+                      </p>
+                    </div>
+                  </div>
+                </SignedOut>
+              </div>
             </div>
           )}
+
+          {/* Authentication Status Indicator */}
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <SignedIn>
+              <div className="flex items-center space-x-2 text-sm text-green-600">
+                <CheckCircle className="h-4 w-4" />
+                <span>Signed in as {user?.firstName || user?.emailAddresses?.[0]?.emailAddress} • Ready to download</span>
+              </div>
+            </SignedIn>
+            <SignedOut>
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <Lock className="h-4 w-4" />
+                <span>Sign in required for downloads • Analysis available without account</span>
+              </div>
+            </SignedOut>
+          </div>
         </div>
 
         <div className="mt-8 text-center">
