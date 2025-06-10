@@ -51,6 +51,35 @@ function executeYouGet(args) {
   });
 }
 
+// Helper function to execute FFmpeg commands
+function executeFFmpeg(args) {
+  return new Promise((resolve, reject) => {
+    const ffmpeg = spawn('ffmpeg', args);
+    let stdout = '';
+    let stderr = '';
+
+    ffmpeg.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    ffmpeg.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    ffmpeg.on('close', (code) => {
+      if (code === 0) {
+        resolve(stdout);
+      } else {
+        reject(new Error(stderr || `FFmpeg process exited with code ${code}`));
+      }
+    });
+
+    ffmpeg.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
+
 // Parse you-get JSON output
 function parseYouGetJson(output) {
   try {
@@ -109,10 +138,10 @@ function parseYouGetJson(output) {
           }
         }
         
-        // Add note for DASH formats that require merging
+        // Check if this is a DASH format that might need merging
         let qualityNote = quality;
         if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
-          qualityNote += ' (Merged with FFmpeg)';
+          qualityNote += ' (Video+Audio merged)';
         }
         
         info.formats.push({
@@ -133,12 +162,23 @@ function parseYouGetJson(output) {
 }
 
 // Helper function to filter downloaded files
-function findMainMediaFile(files) {
-  // Filter out comment files, metadata files, and temporary files
-  const filteredFiles = files.filter(file => {
+function findMediaFiles(files) {
+  // Separate main media files from metadata files
+  const mediaFiles = [];
+  const metadataFiles = [];
+  
+  files.forEach(file => {
     const fileName = file.toLowerCase();
     
-    // Skip comment and metadata files
+    // Skip temporary files and partial downloads
+    if (fileName.includes('.part') || 
+        fileName.includes('.tmp') || 
+        fileName.startsWith('.') ||
+        fileName.includes('~')) {
+      return;
+    }
+    
+    // Categorize files
     if (fileName.endsWith('.cmt.xml') || 
         fileName.endsWith('.info.json') || 
         fileName.endsWith('.description') ||
@@ -147,29 +187,22 @@ function findMainMediaFile(files) {
         fileName.endsWith('.vtt') ||
         fileName.endsWith('.ass') ||
         fileName.endsWith('.ssa')) {
-      return false;
+      metadataFiles.push(file);
+    } else {
+      // Check for main media files
+      const mediaExtensions = [
+        '.mp4', '.mkv', '.webm', '.flv', '.avi', '.mov', '.wmv', '.m4v',  // Video
+        '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav', '.wma',         // Audio
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'        // Image
+      ];
+      
+      if (mediaExtensions.some(ext => fileName.endsWith(ext))) {
+        mediaFiles.push(file);
+      }
     }
-    
-    // Skip temporary files and partial downloads
-    if (fileName.includes('.part') || 
-        fileName.includes('.tmp') || 
-        fileName.startsWith('.') ||
-        fileName.includes('~')) {
-      return false;
-    }
-    
-    // Look for main media files
-    const mediaExtensions = [
-      '.mp4', '.mkv', '.webm', '.flv', '.avi', '.mov', '.wmv', '.m4v',  // Video
-      '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav', '.wma',         // Audio
-      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'        // Image
-    ];
-    
-    return mediaExtensions.some(ext => fileName.endsWith(ext));
   });
   
-  // Return the first main media file found
-  return filteredFiles.length > 0 ? filteredFiles[0] : null;
+  return { mediaFiles, metadataFiles };
 }
 
 // Check if FFmpeg is available
@@ -187,6 +220,35 @@ async function checkFFmpegAvailable() {
   } catch {
     return false;
   }
+}
+
+// Merge video and audio files using FFmpeg
+async function mergeVideoAudio(videoFile, audioFile, outputFile) {
+  const videoPath = path.join(downloadsDir, videoFile);
+  const audioPath = path.join(downloadsDir, audioFile);
+  const outputPath = path.join(downloadsDir, outputFile);
+  
+  // FFmpeg command to merge video and audio
+  const args = [
+    '-i', videoPath,
+    '-i', audioPath,
+    '-c:v', 'copy',  // Copy video stream without re-encoding
+    '-c:a', 'copy',  // Copy audio stream without re-encoding
+    '-y',            // Overwrite output file if it exists
+    outputPath
+  ];
+  
+  await executeFFmpeg(args);
+  
+  // Clean up separate files after successful merge
+  try {
+    fs.unlinkSync(videoPath);
+    fs.unlinkSync(audioPath);
+  } catch (error) {
+    console.warn('Could not clean up temporary files:', error.message);
+  }
+  
+  return outputFile;
 }
 
 // API Routes
@@ -245,17 +307,15 @@ app.post('/api/download', async (req, res) => {
     const ffmpegAvailable = await checkFFmpegAvailable();
     console.log('FFmpeg available:', ffmpegAvailable);
     
+    // Get initial file list
+    const initialFiles = fs.existsSync(downloadsDir) ? fs.readdirSync(downloadsDir) : [];
+    
     // Prepare you-get arguments
     const args = ['-o', downloadsDir];
     
-    // Force FFmpeg merging for DASH formats
-    if (ffmpegAvailable) {
-      args.push('--force-merge');  // Force merge video+audio with FFmpeg
-    }
-    
     // Add format specification
     if (itag) {
-      // Use --format for new you-get versions, --itag for older ones
+      // Use --format for format selection
       args.push(`--format=${itag}`);
     }
     
@@ -273,27 +333,81 @@ app.post('/api/download', async (req, res) => {
     const output = await executeYouGet(args);
     console.log('Download output:', output);
     
-    // Find downloaded file(s)
-    const files = fs.readdirSync(downloadsDir);
-    console.log('Files in downloads directory:', files);
+    // Get new files after download
+    const allFiles = fs.readdirSync(downloadsDir);
+    const newFiles = allFiles.filter(file => !initialFiles.includes(file));
+    console.log('New files after download:', newFiles);
     
-    // Find the main media file (excluding comments and metadata)
-    const downloadedFile = findMainMediaFile(files);
+    // Categorize the downloaded files
+    const { mediaFiles, metadataFiles } = findMediaFiles(newFiles);
+    console.log('Media files:', mediaFiles);
+    console.log('Metadata files:', metadataFiles);
     
-    if (downloadedFile) {
-      const downloadUrl = `/downloads/${downloadedFile}`;
+    let finalFile = null;
+    
+    // Handle different download scenarios
+    if (mediaFiles.length === 1) {
+      // Single file download - perfect!
+      finalFile = mediaFiles[0];
+    } else if (mediaFiles.length === 2 && ffmpegAvailable) {
+      // Two files (likely video + audio) - try to merge with FFmpeg
+      console.log('Attempting to merge video and audio files...');
+      
+      // Identify video and audio files
+      const videoFile = mediaFiles.find(file => 
+        file.toLowerCase().includes('video') || 
+        file.toLowerCase().endsWith('.mp4') ||
+        file.toLowerCase().endsWith('.webm') ||
+        file.toLowerCase().endsWith('.mkv')
+      );
+      
+      const audioFile = mediaFiles.find(file => 
+        file.toLowerCase().includes('audio') || 
+        file.toLowerCase().endsWith('.m4a') ||
+        file.toLowerCase().endsWith('.mp3') ||
+        file.toLowerCase().endsWith('.aac')
+      );
+      
+      if (videoFile && audioFile) {
+        try {
+          // Generate output filename
+          const baseName = outputName || 'merged-video';
+          const outputFile = `${baseName}.mp4`;
+          
+          // Merge the files
+          finalFile = await mergeVideoAudio(videoFile, audioFile, outputFile);
+          console.log('Successfully merged video and audio into:', finalFile);
+        } catch (mergeError) {
+          console.error('Failed to merge files:', mergeError.message);
+          // Fall back to returning the first media file
+          finalFile = mediaFiles[0];
+        }
+      } else {
+        // Can't identify video/audio files clearly
+        finalFile = mediaFiles[0];
+      }
+    } else if (mediaFiles.length > 0) {
+      // Multiple files but can't merge, return the first one
+      finalFile = mediaFiles[0];
+      console.log(`Multiple files downloaded (${mediaFiles.length}), returning first: ${finalFile}`);
+    }
+    
+    if (finalFile) {
+      const downloadUrl = `/downloads/${finalFile}`;
       res.json({ 
         success: true, 
         downloadUrl,
-        filename: downloadedFile,
-        message: 'Download completed successfully'
+        filename: finalFile,
+        message: mediaFiles.length > 1 && !ffmpegAvailable 
+          ? 'Download completed. Multiple files downloaded - install FFmpeg for automatic merging.'
+          : 'Download completed successfully'
       });
     } else {
-      // If no main media file found, list all files for debugging
-      console.log('No main media file found. Available files:', files);
+      // No media files found
+      console.log('No media files found. All files:', newFiles);
       res.status(500).json({ 
-        error: 'Download completed but main media file not found',
-        details: `Available files: ${files.join(', ')}`
+        error: 'Download completed but no media files found',
+        details: `Files downloaded: ${newFiles.join(', ')}`
       });
     }
     
@@ -342,7 +456,7 @@ app.get('/api/check-youget', async (req, res) => {
       installed: true, 
       version: output.trim(),
       ffmpegAvailable: ffmpegAvailable,
-      message: `you-get is properly installed${ffmpegAvailable ? ' with FFmpeg support' : ' (FFmpeg not available - DASH merging may not work)'}`
+      message: `you-get is properly installed${ffmpegAvailable ? ' with FFmpeg support for video/audio merging' : ' (install FFmpeg for automatic video/audio merging)'}`
     });
   } catch (error) {
     res.status(500).json({ 
