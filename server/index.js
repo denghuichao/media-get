@@ -51,7 +51,7 @@ function executeYouGet(args) {
   });
 }
 
-// Parse you-get info output
+// Parse you-get info output - Updated to handle real format
 function parseYouGetInfo(output) {
   const lines = output.split('\n');
   const info = {
@@ -60,39 +60,104 @@ function parseYouGetInfo(output) {
     formats: []
   };
 
-  let currentSection = '';
+  let currentFormat = null;
+  let inStreamsSection = false;
   
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
     
+    // Extract site and title
     if (trimmed.startsWith('site:')) {
       info.site = trimmed.replace('site:', '').trim();
     } else if (trimmed.startsWith('title:')) {
       info.title = trimmed.replace('title:', '').trim();
-    } else if (trimmed.startsWith('- itag:')) {
-      const itag = trimmed.match(/itag:\s*(\w+)/)?.[1];
-      const container = lines[lines.indexOf(line) + 1]?.match(/container:\s*(\w+)/)?.[1];
-      const quality = lines[lines.indexOf(line) + 2]?.match(/quality:\s*(.+)/)?.[1];
-      const sizeMatch = lines[lines.indexOf(line) + 3]?.match(/size:\s*(.+)/);
-      const size = sizeMatch?.[1] || 'Unknown';
-      
-      if (itag && container && quality) {
-        // Determine media type based on container
-        let type = 'video';
-        if (['mp3', 'm4a', 'aac', 'flac', 'ogg'].includes(container.toLowerCase())) {
-          type = 'audio';
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(container.toLowerCase())) {
-          type = 'image';
-        }
-        
-        info.formats.push({
-          itag,
-          container,
-          quality,
-          size,
-          type
-        });
+    }
+    
+    // Check if we're in the streams section
+    if (trimmed.includes('streams:') || trimmed.includes('Available quality')) {
+      inStreamsSection = true;
+      continue;
+    }
+    
+    if (!inStreamsSection) continue;
+    
+    // Parse format entries - handle both old and new you-get output formats
+    if (trimmed.startsWith('- format:')) {
+      // New format (like Bilibili)
+      const formatMatch = trimmed.match(/- format:\s*(.+)/);
+      if (formatMatch) {
+        currentFormat = {
+          itag: formatMatch[1].trim(),
+          container: '',
+          quality: '',
+          size: '',
+          type: 'video'
+        };
       }
+    } else if (trimmed.startsWith('- itag:')) {
+      // Old format (like YouTube)
+      const itagMatch = trimmed.match(/- itag:\s*(.+)/);
+      if (itagMatch) {
+        currentFormat = {
+          itag: itagMatch[1].trim(),
+          container: '',
+          quality: '',
+          size: '',
+          type: 'video'
+        };
+      }
+    } else if (currentFormat) {
+      // Parse format details
+      if (trimmed.startsWith('container:')) {
+        currentFormat.container = trimmed.replace('container:', '').trim();
+      } else if (trimmed.startsWith('quality:')) {
+        currentFormat.quality = trimmed.replace('quality:', '').trim();
+      } else if (trimmed.startsWith('size:')) {
+        const sizeMatch = trimmed.match(/size:\s*(.+?)(?:\s*\(|$)/);
+        currentFormat.size = sizeMatch ? sizeMatch[1].trim() : trimmed.replace('size:', '').trim();
+        
+        // When we hit size, this format entry is complete
+        if (currentFormat.itag && currentFormat.container) {
+          // Determine media type based on container or quality info
+          let type = 'video';
+          const containerLower = currentFormat.container.toLowerCase();
+          const qualityLower = currentFormat.quality.toLowerCase();
+          
+          if (['mp3', 'm4a', 'aac', 'flac', 'ogg', 'wav'].includes(containerLower)) {
+            type = 'audio';
+          } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(containerLower)) {
+            type = 'image';
+          } else if (qualityLower.includes('audio') || qualityLower.includes('kbps')) {
+            type = 'audio';
+          }
+          
+          currentFormat.type = type;
+          info.formats.push({ ...currentFormat });
+        }
+        currentFormat = null;
+      }
+    }
+    
+    // Handle single-line format entries (some sites)
+    const singleLineMatch = trimmed.match(/^(\w+)\s+(\w+)\s+(.+?)\s+(.+)$/);
+    if (singleLineMatch && inStreamsSection && !trimmed.startsWith('-') && !trimmed.includes(':')) {
+      const [, itag, container, quality, size] = singleLineMatch;
+      let type = 'video';
+      
+      if (['mp3', 'm4a', 'aac', 'flac', 'ogg'].includes(container.toLowerCase())) {
+        type = 'audio';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(container.toLowerCase())) {
+        type = 'image';
+      }
+      
+      info.formats.push({
+        itag,
+        container,
+        quality,
+        size,
+        type
+      });
     }
   }
 
@@ -121,7 +186,10 @@ app.post('/api/analyze', async (req, res) => {
     
     // Execute you-get with info flag
     const output = await executeYouGet(['-i', url]);
+    console.log('you-get output:', output); // Debug log
+    
     const mediaInfo = parseYouGetInfo(output);
+    console.log('Parsed info:', mediaInfo); // Debug log
     
     if (!mediaInfo.title) {
       return res.status(404).json({ error: 'No media found at this URL' });
@@ -146,13 +214,14 @@ app.post('/api/download', async (req, res) => {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    console.log(`Starting download: ${url} with itag: ${itag}`);
+    console.log(`Starting download: ${url} with format: ${itag}`);
     
     // Prepare you-get arguments
     const args = ['-o', downloadsDir];
     
     if (itag) {
-      args.push(`--itag=${itag}`);
+      // Use --format for new you-get versions, --itag for older ones
+      args.push(`--format=${itag}`);
     }
     
     if (outputName) {
@@ -160,6 +229,8 @@ app.post('/api/download', async (req, res) => {
     }
     
     args.push(url);
+    
+    console.log('Executing you-get with args:', args);
     
     // Execute download
     const output = await executeYouGet(args);
