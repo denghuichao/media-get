@@ -22,12 +22,6 @@ if (!fs.existsSync(downloadsDir)) {
   fs.mkdirSync(downloadsDir, { recursive: true });
 }
 
-// Helper function to remove ANSI escape codes
-function stripAnsiCodes(text) {
-  // Remove ANSI escape sequences like [7m, [0m, [1m, etc.
-  return text.replace(/\x1b\[[0-9;]*m/g, '');
-}
-
 // Helper function to execute you-get commands
 function executeYouGet(args) {
   return new Promise((resolve, reject) => {
@@ -57,120 +51,79 @@ function executeYouGet(args) {
   });
 }
 
-// Parse you-get info output - Updated to handle real format and strip ANSI codes
-function parseYouGetInfo(output) {
-  // First, strip all ANSI escape codes from the output
-  const cleanOutput = stripAnsiCodes(output);
-  const lines = cleanOutput.split('\n');
-  
-  const info = {
-    site: '',
-    title: '',
-    formats: []
-  };
-
-  let currentFormat = null;
-  let inStreamsSection = false;
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
+// Parse you-get JSON output
+function parseYouGetJson(output) {
+  try {
+    // Extract JSON from output (you-get may output warnings before JSON)
+    const lines = output.split('\n');
+    let jsonStart = -1;
     
-    // Extract site and title
-    if (trimmed.startsWith('site:')) {
-      info.site = trimmed.replace('site:', '').trim();
-    } else if (trimmed.startsWith('title:')) {
-      info.title = trimmed.replace('title:', '').trim();
+    // Find the line where JSON starts (look for opening brace)
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim().startsWith('{')) {
+        jsonStart = i;
+        break;
+      }
     }
     
-    // Check if we're in the streams section
-    if (trimmed.includes('streams:') || trimmed.includes('Available quality')) {
-      inStreamsSection = true;
-      continue;
+    if (jsonStart === -1) {
+      throw new Error('No JSON found in you-get output');
     }
     
-    if (!inStreamsSection) continue;
+    // Join lines from JSON start to end
+    const jsonString = lines.slice(jsonStart).join('\n');
+    const data = JSON.parse(jsonString);
     
-    // Parse format entries - handle both old and new you-get output formats
-    if (trimmed.startsWith('- format:')) {
-      // New format (like Bilibili)
-      const formatMatch = trimmed.match(/- format:\s*(.+)/);
-      if (formatMatch) {
-        currentFormat = {
-          itag: formatMatch[1].trim(),
-          container: '',
-          quality: '',
-          size: '',
-          type: 'video'
-        };
-      }
-    } else if (trimmed.startsWith('- itag:')) {
-      // Old format (like YouTube)
-      const itagMatch = trimmed.match(/- itag:\s*(.+)/);
-      if (itagMatch) {
-        currentFormat = {
-          itag: itagMatch[1].trim(),
-          container: '',
-          quality: '',
-          size: '',
-          type: 'video'
-        };
-      }
-    } else if (currentFormat) {
-      // Parse format details
-      if (trimmed.startsWith('container:')) {
-        currentFormat.container = trimmed.replace('container:', '').trim();
-      } else if (trimmed.startsWith('quality:')) {
-        currentFormat.quality = trimmed.replace('quality:', '').trim();
-      } else if (trimmed.startsWith('size:')) {
-        const sizeMatch = trimmed.match(/size:\s*(.+?)(?:\s*\(|$)/);
-        currentFormat.size = sizeMatch ? sizeMatch[1].trim() : trimmed.replace('size:', '').trim();
+    // Convert you-get JSON format to our API format
+    const info = {
+      site: data.site || '',
+      title: data.title || '',
+      formats: []
+    };
+    
+    // Process streams object
+    if (data.streams && typeof data.streams === 'object') {
+      for (const [formatId, streamData] of Object.entries(data.streams)) {
+        // Determine media type based on container or quality
+        let type = 'video';
+        const container = streamData.container || 'mp4';
+        const quality = streamData.quality || '';
         
-        // When we hit size, this format entry is complete
-        if (currentFormat.itag && currentFormat.container) {
-          // Determine media type based on container or quality info
-          let type = 'video';
-          const containerLower = currentFormat.container.toLowerCase();
-          const qualityLower = currentFormat.quality.toLowerCase();
-          
-          if (['mp3', 'm4a', 'aac', 'flac', 'ogg', 'wav'].includes(containerLower)) {
-            type = 'audio';
-          } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(containerLower)) {
-            type = 'image';
-          } else if (qualityLower.includes('audio') || qualityLower.includes('kbps')) {
-            type = 'audio';
-          }
-          
-          currentFormat.type = type;
-          info.formats.push({ ...currentFormat });
+        if (['mp3', 'm4a', 'aac', 'flac', 'ogg', 'wav'].includes(container.toLowerCase())) {
+          type = 'audio';
+        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(container.toLowerCase())) {
+          type = 'image';
+        } else if (quality.toLowerCase().includes('audio') || quality.toLowerCase().includes('kbps')) {
+          type = 'audio';
         }
-        currentFormat = null;
+        
+        // Convert size from bytes to human readable format
+        let size = 'Unknown';
+        if (streamData.size && typeof streamData.size === 'number') {
+          const sizeInMB = streamData.size / (1024 * 1024);
+          if (sizeInMB >= 1) {
+            size = `${sizeInMB.toFixed(1)} MiB`;
+          } else {
+            const sizeInKB = streamData.size / 1024;
+            size = `${sizeInKB.toFixed(1)} KiB`;
+          }
+        }
+        
+        info.formats.push({
+          itag: formatId,
+          container: container,
+          quality: quality,
+          size: size,
+          type: type
+        });
       }
     }
     
-    // Handle single-line format entries (some sites)
-    const singleLineMatch = trimmed.match(/^(\w+)\s+(\w+)\s+(.+?)\s+(.+)$/);
-    if (singleLineMatch && inStreamsSection && !trimmed.startsWith('-') && !trimmed.includes(':')) {
-      const [, itag, container, quality, size] = singleLineMatch;
-      let type = 'video';
-      
-      if (['mp3', 'm4a', 'aac', 'flac', 'ogg'].includes(container.toLowerCase())) {
-        type = 'audio';
-      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(container.toLowerCase())) {
-        type = 'image';
-      }
-      
-      info.formats.push({
-        itag,
-        container,
-        quality,
-        size,
-        type
-      });
-    }
+    return info;
+  } catch (error) {
+    console.error('Error parsing you-get JSON:', error);
+    throw new Error('Failed to parse you-get output');
   }
-
-  return info;
 }
 
 // API Routes
@@ -193,11 +146,11 @@ app.post('/api/analyze', async (req, res) => {
 
     console.log(`Analyzing URL: ${url}`);
     
-    // Execute you-get with info flag
-    const output = await executeYouGet(['-i', url]);
+    // Execute you-get with JSON flag
+    const output = await executeYouGet(['--json', url]);
     console.log('you-get raw output:', output); // Debug log
     
-    const mediaInfo = parseYouGetInfo(output);
+    const mediaInfo = parseYouGetJson(output);
     console.log('Parsed info:', mediaInfo); // Debug log
     
     if (!mediaInfo.title) {
