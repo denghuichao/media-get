@@ -141,7 +141,7 @@ function parseYouGetJson(output) {
         // Check if this is a DASH format that might need merging
         let qualityNote = quality;
         if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
-          qualityNote += ' (Video+Audio merged)';
+          qualityNote += ' (Video+Audio will be merged)';
         }
         
         info.formats.push({
@@ -222,11 +222,77 @@ async function checkFFmpegAvailable() {
   }
 }
 
+// Detect if files are video/audio based on content analysis
+async function analyzeFileContent(filePath) {
+  try {
+    // Use ffprobe to analyze file content
+    const result = await new Promise((resolve, reject) => {
+      const ffprobe = spawn('ffprobe', [
+        '-v', 'quiet',
+        '-print_format', 'json',
+        '-show_streams',
+        filePath
+      ]);
+      
+      let stdout = '';
+      ffprobe.stdout.on('data', (data) => {
+        stdout += data.toString();
+      });
+      
+      ffprobe.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const data = JSON.parse(stdout);
+            resolve(data);
+          } catch (e) {
+            reject(e);
+          }
+        } else {
+          reject(new Error('ffprobe failed'));
+        }
+      });
+      
+      ffprobe.on('error', reject);
+    });
+    
+    const streams = result.streams || [];
+    const hasVideo = streams.some(s => s.codec_type === 'video');
+    const hasAudio = streams.some(s => s.codec_type === 'audio');
+    
+    return { hasVideo, hasAudio };
+  } catch (error) {
+    console.warn('Could not analyze file content:', error.message);
+    return { hasVideo: false, hasAudio: false };
+  }
+}
+
+// Smart file identification for DASH merging
+async function identifyDashFiles(mediaFiles) {
+  const fileAnalysis = [];
+  
+  for (const file of mediaFiles) {
+    const filePath = path.join(downloadsDir, file);
+    const analysis = await analyzeFileContent(filePath);
+    fileAnalysis.push({
+      filename: file,
+      ...analysis
+    });
+  }
+  
+  // Find video-only and audio-only files
+  const videoOnlyFile = fileAnalysis.find(f => f.hasVideo && !f.hasAudio);
+  const audioOnlyFile = fileAnalysis.find(f => f.hasAudio && !f.hasVideo);
+  
+  return { videoOnlyFile, audioOnlyFile };
+}
+
 // Merge video and audio files using FFmpeg
 async function mergeVideoAudio(videoFile, audioFile, outputFile) {
   const videoPath = path.join(downloadsDir, videoFile);
   const audioPath = path.join(downloadsDir, audioFile);
   const outputPath = path.join(downloadsDir, outputFile);
+  
+  console.log(`Merging: ${videoFile} + ${audioFile} -> ${outputFile}`);
   
   // FFmpeg command to merge video and audio
   const args = [
@@ -244,11 +310,24 @@ async function mergeVideoAudio(videoFile, audioFile, outputFile) {
   try {
     fs.unlinkSync(videoPath);
     fs.unlinkSync(audioPath);
+    console.log('Cleaned up temporary files');
   } catch (error) {
     console.warn('Could not clean up temporary files:', error.message);
   }
   
   return outputFile;
+}
+
+// Generate a clean filename from title
+function generateCleanFilename(title, extension = 'mp4') {
+  // Remove or replace problematic characters
+  const cleanTitle = title
+    .replace(/[<>:"/\\|?*]/g, '') // Remove invalid filename characters
+    .replace(/\s+/g, '-')         // Replace spaces with hyphens
+    .replace(/[^\w\-\u4e00-\u9fff]/g, '') // Keep only word chars, hyphens, and Chinese characters
+    .substring(0, 100);           // Limit length
+  
+  return `${cleanTitle}.${extension}`;
 }
 
 // API Routes
@@ -344,51 +423,62 @@ app.post('/api/download', async (req, res) => {
     console.log('Metadata files:', metadataFiles);
     
     let finalFile = null;
+    let message = 'Download completed successfully';
     
     // Handle different download scenarios
     if (mediaFiles.length === 1) {
       // Single file download - perfect!
       finalFile = mediaFiles[0];
     } else if (mediaFiles.length === 2 && ffmpegAvailable) {
-      // Two files (likely video + audio) - try to merge with FFmpeg
-      console.log('Attempting to merge video and audio files...');
+      // Two files - likely DASH video + audio, try smart merging
+      console.log('Attempting to merge DASH video and audio files...');
       
-      // Identify video and audio files
-      const videoFile = mediaFiles.find(file => 
-        file.toLowerCase().includes('video') || 
-        file.toLowerCase().endsWith('.mp4') ||
-        file.toLowerCase().endsWith('.webm') ||
-        file.toLowerCase().endsWith('.mkv')
-      );
-      
-      const audioFile = mediaFiles.find(file => 
-        file.toLowerCase().includes('audio') || 
-        file.toLowerCase().endsWith('.m4a') ||
-        file.toLowerCase().endsWith('.mp3') ||
-        file.toLowerCase().endsWith('.aac')
-      );
-      
-      if (videoFile && audioFile) {
-        try {
-          // Generate output filename
-          const baseName = outputName || 'merged-video';
-          const outputFile = `${baseName}.mp4`;
+      try {
+        // Use smart file analysis to identify video/audio files
+        const { videoOnlyFile, audioOnlyFile } = await identifyDashFiles(mediaFiles);
+        
+        if (videoOnlyFile && audioOnlyFile) {
+          console.log(`Identified video file: ${videoOnlyFile.filename}`);
+          console.log(`Identified audio file: ${audioOnlyFile.filename}`);
+          
+          // Generate a clean output filename
+          let outputFilename;
+          if (outputName) {
+            outputFilename = `${outputName}.mp4`;
+          } else {
+            // Try to get title from analyze first
+            try {
+              const analyzeOutput = await executeYouGet(['--json', url]);
+              const mediaInfo = parseYouGetJson(analyzeOutput);
+              outputFilename = generateCleanFilename(mediaInfo.title);
+            } catch {
+              outputFilename = 'merged-video.mp4';
+            }
+          }
           
           // Merge the files
-          finalFile = await mergeVideoAudio(videoFile, audioFile, outputFile);
-          console.log('Successfully merged video and audio into:', finalFile);
-        } catch (mergeError) {
-          console.error('Failed to merge files:', mergeError.message);
-          // Fall back to returning the first media file
+          finalFile = await mergeVideoAudio(
+            videoOnlyFile.filename, 
+            audioOnlyFile.filename, 
+            outputFilename
+          );
+          message = 'Download completed and video/audio merged successfully';
+          console.log('Successfully merged DASH streams into:', finalFile);
+        } else {
+          console.log('Could not identify separate video/audio files, using first file');
           finalFile = mediaFiles[0];
+          message = 'Download completed (files could not be automatically merged)';
         }
-      } else {
-        // Can't identify video/audio files clearly
+      } catch (mergeError) {
+        console.error('Failed to merge DASH files:', mergeError.message);
+        // Fall back to returning the first media file
         finalFile = mediaFiles[0];
+        message = 'Download completed but merging failed - returning first file';
       }
     } else if (mediaFiles.length > 0) {
       // Multiple files but can't merge, return the first one
       finalFile = mediaFiles[0];
+      message = `Download completed. ${mediaFiles.length} files downloaded${!ffmpegAvailable ? ' (install FFmpeg for automatic merging)' : ''}`;
       console.log(`Multiple files downloaded (${mediaFiles.length}), returning first: ${finalFile}`);
     }
     
@@ -398,9 +488,7 @@ app.post('/api/download', async (req, res) => {
         success: true, 
         downloadUrl,
         filename: finalFile,
-        message: mediaFiles.length > 1 && !ffmpegAvailable 
-          ? 'Download completed. Multiple files downloaded - install FFmpeg for automatic merging.'
-          : 'Download completed successfully'
+        message: message
       });
     } else {
       // No media files found
