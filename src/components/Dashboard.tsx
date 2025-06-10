@@ -11,7 +11,6 @@ import {
   Play,
   Music,
   Image,
-  MoreVertical,
   RefreshCw,
   Lock,
   AlertCircle,
@@ -571,11 +570,6 @@ function DashboardContent() {
                 <div key={download.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4 flex-1 min-w-0">
-                      {/* Type Icon */}
-                      <div className="flex-shrink-0">
-                        {getTypeIcon(download.type)}
-                      </div>
-                      
                       {/* Download Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-1">
@@ -589,7 +583,10 @@ function DashboardContent() {
                         </div>
                         
                         <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span>{download.site}</span>
+                          <span className="flex items-center space-x-1">
+                            {getTypeIcon(download.type)}
+                            <span>{download.site}</span>
+                          </span>
                           <span>•</span>
                           <span>{download.format.toUpperCase()}</span>
                           <span>•</span>
@@ -633,10 +630,6 @@ function DashboardContent() {
                         title={t('dashboard.actions.delete')}
                       >
                         <Trash2 className="h-4 w-4" />
-                      </button>
-                      
-                      <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                        <MoreVertical className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
