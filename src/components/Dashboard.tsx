@@ -15,10 +15,255 @@ import {
   MoreVertical,
   RefreshCw,
   Lock,
-  AlertCircle
+  AlertCircle,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  X
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { apiService, DownloadRecord } from '../services/api';
+
+interface MediaPlayerProps {
+  download: DownloadRecord;
+  onClose: () => void;
+}
+
+function MediaPlayer({ download, onClose }: MediaPlayerProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const mediaRef = React.useRef<HTMLVideoElement | HTMLAudioElement>(null);
+
+  const mediaUrl = `http://localhost:3001${download.downloadPath}`;
+  const isVideo = download.type === 'video';
+  const isAudio = download.type === 'audio';
+  const isImage = download.type === 'image';
+
+  useEffect(() => {
+    const media = mediaRef.current;
+    if (!media) return;
+
+    const updateTime = () => setCurrentTime(media.currentTime);
+    const updateDuration = () => setDuration(media.duration);
+
+    media.addEventListener('timeupdate', updateTime);
+    media.addEventListener('loadedmetadata', updateDuration);
+    media.addEventListener('ended', () => setIsPlaying(false));
+
+    return () => {
+      media.removeEventListener('timeupdate', updateTime);
+      media.removeEventListener('loadedmetadata', updateDuration);
+      media.removeEventListener('ended', () => setIsPlaying(false));
+    };
+  }, []);
+
+  const togglePlay = () => {
+    const media = mediaRef.current;
+    if (!media) return;
+
+    if (isPlaying) {
+      media.pause();
+    } else {
+      media.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const toggleMute = () => {
+    const media = mediaRef.current;
+    if (!media) return;
+
+    media.muted = !isMuted;
+    setIsMuted(!isMuted);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    const media = mediaRef.current;
+    if (!media) return;
+
+    media.volume = newVolume;
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const media = mediaRef.current;
+    if (!media) return;
+
+    const newTime = parseFloat(e.target.value);
+    media.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="flex items-center space-x-3">
+            {download.type === 'video' && <Play className="h-5 w-5 text-blue-600" />}
+            {download.type === 'audio' && <Music className="h-5 w-5 text-green-600" />}
+            {download.type === 'image' && <Image className="h-5 w-5 text-purple-600" />}
+            <div>
+              <h3 className="font-semibold text-gray-900 truncate">{download.title}</h3>
+              <p className="text-sm text-gray-500">{download.site} • {download.format.toUpperCase()}</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Media Content */}
+        <div className="p-6">
+          {isImage ? (
+            <div className="text-center">
+              <img
+                src={mediaUrl}
+                alt={download.title}
+                className="max-w-full max-h-96 mx-auto rounded-lg shadow-lg"
+                onError={(e) => {
+                  console.error('Image load error:', e);
+                }}
+              />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Video/Audio Element */}
+              {isVideo ? (
+                <video
+                  ref={mediaRef as React.RefObject<HTMLVideoElement>}
+                  src={mediaUrl}
+                  className="w-full max-h-96 rounded-lg bg-black"
+                  onError={(e) => {
+                    console.error('Video load error:', e);
+                  }}
+                />
+              ) : (
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center">
+                  <Music className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">{download.title}</h4>
+                  <p className="text-gray-600">{download.site}</p>
+                  <audio
+                    ref={mediaRef as React.RefObject<HTMLAudioElement>}
+                    src={mediaUrl}
+                    onError={(e) => {
+                      console.error('Audio load error:', e);
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Media Controls */}
+              {(isVideo || isAudio) && (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max={duration || 0}
+                      value={currentTime}
+                      onChange={handleSeek}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>{formatTime(currentTime)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                  </div>
+
+                  {/* Control Buttons */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={togglePlay}
+                        className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                      >
+                        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                      </button>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={toggleMute}
+                          className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                        >
+                          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                        </button>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={isMuted ? 0 : volume}
+                          onChange={handleVolumeChange}
+                          className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      {isVideo && (
+                        <button
+                          onClick={toggleFullscreen}
+                          className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                        >
+                          <Maximize className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Download Button */}
+          <div className="mt-6 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = mediaUrl;
+                link.download = download.filename || 'download';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+            >
+              <Download className="h-4 w-4" />
+              <span>Download File</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DashboardContent() {
   const { user } = useUser();
@@ -28,6 +273,7 @@ function DashboardContent() {
   const [filter, setFilter] = useState<'all' | 'completed' | 'failed' | 'downloading' | 'pending'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'size' | 'title'>('newest');
+  const [selectedDownload, setSelectedDownload] = useState<DownloadRecord | null>(null);
 
   // Load user downloads
   useEffect(() => {
@@ -139,6 +385,12 @@ function DashboardContent() {
       link.click();
       document.body.removeChild(link);
     }
+  };
+
+  const canPlay = (download: DownloadRecord) => {
+    return download.status === 'completed' && 
+           download.downloadPath && 
+           ['video', 'audio', 'image'].includes(download.type);
   };
 
   if (loading) {
@@ -346,16 +598,29 @@ function DashboardContent() {
                     
                     {/* Actions */}
                     <div className="flex items-center space-x-2 ml-4">
-                      {download.status === 'completed' && download.downloadPath && (
+                      {/* Play Button */}
+                      {canPlay(download) && (
                         <button 
-                          onClick={() => handleDownloadFile(download)}
+                          onClick={() => setSelectedDownload(download)}
                           className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                          title="Download file"
+                          title="Play media"
                         >
-                          <ExternalLink className="h-4 w-4" />
+                          <Play className="h-4 w-4" />
                         </button>
                       )}
                       
+                      {/* Download Button */}
+                      {download.status === 'completed' && download.downloadPath && (
+                        <button 
+                          onClick={() => handleDownloadFile(download)}
+                          className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                          title="Download file"
+                        >
+                          <Download className="h-4 w-4" />
+                        </button>
+                      )}
+                      
+                      {/* Delete Button */}
                       <button 
                         onClick={() => deleteDownload(download.id)}
                         className="p-2 text-gray-400 hover:text-red-600 transition-colors"
@@ -375,6 +640,14 @@ function DashboardContent() {
           </div>
         </div>
       </div>
+
+      {/* Media Player Modal */}
+      {selectedDownload && (
+        <MediaPlayer
+          download={selectedDownload}
+          onClose={() => setSelectedDownload(null)}
+        />
+      )}
     </div>
   );
 }
