@@ -29,6 +29,7 @@ export default function Footer() {
                   you-get
                 </a>
                 <span>{t('footer.builtWith.suffix')}</span>
+                <span className="text-red-500">♥</span>
               </p>
             </div>
           </div>
