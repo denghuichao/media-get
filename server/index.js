@@ -109,10 +109,16 @@ function parseYouGetJson(output) {
           }
         }
         
+        // Add note for DASH formats that require merging
+        let qualityNote = quality;
+        if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
+          qualityNote += ' (Video + Audio merged)';
+        }
+        
         info.formats.push({
           itag: formatId,
           container: container,
-          quality: quality,
+          quality: qualityNote,
           size: size,
           type: type
         });
@@ -181,28 +187,42 @@ app.post('/api/download', async (req, res) => {
     // Prepare you-get arguments
     const args = ['-o', downloadsDir];
     
+    // Add format specification
     if (itag) {
       // Use --format for new you-get versions, --itag for older ones
       args.push(`--format=${itag}`);
     }
     
+    // Add custom output name if provided
     if (outputName) {
       args.push('-O', outputName);
     }
     
+    // Add URL
     args.push(url);
     
     console.log('Executing you-get with args:', args);
     
     // Execute download
     const output = await executeYouGet(args);
+    console.log('Download output:', output);
     
-    // Find downloaded file
+    // Find downloaded file(s)
     const files = fs.readdirSync(downloadsDir);
-    const downloadedFile = files.find(file => 
-      file.includes(outputName || 'download') || 
-      files.length === 1
-    ) || files[files.length - 1]; // Get the most recent file
+    console.log('Files in downloads directory:', files);
+    
+    // For DASH formats, you-get should merge streams automatically
+    // Look for the main video file (not temporary files)
+    const downloadedFile = files.find(file => {
+      // Skip temporary files and partial downloads
+      if (file.includes('.part') || file.includes('.tmp') || file.startsWith('.')) {
+        return false;
+      }
+      
+      // Look for video files
+      const videoExtensions = ['.mp4', '.mkv', '.webm', '.flv', '.avi'];
+      return videoExtensions.some(ext => file.toLowerCase().endsWith(ext));
+    });
     
     if (downloadedFile) {
       const downloadUrl = `/downloads/${downloadedFile}`;
@@ -213,7 +233,12 @@ app.post('/api/download', async (req, res) => {
         message: 'Download completed successfully'
       });
     } else {
-      res.status(500).json({ error: 'Download completed but file not found' });
+      // If no merged file found, list all files for debugging
+      console.log('No merged video file found. Available files:', files);
+      res.status(500).json({ 
+        error: 'Download completed but merged video file not found',
+        details: `Available files: ${files.join(', ')}`
+      });
     }
     
   } catch (error) {
