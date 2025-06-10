@@ -27,7 +27,7 @@ export default function Header() {
                 >
                   you-get
                 </a>
-                <span className="text-red-500">♥</span>
+                <span>{t('header.subtitle.suffix')}</span>
               </p>
             </div>
           </div>

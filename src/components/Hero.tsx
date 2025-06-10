@@ -260,7 +260,6 @@ export default function Hero() {
             >
               you-get
             </a>
-            <span className="text-red-500">♥</span>
             <span>{t('hero.poweredBy.suffix')}</span>
           </p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
