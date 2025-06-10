@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo } from '../services/api';
@@ -250,19 +250,7 @@ export default function Hero() {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-600 mb-4 flex items-center justify-center space-x-2">
-            <span>A simple and universal media downloader built with</span>
-            <a 
-              href="https://github.com/soimort/you-get" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors font-medium"
-            >
-              you-get
-            </a>
-            <span>and</span>
-            <Heart className="h-4 w-4 text-red-500 fill-current" />
-          </p>
+          <p className="text-gray-600 mb-4">{t('hero.poweredBy')}</p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
             {t('hero.features', { returnObjects: true }).map((feature: string, index: number) => (
               <span key={index}>✓ {feature}</span>
