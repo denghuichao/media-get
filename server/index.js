@@ -112,7 +112,7 @@ function parseYouGetJson(output) {
         // Add note for DASH formats that require merging
         let qualityNote = quality;
         if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
-          qualityNote += ' (Video + Audio merged)';
+          qualityNote += ' (Merged with FFmpeg)';
         }
         
         info.formats.push({
@@ -172,6 +172,23 @@ function findMainMediaFile(files) {
   return filteredFiles.length > 0 ? filteredFiles[0] : null;
 }
 
+// Check if FFmpeg is available
+async function checkFFmpegAvailable() {
+  try {
+    await new Promise((resolve, reject) => {
+      const ffmpeg = spawn('ffmpeg', ['-version']);
+      ffmpeg.on('close', (code) => {
+        if (code === 0) resolve();
+        else reject(new Error('FFmpeg not available'));
+      });
+      ffmpeg.on('error', reject);
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // API Routes
 
 // Analyze URL endpoint
@@ -224,8 +241,17 @@ app.post('/api/download', async (req, res) => {
 
     console.log(`Starting download: ${url} with format: ${itag}`);
     
+    // Check if FFmpeg is available
+    const ffmpegAvailable = await checkFFmpegAvailable();
+    console.log('FFmpeg available:', ffmpegAvailable);
+    
     // Prepare you-get arguments
     const args = ['-o', downloadsDir];
+    
+    // Force FFmpeg merging for DASH formats
+    if (ffmpegAvailable) {
+      args.push('--force-merge');  // Force merge video+audio with FFmpeg
+    }
     
     // Add format specification
     if (itag) {
@@ -310,10 +336,13 @@ app.get('/api/health', (req, res) => {
 app.get('/api/check-youget', async (req, res) => {
   try {
     const output = await executeYouGet(['--version']);
+    const ffmpegAvailable = await checkFFmpegAvailable();
+    
     res.json({ 
       installed: true, 
       version: output.trim(),
-      message: 'you-get is properly installed'
+      ffmpegAvailable: ffmpegAvailable,
+      message: `you-get is properly installed${ffmpegAvailable ? ' with FFmpeg support' : ' (FFmpeg not available - DASH merging may not work)'}`
     });
   } catch (error) {
     res.status(500).json({ 
