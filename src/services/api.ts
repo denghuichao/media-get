@@ -18,6 +18,23 @@ export interface DownloadResponse {
   filename?: string;
   message?: string;
   error?: string;
+  downloadId?: string;
+}
+
+export interface DownloadRecord {
+  id: string;
+  url: string;
+  title: string;
+  site: string;
+  format: string;
+  quality: string;
+  size: string;
+  status: 'completed' | 'failed' | 'downloading' | 'pending';
+  timestamp: string;
+  downloadPath?: string;
+  type: 'video' | 'audio' | 'image';
+  filename?: string;
+  downloadDir?: string;
 }
 
 export interface SupportedSite {
@@ -44,18 +61,40 @@ class ApiService {
     return response.json();
   }
 
-  async downloadMedia(url: string, itag?: string, outputName?: string): Promise<DownloadResponse> {
+  async downloadMedia(url: string, userId: string, itag?: string, outputName?: string): Promise<DownloadResponse> {
     const response = await fetch(`${API_BASE_URL}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, itag, outputName }),
+      body: JSON.stringify({ url, userId, itag, outputName }),
     });
 
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || 'Download failed');
+    }
+
+    return response.json();
+  }
+
+  async getUserDownloads(userId: string): Promise<DownloadRecord[]> {
+    const response = await fetch(`${API_BASE_URL}/downloads/${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user downloads');
+    }
+
+    return response.json();
+  }
+
+  async deleteDownload(userId: string, downloadId: string): Promise<{ success: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/downloads/${userId}/${downloadId}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete download');
     }
 
     return response.json();
@@ -71,7 +110,7 @@ class ApiService {
     return response.json();
   }
 
-  async checkYouGetInstallation(): Promise<{ installed: boolean; version?: string; error?: string }> {
+  async checkYouGetInstallation(): Promise<{ installed: boolean; version?: string; error?: string; ffmpegAvailable?: boolean }> {
     try {
       const response = await fetch(`${API_BASE_URL}/check-youget`);
       return response.json();

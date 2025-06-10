@@ -8,105 +8,59 @@ import {
   ExternalLink,
   Filter,
   Search,
-  Calendar,
   FileText,
   Play,
   Music,
   Image,
   MoreVertical,
   RefreshCw,
-  Lock
+  Lock,
+  AlertCircle
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
-
-interface DownloadItem {
-  id: string;
-  url: string;
-  title: string;
-  site: string;
-  format: string;
-  quality: string;
-  size: string;
-  status: 'completed' | 'failed' | 'downloading' | 'pending';
-  timestamp: Date;
-  downloadPath?: string;
-  type: 'video' | 'audio' | 'image';
-  progress?: number;
-}
-
-// Mock data for demonstration
-const mockDownloads: DownloadItem[] = [
-  {
-    id: '1',
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-    title: 'Rick Astley - Never Gonna Give You Up',
-    site: 'YouTube',
-    format: 'mp4',
-    quality: '1080p',
-    size: '45.2 MB',
-    status: 'completed',
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    type: 'video',
-    downloadPath: '/downloads/rick-astley-never-gonna-give-you-up.mp4'
-  },
-  {
-    id: '2',
-    url: 'https://soundcloud.com/example/track',
-    title: 'Amazing Electronic Track',
-    site: 'SoundCloud',
-    format: 'mp3',
-    quality: '320kbps',
-    size: '8.7 MB',
-    status: 'completed',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    type: 'audio',
-    downloadPath: '/downloads/amazing-electronic-track.mp3'
-  },
-  {
-    id: '3',
-    url: 'https://vimeo.com/example',
-    title: 'Creative Short Film',
-    site: 'Vimeo',
-    format: 'mp4',
-    quality: '4K',
-    size: '156.8 MB',
-    status: 'downloading',
-    timestamp: new Date(),
-    type: 'video',
-    progress: 67
-  },
-  {
-    id: '4',
-    url: 'https://instagram.com/p/example',
-    title: 'Beautiful Sunset Photo',
-    site: 'Instagram',
-    format: 'jpg',
-    quality: 'Original',
-    size: '2.1 MB',
-    status: 'failed',
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-    type: 'image'
-  },
-  {
-    id: '5',
-    url: 'https://tiktok.com/@user/video/123',
-    title: 'Viral Dance Video',
-    site: 'TikTok',
-    format: 'mp4',
-    quality: '720p',
-    size: '12.4 MB',
-    status: 'pending',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-    type: 'video'
-  }
-];
+import { apiService, DownloadRecord } from '../services/api';
 
 function DashboardContent() {
   const { user } = useUser();
-  const [downloads, setDownloads] = useState<DownloadItem[]>(mockDownloads);
+  const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | 'completed' | 'failed' | 'downloading' | 'pending'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'size' | 'title'>('newest');
+
+  // Load user downloads
+  useEffect(() => {
+    if (user?.id) {
+      loadDownloads();
+    }
+  }, [user?.id]);
+
+  const loadDownloads = async () => {
+    if (!user?.id) return;
+    
+    try {
+      setLoading(true);
+      setError('');
+      const userDownloads = await apiService.getUserDownloads(user.id);
+      setDownloads(userDownloads);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load downloads');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteDownload = async (downloadId: string) => {
+    if (!user?.id) return;
+    
+    try {
+      await apiService.deleteDownload(user.id, downloadId);
+      setDownloads(downloads.filter(d => d.id !== downloadId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete download');
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -146,8 +100,8 @@ function DashboardContent() {
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case 'newest': return b.timestamp.getTime() - a.timestamp.getTime();
-        case 'oldest': return a.timestamp.getTime() - b.timestamp.getTime();
+        case 'newest': return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        case 'oldest': return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
         case 'title': return a.title.localeCompare(b.title);
         case 'size': return parseFloat(b.size) - parseFloat(a.size);
         default: return 0;
@@ -162,7 +116,8 @@ function DashboardContent() {
     pending: downloads.filter(d => d.status === 'pending').length
   };
 
-  const formatTimestamp = (date: Date) => {
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
@@ -175,15 +130,27 @@ function DashboardContent() {
     return `${days}d ago`;
   };
 
-  const deleteDownload = (id: string) => {
-    setDownloads(downloads.filter(d => d.id !== id));
+  const handleDownloadFile = (download: DownloadRecord) => {
+    if (download.downloadPath && download.filename) {
+      const link = document.createElement('a');
+      link.href = `http://localhost:3001${download.downloadPath}`;
+      link.download = download.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
-  const retryDownload = (id: string) => {
-    setDownloads(downloads.map(d => 
-      d.id === id ? { ...d, status: 'pending' as const } : d
-    ));
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading your downloads...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -195,6 +162,20 @@ function DashboardContent() {
           </h1>
           <p className="text-gray-600">Manage your downloads and view download history</p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            <span className="text-red-700">{error}</span>
+            <button 
+              onClick={() => setError('')}
+              className="ml-auto text-red-500 hover:text-red-700"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
@@ -282,19 +263,29 @@ function DashboardContent() {
               </div>
             </div>
 
-            {/* Sort */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">Sort by:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+            {/* Sort and Refresh */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Sort by:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="title">Title A-Z</option>
+                  <option value="size">File Size</option>
+                </select>
+              </div>
+              
+              <button
+                onClick={loadDownloads}
+                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                title="Refresh downloads"
               >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="title">Title A-Z</option>
-                <option value="size">File Size</option>
-              </select>
+                <RefreshCw className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -350,40 +341,18 @@ function DashboardContent() {
                           <span>•</span>
                           <span>{formatTimestamp(download.timestamp)}</span>
                         </div>
-                        
-                        {/* Progress Bar for Downloading */}
-                        {download.status === 'downloading' && download.progress && (
-                          <div className="mt-2">
-                            <div className="flex items-center justify-between text-xs text-gray-600 mb-1">
-                              <span>Downloading...</span>
-                              <span>{download.progress}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                                style={{ width: `${download.progress}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                     
                     {/* Actions */}
                     <div className="flex items-center space-x-2 ml-4">
                       {download.status === 'completed' && download.downloadPath && (
-                        <button className="p-2 text-gray-400 hover:text-blue-600 transition-colors">
-                          <ExternalLink className="h-4 w-4" />
-                        </button>
-                      )}
-                      
-                      {download.status === 'failed' && (
                         <button 
-                          onClick={() => retryDownload(download.id)}
-                          className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                          title="Retry download"
+                          onClick={() => handleDownloadFile(download)}
+                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Download file"
                         >
-                          <RefreshCw className="h-4 w-4" />
+                          <ExternalLink className="h-4 w-4" />
                         </button>
                       )}
                       

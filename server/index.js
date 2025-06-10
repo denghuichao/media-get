@@ -4,6 +4,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,16 +12,97 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Configuration from environment
+const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(__dirname, 'downloads');
+const CLEANUP_INTERVAL_HOURS = parseInt(process.env.CLEANUP_INTERVAL_HOURS) || 24;
+const MAX_DOWNLOAD_AGE_HOURS = parseInt(process.env.MAX_DOWNLOAD_AGE_HOURS) || 24;
+
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/downloads', express.static(path.join(__dirname, 'downloads')));
+app.use('/downloads', express.static(DOWNLOADS_DIR));
 
 // Ensure downloads directory exists
-const downloadsDir = path.join(__dirname, 'downloads');
-if (!fs.existsSync(downloadsDir)) {
-  fs.mkdirSync(downloadsDir, { recursive: true });
+if (!fs.existsSync(DOWNLOADS_DIR)) {
+  fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
 }
+
+// User data storage (in production, use a proper database)
+const USER_DATA_FILE = path.join(__dirname, 'user-data.json');
+let userData = {};
+
+// Load existing user data
+function loadUserData() {
+  try {
+    if (fs.existsSync(USER_DATA_FILE)) {
+      const data = fs.readFileSync(USER_DATA_FILE, 'utf8');
+      userData = JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading user data:', error);
+    userData = {};
+  }
+}
+
+// Save user data
+function saveUserData() {
+  try {
+    fs.writeFileSync(USER_DATA_FILE, JSON.stringify(userData, null, 2));
+  } catch (error) {
+    console.error('Error saving user data:', error);
+  }
+}
+
+// Initialize user data
+loadUserData();
+
+// Generate unique download directory for user
+function generateUserDownloadDir(userId) {
+  const randomStr = crypto.randomBytes(8).toString('hex');
+  const dirName = `${userId}_${randomStr}`;
+  const userDir = path.join(DOWNLOADS_DIR, dirName);
+  
+  if (!fs.existsSync(userDir)) {
+    fs.mkdirSync(userDir, { recursive: true });
+  }
+  
+  return { dirName, fullPath: userDir };
+}
+
+// Cleanup old download directories
+function cleanupOldDownloads() {
+  try {
+    const now = Date.now();
+    const maxAge = MAX_DOWNLOAD_AGE_HOURS * 60 * 60 * 1000; // Convert to milliseconds
+    
+    const items = fs.readdirSync(DOWNLOADS_DIR);
+    let cleanedCount = 0;
+    
+    for (const item of items) {
+      const itemPath = path.join(DOWNLOADS_DIR, item);
+      const stats = fs.statSync(itemPath);
+      
+      if (stats.isDirectory() && (now - stats.mtime.getTime()) > maxAge) {
+        // Remove old directory
+        fs.rmSync(itemPath, { recursive: true, force: true });
+        cleanedCount++;
+        console.log(`Cleaned up old download directory: ${item}`);
+      }
+    }
+    
+    if (cleanedCount > 0) {
+      console.log(`Cleanup completed: removed ${cleanedCount} old download directories`);
+    }
+  } catch (error) {
+    console.error('Error during cleanup:', error);
+  }
+}
+
+// Schedule periodic cleanup
+setInterval(cleanupOldDownloads, CLEANUP_INTERVAL_HOURS * 60 * 60 * 1000);
+
+// Run initial cleanup on startup
+setTimeout(cleanupOldDownloads, 5000);
 
 // Helper function to execute you-get commands
 function executeYouGet(args) {
@@ -83,11 +165,9 @@ function executeFFmpeg(args) {
 // Parse you-get JSON output
 function parseYouGetJson(output) {
   try {
-    // Extract JSON from output (you-get may output warnings before JSON)
     const lines = output.split('\n');
     let jsonStart = -1;
     
-    // Find the line where JSON starts (look for opening brace)
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].trim().startsWith('{')) {
         jsonStart = i;
@@ -99,21 +179,17 @@ function parseYouGetJson(output) {
       throw new Error('No JSON found in you-get output');
     }
     
-    // Join lines from JSON start to end
     const jsonString = lines.slice(jsonStart).join('\n');
     const data = JSON.parse(jsonString);
     
-    // Convert you-get JSON format to our API format
     const info = {
       site: data.site || '',
       title: data.title || '',
       formats: []
     };
     
-    // Process streams object
     if (data.streams && typeof data.streams === 'object') {
       for (const [formatId, streamData] of Object.entries(data.streams)) {
-        // Determine media type based on container or quality
         let type = 'video';
         const container = streamData.container || 'mp4';
         const quality = streamData.quality || '';
@@ -126,7 +202,6 @@ function parseYouGetJson(output) {
           type = 'audio';
         }
         
-        // Convert size from bytes to human readable format
         let size = 'Unknown';
         if (streamData.size && typeof streamData.size === 'number') {
           const sizeInMB = streamData.size / (1024 * 1024);
@@ -138,7 +213,6 @@ function parseYouGetJson(output) {
           }
         }
         
-        // Check if this is a DASH format that might need merging
         let qualityNote = quality;
         if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
           qualityNote += ' (Video+Audio will be merged)';
@@ -163,14 +237,12 @@ function parseYouGetJson(output) {
 
 // Helper function to filter downloaded files
 function findMediaFiles(files) {
-  // Separate main media files from metadata files
   const mediaFiles = [];
   const metadataFiles = [];
   
   files.forEach(file => {
     const fileName = file.toLowerCase();
     
-    // Skip temporary files and partial downloads
     if (fileName.includes('.part') || 
         fileName.includes('.tmp') || 
         fileName.startsWith('.') ||
@@ -178,7 +250,6 @@ function findMediaFiles(files) {
       return;
     }
     
-    // Categorize files
     if (fileName.endsWith('.cmt.xml') || 
         fileName.endsWith('.info.json') || 
         fileName.endsWith('.description') ||
@@ -189,11 +260,10 @@ function findMediaFiles(files) {
         fileName.endsWith('.ssa')) {
       metadataFiles.push(file);
     } else {
-      // Check for main media files
       const mediaExtensions = [
-        '.mp4', '.mkv', '.webm', '.flv', '.avi', '.mov', '.wmv', '.m4v',  // Video
-        '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav', '.wma',         // Audio
-        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'        // Image
+        '.mp4', '.mkv', '.webm', '.flv', '.avi', '.mov', '.wmv', '.m4v',
+        '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav', '.wma',
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'
       ];
       
       if (mediaExtensions.some(ext => fileName.endsWith(ext))) {
@@ -225,7 +295,6 @@ async function checkFFmpegAvailable() {
 // Detect if files are video/audio based on content analysis
 async function analyzeFileContent(filePath) {
   try {
-    // Use ffprobe to analyze file content
     const result = await new Promise((resolve, reject) => {
       const ffprobe = spawn('ffprobe', [
         '-v', 'quiet',
@@ -267,11 +336,11 @@ async function analyzeFileContent(filePath) {
 }
 
 // Smart file identification for DASH merging
-async function identifyDashFiles(mediaFiles) {
+async function identifyDashFiles(mediaFiles, downloadDir) {
   const fileAnalysis = [];
   
   for (const file of mediaFiles) {
-    const filePath = path.join(downloadsDir, file);
+    const filePath = path.join(downloadDir, file);
     const analysis = await analyzeFileContent(filePath);
     fileAnalysis.push({
       filename: file,
@@ -279,7 +348,6 @@ async function identifyDashFiles(mediaFiles) {
     });
   }
   
-  // Find video-only and audio-only files
   const videoOnlyFile = fileAnalysis.find(f => f.hasVideo && !f.hasAudio);
   const audioOnlyFile = fileAnalysis.find(f => f.hasAudio && !f.hasVideo);
   
@@ -287,26 +355,24 @@ async function identifyDashFiles(mediaFiles) {
 }
 
 // Merge video and audio files using FFmpeg
-async function mergeVideoAudio(videoFile, audioFile, outputFile) {
-  const videoPath = path.join(downloadsDir, videoFile);
-  const audioPath = path.join(downloadsDir, audioFile);
-  const outputPath = path.join(downloadsDir, outputFile);
+async function mergeVideoAudio(videoFile, audioFile, outputFile, downloadDir) {
+  const videoPath = path.join(downloadDir, videoFile);
+  const audioPath = path.join(downloadDir, audioFile);
+  const outputPath = path.join(downloadDir, outputFile);
   
   console.log(`Merging: ${videoFile} + ${audioFile} -> ${outputFile}`);
   
-  // FFmpeg command to merge video and audio
   const args = [
     '-i', videoPath,
     '-i', audioPath,
-    '-c:v', 'copy',  // Copy video stream without re-encoding
-    '-c:a', 'copy',  // Copy audio stream without re-encoding
-    '-y',            // Overwrite output file if it exists
+    '-c:v', 'copy',
+    '-c:a', 'copy',
+    '-y',
     outputPath
   ];
   
   await executeFFmpeg(args);
   
-  // Clean up separate files after successful merge
   try {
     fs.unlinkSync(videoPath);
     fs.unlinkSync(audioPath);
@@ -320,14 +386,41 @@ async function mergeVideoAudio(videoFile, audioFile, outputFile) {
 
 // Generate a clean filename from title
 function generateCleanFilename(title, extension = 'mp4') {
-  // Remove or replace problematic characters
   const cleanTitle = title
-    .replace(/[<>:"/\\|?*]/g, '') // Remove invalid filename characters
-    .replace(/\s+/g, '-')         // Replace spaces with hyphens
-    .replace(/[^\w\-\u4e00-\u9fff]/g, '') // Keep only word chars, hyphens, and Chinese characters
-    .substring(0, 100);           // Limit length
+    .replace(/[<>:"/\\|?*]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-\u4e00-\u9fff]/g, '')
+    .substring(0, 100);
   
   return `${cleanTitle}.${extension}`;
+}
+
+// Save download record for user
+function saveDownloadRecord(userId, downloadData) {
+  if (!userData[userId]) {
+    userData[userId] = { downloads: [] };
+  }
+  
+  const downloadRecord = {
+    id: crypto.randomUUID(),
+    ...downloadData,
+    timestamp: new Date().toISOString()
+  };
+  
+  userData[userId].downloads.unshift(downloadRecord);
+  
+  // Keep only last 100 downloads per user
+  if (userData[userId].downloads.length > 100) {
+    userData[userId].downloads = userData[userId].downloads.slice(0, 100);
+  }
+  
+  saveUserData();
+  return downloadRecord;
+}
+
+// Get user downloads
+function getUserDownloads(userId) {
+  return userData[userId]?.downloads || [];
 }
 
 // API Routes
@@ -341,7 +434,6 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    // Validate URL format
     try {
       new URL(url);
     } catch {
@@ -350,12 +442,8 @@ app.post('/api/analyze', async (req, res) => {
 
     console.log(`Analyzing URL: ${url}`);
     
-    // Execute you-get with JSON flag
     const output = await executeYouGet(['--json', url]);
-    console.log('you-get raw output:', output); // Debug log
-    
     const mediaInfo = parseYouGetJson(output);
-    console.log('Parsed info:', mediaInfo); // Debug log
     
     if (!mediaInfo.title) {
       return res.status(404).json({ error: 'No media found at this URL' });
@@ -374,93 +462,88 @@ app.post('/api/analyze', async (req, res) => {
 // Download endpoint
 app.post('/api/download', async (req, res) => {
   try {
-    const { url, itag, outputName } = req.body;
+    const { url, itag, outputName, userId } = req.body;
     
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    console.log(`Starting download: ${url} with format: ${itag}`);
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    console.log(`Starting download for user ${userId}: ${url} with format: ${itag}`);
     
-    // Check if FFmpeg is available
+    // Generate unique download directory for this user/download
+    const { dirName, fullPath: downloadDir } = generateUserDownloadDir(userId);
+    
     const ffmpegAvailable = await checkFFmpegAvailable();
     console.log('FFmpeg available:', ffmpegAvailable);
     
-    // Get initial file list
-    const initialFiles = fs.existsSync(downloadsDir) ? fs.readdirSync(downloadsDir) : [];
+    const initialFiles = fs.existsSync(downloadDir) ? fs.readdirSync(downloadDir) : [];
     
-    // Prepare you-get arguments
-    const args = ['-o', downloadsDir];
+    const args = ['-o', downloadDir];
     
-    // Add format specification
     if (itag) {
-      // Use --format for format selection
       args.push(`--format=${itag}`);
     }
     
-    // Add custom output name if provided
     if (outputName) {
       args.push('-O', outputName);
     }
     
-    // Add URL
     args.push(url);
     
     console.log('Executing you-get with args:', args);
     
-    // Execute download
+    // Get media info for record keeping
+    let mediaInfo;
+    try {
+      const analyzeOutput = await executeYouGet(['--json', url]);
+      mediaInfo = parseYouGetJson(analyzeOutput);
+    } catch (error) {
+      console.warn('Could not get media info:', error.message);
+      mediaInfo = { site: 'Unknown', title: 'Unknown', formats: [] };
+    }
+    
     const output = await executeYouGet(args);
     console.log('Download output:', output);
     
-    // Get new files after download
-    const allFiles = fs.readdirSync(downloadsDir);
+    const allFiles = fs.readdirSync(downloadDir);
     const newFiles = allFiles.filter(file => !initialFiles.includes(file));
     console.log('New files after download:', newFiles);
     
-    // Categorize the downloaded files
     const { mediaFiles, metadataFiles } = findMediaFiles(newFiles);
     console.log('Media files:', mediaFiles);
-    console.log('Metadata files:', metadataFiles);
     
     let finalFile = null;
     let message = 'Download completed successfully';
+    let status = 'completed';
     
-    // Handle different download scenarios
     if (mediaFiles.length === 1) {
-      // Single file download - perfect!
       finalFile = mediaFiles[0];
     } else if (mediaFiles.length === 2 && ffmpegAvailable) {
-      // Two files - likely DASH video + audio, try smart merging
       console.log('Attempting to merge DASH video and audio files...');
       
       try {
-        // Use smart file analysis to identify video/audio files
-        const { videoOnlyFile, audioOnlyFile } = await identifyDashFiles(mediaFiles);
+        const { videoOnlyFile, audioOnlyFile } = await identifyDashFiles(mediaFiles, downloadDir);
         
         if (videoOnlyFile && audioOnlyFile) {
           console.log(`Identified video file: ${videoOnlyFile.filename}`);
           console.log(`Identified audio file: ${audioOnlyFile.filename}`);
           
-          // Generate a clean output filename
           let outputFilename;
           if (outputName) {
             outputFilename = `${outputName}.mp4`;
           } else {
-            // Try to get title from analyze first
-            try {
-              const analyzeOutput = await executeYouGet(['--json', url]);
-              const mediaInfo = parseYouGetJson(analyzeOutput);
-              outputFilename = generateCleanFilename(mediaInfo.title);
-            } catch {
-              outputFilename = 'merged-video.mp4';
-            }
+            outputFilename = generateCleanFilename(mediaInfo.title);
           }
           
-          // Merge the files
           finalFile = await mergeVideoAudio(
             videoOnlyFile.filename, 
             audioOnlyFile.filename, 
-            outputFilename
+            outputFilename,
+            downloadDir
           );
           message = 'Download completed and video/audio merged successfully';
           console.log('Successfully merged DASH streams into:', finalFile);
@@ -471,28 +554,69 @@ app.post('/api/download', async (req, res) => {
         }
       } catch (mergeError) {
         console.error('Failed to merge DASH files:', mergeError.message);
-        // Fall back to returning the first media file
         finalFile = mediaFiles[0];
         message = 'Download completed but merging failed - returning first file';
       }
     } else if (mediaFiles.length > 0) {
-      // Multiple files but can't merge, return the first one
       finalFile = mediaFiles[0];
       message = `Download completed. ${mediaFiles.length} files downloaded${!ffmpegAvailable ? ' (install FFmpeg for automatic merging)' : ''}`;
       console.log(`Multiple files downloaded (${mediaFiles.length}), returning first: ${finalFile}`);
     }
     
     if (finalFile) {
-      const downloadUrl = `/downloads/${finalFile}`;
+      // Get file stats
+      const filePath = path.join(downloadDir, finalFile);
+      const stats = fs.statSync(filePath);
+      const fileSizeBytes = stats.size;
+      const fileSizeMB = (fileSizeBytes / (1024 * 1024)).toFixed(1);
+      
+      // Determine file type
+      const ext = path.extname(finalFile).toLowerCase();
+      let type = 'video';
+      if (['.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav'].includes(ext)) {
+        type = 'audio';
+      } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(ext)) {
+        type = 'image';
+      }
+      
+      // Save download record
+      const downloadRecord = saveDownloadRecord(userId, {
+        url,
+        title: mediaInfo.title,
+        site: mediaInfo.site,
+        format: path.extname(finalFile).slice(1),
+        quality: itag || 'default',
+        size: `${fileSizeMB} MB`,
+        status,
+        type,
+        downloadPath: `/downloads/${dirName}/${finalFile}`,
+        filename: finalFile,
+        downloadDir: dirName
+      });
+      
+      const downloadUrl = `/downloads/${dirName}/${finalFile}`;
       res.json({ 
         success: true, 
         downloadUrl,
         filename: finalFile,
-        message: message
+        message: message,
+        downloadId: downloadRecord.id
       });
     } else {
-      // No media files found
       console.log('No media files found. All files:', newFiles);
+      
+      // Save failed download record
+      saveDownloadRecord(userId, {
+        url,
+        title: mediaInfo.title,
+        site: mediaInfo.site,
+        format: 'unknown',
+        quality: itag || 'default',
+        size: '0 MB',
+        status: 'failed',
+        type: 'video'
+      });
+      
       res.status(500).json({ 
         error: 'Download completed but no media files found',
         details: `Files downloaded: ${newFiles.join(', ')}`
@@ -501,6 +625,21 @@ app.post('/api/download', async (req, res) => {
     
   } catch (error) {
     console.error('Download error:', error.message);
+    
+    // Save failed download record if we have user info
+    if (req.body.userId) {
+      saveDownloadRecord(req.body.userId, {
+        url: req.body.url,
+        title: 'Failed Download',
+        site: 'Unknown',
+        format: 'unknown',
+        quality: req.body.itag || 'default',
+        size: '0 MB',
+        status: 'failed',
+        type: 'video'
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Download failed. Please try again.',
       details: error.message 
@@ -508,10 +647,55 @@ app.post('/api/download', async (req, res) => {
   }
 });
 
+// Get user downloads
+app.get('/api/downloads/:userId', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const downloads = getUserDownloads(userId);
+    res.json(downloads);
+  } catch (error) {
+    console.error('Error fetching user downloads:', error);
+    res.status(500).json({ error: 'Failed to fetch downloads' });
+  }
+});
+
+// Delete download record
+app.delete('/api/downloads/:userId/:downloadId', (req, res) => {
+  try {
+    const { userId, downloadId } = req.params;
+    
+    if (!userData[userId]) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const downloadIndex = userData[userId].downloads.findIndex(d => d.id === downloadId);
+    if (downloadIndex === -1) {
+      return res.status(404).json({ error: 'Download not found' });
+    }
+    
+    const download = userData[userId].downloads[downloadIndex];
+    
+    // Remove file if it exists
+    if (download.downloadDir) {
+      const downloadDirPath = path.join(DOWNLOADS_DIR, download.downloadDir);
+      if (fs.existsSync(downloadDirPath)) {
+        fs.rmSync(downloadDirPath, { recursive: true, force: true });
+      }
+    }
+    
+    // Remove from records
+    userData[userId].downloads.splice(downloadIndex, 1);
+    saveUserData();
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting download:', error);
+    res.status(500).json({ error: 'Failed to delete download' });
+  }
+});
+
 // Get supported sites
 app.get('/api/supported-sites', (req, res) => {
-  // This could be dynamically generated by parsing you-get's help
-  // For now, we'll return a static list based on the documentation
   const sites = [
     { name: 'YouTube', url: 'youtube.com', types: ['video', 'audio'] },
     { name: 'Twitter/X', url: 'x.com', types: ['video', 'image'] },
@@ -523,7 +707,6 @@ app.get('/api/supported-sites', (req, res) => {
     { name: 'SoundCloud', url: 'soundcloud.com', types: ['audio'] },
     { name: 'Dailymotion', url: 'dailymotion.com', types: ['video'] },
     { name: 'Bilibili', url: 'bilibili.com', types: ['video'] },
-    // Add more sites as needed
   ];
   
   res.json(sites);
@@ -557,5 +740,7 @@ app.get('/api/check-youget', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Downloads will be saved to: ${downloadsDir}`);
+  console.log(`Downloads will be saved to: ${DOWNLOADS_DIR}`);
+  console.log(`Cleanup interval: ${CLEANUP_INTERVAL_HOURS} hours`);
+  console.log(`Max download age: ${MAX_DOWNLOAD_AGE_HOURS} hours`);
 });

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock } from 'lucide-react';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { apiService, MediaInfo } from '../services/api';
 
 export default function Hero() {
+  const { user } = useUser();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -36,14 +37,14 @@ export default function Hero() {
   };
 
   const handleDownload = async () => {
-    if (!url || !selectedFormat) return;
+    if (!url || !selectedFormat || !user) return;
     
     setIsDownloading(true);
     setError('');
     setDownloadSuccess('');
     
     try {
-      const result = await apiService.downloadMedia(url, selectedFormat);
+      const result = await apiService.downloadMedia(url, user.id, selectedFormat);
       
       if (result.success && result.downloadUrl) {
         setDownloadSuccess(`Download completed! File: ${result.filename}`);
