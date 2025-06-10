@@ -1,0 +1,249 @@
+{
+  "common": {
+    "loading": "로딩 중...",
+    "error": "오류",
+    "success": "성공",
+    "cancel": "취소",
+    "confirm": "확인",
+    "delete": "삭제",
+    "download": "다운로드",
+    "play": "재생",
+    "pause": "일시정지",
+    "retry": "다시 시도",
+    "refresh": "새로고침",
+    "search": "검색",
+    "filter": "필터",
+    "sort": "정렬",
+    "close": "닫기",
+    "save": "저장",
+    "edit": "편집",
+    "view": "보기",
+    "back": "뒤로",
+    "next": "다음",
+    "previous": "이전",
+    "home": "홈",
+    "dashboard": "대시보드",
+    "settings": "설정",
+    "help": "도움말",
+    "about": "정보",
+    "contact": "연락처",
+    "privacy": "개인정보",
+    "terms": "약관",
+    "signIn": "로그인",
+    "signOut": "로그아웃",
+    "signUp": "회원가입",
+    "profile": "프로필",
+    "account": "계정",
+    "source": "소스"
+  },
+  "header": {
+    "title": "MediaGet",
+    "subtitle": {
+      "prefix": "",
+      "suffix": "와 ♥로 제작"
+    },
+    "nav": {
+      "home": "홈",
+      "dashboard": "대시보드"
+    },
+    "auth": {
+      "signIn": "로그인",
+      "signOut": "로그아웃"
+    }
+  },
+  "hero": {
+    "title": "어디서든",
+    "titleHighlight": "미디어 다운로드",
+    "subtitle": "URL 하나로 100개 이상의 인기 웹사이트에서 비디오, 오디오, 이미지를 추출하세요",
+    "placeholder": "비디오, 오디오 또는 이미지 URL을 여기에 붙여넣으세요...",
+    "analyze": "분석",
+    "analyzing": "분석 중...",
+    "downloadNow": "지금 다운로드",
+    "downloading": "다운로드 중...",
+    "selectFormat": "형식과 품질 선택",
+    "authRequired": {
+      "title": "다운로드하려면 로그인",
+      "description": "무료 계정을 만들어 미디어 파일을 다운로드하고 다운로드 기록에 액세스하세요.",
+      "button": "로그인하여 다운로드",
+      "benefits": "무료 계정 • 신용카드 불필요 • 다운로드 기록 포함"
+    },
+    "authStatus": {
+      "signedIn": "{{name}}으로 로그인됨 • 다운로드 준비 완료",
+      "signedOut": "다운로드하려면 로그인 필요 • 계정 없이도 분석 가능"
+    },
+    "poweredBy": {
+      "prefix": "",
+      "suffix": "와 ♥로 구동 - 전 세계 수천 명의 사용자가 신뢰"
+    },
+    "features": [
+      "100개 이상의 플랫폼 지원",
+      "다양한 형식 옵션",
+      "초고속 다운로드"
+    ]
+  },
+  "features": {
+    "title": "모든 요구사항을 위한 강력한 기능",
+    "subtitle": "강력한 you-get 엔진을 기반으로 추가 웹 인터페이스 개선사항과 함께 구축",
+    "items": {
+      "multipleFormats": {
+        "title": "다양한 형식",
+        "description": "다양한 형식과 품질 수준으로 다운로드 - 144p부터 4K까지, MP4부터 WebM까지, MP3부터 FLAC까지."
+      },
+      "lightningFast": {
+        "title": "초고속",
+        "description": "빠른 분석과 고속 다운로드를 위한 you-get의 최적화된 추출 엔진으로 구동."
+      },
+      "privacyFirst": {
+        "title": "개인정보 우선",
+        "description": "추적 없음, 데이터 수집 없음. 모든 처리는 귀하의 정보를 저장하지 않고 저희 서버에서 이루어집니다."
+      },
+      "advancedOptions": {
+        "title": "고급 옵션",
+        "description": "프록시 지원, 사용자 정의 출력 경로, 자막 다운로드 및 배치 처리 기능."
+      },
+      "streamDownload": {
+        "title": "스트리밍 및 다운로드",
+        "description": "다운로드 전 콘텐츠 미리보기 또는 선호하는 미디어 플레이어로 직접 스트리밍."
+      },
+      "mobileFriendly": {
+        "title": "모바일 친화적",
+        "description": "데스크톱, 태블릿, 모바일 등 모든 기기에서 완벽하게 작동하는 완전 반응형 디자인."
+      }
+    },
+    "status": "모든 기능 현재 사용 가능"
+  },
+  "supportedSites": {
+    "title": "100개 이상의 플랫폼 지원",
+    "subtitle": "전 세계에서 가장 인기 있는 비디오, 오디오, 이미지 공유 플랫폼에서 다운로드",
+    "types": {
+      "video": "비디오 다운로드",
+      "audio": "오디오 다운로드",
+      "image": "이미지 다운로드"
+    },
+    "universal": {
+      "title": "범용 추출기",
+      "description": "원하는 플랫폼이 보이지 않나요? 저희 범용 추출기는 다운로드 가능한 콘텐츠가 있는 대부분의 웹사이트를 처리할 수 있습니다",
+      "features": [
+        "자동 감지",
+        "스마트 추출",
+        "다양한 형식"
+      ]
+    }
+  },
+  "dashboard": {
+    "welcome": "다시 오신 것을 환영합니다, {{name}}님!",
+    "subtitle": "다운로드를 관리하고 다운로드 기록을 확인하세요",
+    "stats": {
+      "total": "총 다운로드",
+      "completed": "완료됨",
+      "downloading": "다운로드 중",
+      "pending": "대기 중",
+      "failed": "실패함"
+    },
+    "filters": {
+      "search": "다운로드 검색...",
+      "allStatus": "모든 상태",
+      "sortBy": "정렬 기준:",
+      "newest": "최신순",
+      "oldest": "오래된순",
+      "title": "제목 A-Z",
+      "size": "파일 크기"
+    },
+    "history": {
+      "title": "다운로드 기록",
+      "empty": {
+        "title": "다운로드를 찾을 수 없음",
+        "description": "검색 또는 필터 조건을 조정해 보세요",
+        "noDownloads": "미디어 다운로드를 시작하여 여기에서 기록을 확인하세요"
+      }
+    },
+    "actions": {
+      "play": "미디어 재생",
+      "download": "파일 다운로드",
+      "delete": "기록에서 삭제",
+      "retry": "다운로드 재시도"
+    },
+    "status": {
+      "completed": "완료됨",
+      "failed": "실패함",
+      "downloading": "다운로드 중",
+      "pending": "대기 중"
+    },
+    "timeAgo": {
+      "justNow": "방금 전",
+      "minutesAgo": "{{minutes}}분 전",
+      "hoursAgo": "{{hours}}시간 전",
+      "daysAgo": "{{days}}일 전"
+    },
+    "authRequired": {
+      "title": "액세스 제한",
+      "description": "다운로드 대시보드에 액세스하고 다운로드 기록을 보려면 로그인해야 합니다.",
+      "button": "로그인하여 계속",
+      "note": "계정이 없으신가요? 가입은 무료이며 1분도 걸리지 않습니다."
+    }
+  },
+  "mediaPlayer": {
+    "downloadFile": "파일 다운로드",
+    "controls": {
+      "play": "재생",
+      "pause": "일시정지",
+      "mute": "음소거",
+      "unmute": "음소거 해제",
+      "fullscreen": "전체화면",
+      "volume": "볼륨"
+    }
+  },
+  "systemStatus": {
+    "checking": "시스템 상태 확인 중...",
+    "ready": "시스템 준비 완료 - you-get {{version}}이 설치되어 작동 중",
+    "notMet": {
+      "title": "시스템 요구사항 미충족",
+      "description": "you-get이 설치되지 않았거나 액세스할 수 없음",
+      "install": "이 서비스를 사용하려면 you-get을 설치하세요:",
+      "visitGithub": "또는 설치 지침은 github.com/soimort/you-get을 방문하세요.",
+      "recheck": "상태 다시 확인"
+    }
+  },
+  "footer": {
+    "copyright": "© 2025 MediaGet",
+    "builtWith": {
+      "prefix": "",
+      "suffix": "와 ♥로 제작"
+    }
+  },
+  "errors": {
+    "urlRequired": "URL이 필요합니다",
+    "invalidUrl": "잘못된 URL 형식",
+    "noMediaFound": "이 URL에서 미디어를 찾을 수 없음",
+    "analysisError": "URL 분석 실패. URL이 유효하고 지원되는지 확인하세요.",
+    "downloadError": "다운로드 실패. 다시 시도하세요.",
+    "networkError": "네트워크 오류",
+    "serverError": "서버 오류",
+    "authRequired": "인증 필요",
+    "permissionDenied": "권한 거부됨",
+    "fileNotFound": "파일을 찾을 수 없음",
+    "unsupportedFormat": "지원되지 않는 형식",
+    "quotaExceeded": "다운로드 할당량 초과"
+  },
+  "success": {
+    "downloadCompleted": "다운로드 완료! 파일: {{filename}}",
+    "downloadStarted": "다운로드가 성공적으로 시작됨",
+    "analysisCompleted": "분석이 성공적으로 완료됨",
+    "fileDeleted": "파일이 성공적으로 삭제됨",
+    "settingsSaved": "설정이 성공적으로 저장됨"
+  },
+  "language": {
+    "current": "한국어",
+    "switch": "언어 변경",
+    "english": "English",
+    "chinese": "中文",
+    "spanish": "Español",
+    "french": "Français",
+    "german": "Deutsch",
+    "japanese": "日本語",
+    "korean": "한국어",
+    "portuguese": "Português",
+    "russian": "Русский",
+    "arabic": "العربية"
+  }
+}

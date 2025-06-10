@@ -236,6 +236,14 @@
     "current": "中文",
     "switch": "切换语言",
     "english": "English",
-    "chinese": "中文"
+    "chinese": "中文",
+    "spanish": "Español",
+    "french": "Français",
+    "german": "Deutsch",
+    "japanese": "日本語",
+    "korean": "한국어",
+    "portuguese": "Português",
+    "russian": "Русский",
+    "arabic": "العربية"
   }
 }

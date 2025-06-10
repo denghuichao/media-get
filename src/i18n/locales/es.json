@@ -1,0 +1,249 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "delete": "Eliminar",
+    "download": "Descargar",
+    "play": "Reproducir",
+    "pause": "Pausar",
+    "retry": "Reintentar",
+    "refresh": "Actualizar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "sort": "Ordenar",
+    "close": "Cerrar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "view": "Ver",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "settings": "Configuración",
+    "help": "Ayuda",
+    "about": "Acerca de",
+    "contact": "Contacto",
+    "privacy": "Privacidad",
+    "terms": "Términos",
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión",
+    "signUp": "Registrarse",
+    "profile": "Perfil",
+    "account": "Cuenta",
+    "source": "Fuente"
+  },
+  "header": {
+    "title": "MediaGet",
+    "subtitle": {
+      "prefix": "Construido con",
+      "suffix": "y ♥"
+    },
+    "nav": {
+      "home": "Inicio",
+      "dashboard": "Panel"
+    },
+    "auth": {
+      "signIn": "Iniciar Sesión",
+      "signOut": "Cerrar Sesión"
+    }
+  },
+  "hero": {
+    "title": "Descarga Medios desde",
+    "titleHighlight": "Cualquier Lugar",
+    "subtitle": "Extrae videos, audio e imágenes de más de 100 sitios web populares con solo una URL",
+    "placeholder": "Pega cualquier URL de video, audio o imagen aquí...",
+    "analyze": "Analizar",
+    "analyzing": "Analizando...",
+    "downloadNow": "Descargar Ahora",
+    "downloading": "Descargando...",
+    "selectFormat": "Elegir Formato y Calidad",
+    "authRequired": {
+      "title": "Inicia Sesión para Descargar",
+      "description": "Crea una cuenta gratuita para descargar archivos multimedia y acceder a tu historial de descargas.",
+      "button": "Iniciar Sesión para Descargar",
+      "benefits": "Cuenta gratuita • Sin tarjeta de crédito • Historial de descargas incluido"
+    },
+    "authStatus": {
+      "signedIn": "Conectado como {{name}} • Listo para descargar",
+      "signedOut": "Se requiere iniciar sesión para descargas • Análisis disponible sin cuenta"
+    },
+    "poweredBy": {
+      "prefix": "Impulsado por",
+      "suffix": "y ♥ - Confiado por miles de usuarios en todo el mundo"
+    },
+    "features": [
+      "Más de 100 plataformas compatibles",
+      "Múltiples opciones de formato",
+      "Descargas ultrarrápidas"
+    ]
+  },
+  "features": {
+    "title": "Funciones Potentes para Cada Necesidad",
+    "subtitle": "Construido sobre el robusto motor you-get con mejoras adicionales de interfaz web",
+    "items": {
+      "multipleFormats": {
+        "title": "Múltiples Formatos",
+        "description": "Descarga en varios formatos y niveles de calidad - desde 144p hasta 4K, MP4 a WebM, MP3 a FLAC."
+      },
+      "lightningFast": {
+        "title": "Ultrarrápido",
+        "description": "Impulsado por el motor de extracción optimizado de you-get para análisis rápido y descargas de alta velocidad."
+      },
+      "privacyFirst": {
+        "title": "Privacidad Primero",
+        "description": "Sin seguimiento, sin recopilación de datos. Todo el procesamiento ocurre en nuestros servidores sin almacenar tu información."
+      },
+      "advancedOptions": {
+        "title": "Opciones Avanzadas",
+        "description": "Soporte de proxy, rutas de salida personalizadas, descarga de subtítulos y capacidades de procesamiento por lotes."
+      },
+      "streamDownload": {
+        "title": "Transmitir y Descargar",
+        "description": "Previsualiza el contenido antes de descargar o transmite directamente a tu reproductor multimedia preferido."
+      },
+      "mobileFriendly": {
+        "title": "Compatible con Móviles",
+        "description": "Diseño completamente responsivo que funciona perfectamente en todos los dispositivos - escritorio, tablet y móvil."
+      }
+    },
+    "status": "Todas las funciones disponibles ahora"
+  },
+  "supportedSites": {
+    "title": "Más de 100 Plataformas Compatibles",
+    "subtitle": "Descarga desde las plataformas de intercambio de video, audio e imágenes más populares del mundo",
+    "types": {
+      "video": "Descargas de Video",
+      "audio": "Descargas de Audio",
+      "image": "Descargas de Imagen"
+    },
+    "universal": {
+      "title": "Extractor Universal",
+      "description": "¿No ves tu plataforma? Nuestro extractor universal puede manejar la mayoría de sitios web con contenido descargable",
+      "features": [
+        "Detección automática",
+        "Extracción inteligente",
+        "Múltiples formatos"
+      ]
+    }
+  },
+  "dashboard": {
+    "welcome": "¡Bienvenido de vuelta, {{name}}!",
+    "subtitle": "Gestiona tus descargas y ve el historial de descargas",
+    "stats": {
+      "total": "Descargas Totales",
+      "completed": "Completadas",
+      "downloading": "Descargando",
+      "pending": "Pendientes",
+      "failed": "Fallidas"
+    },
+    "filters": {
+      "search": "Buscar descargas...",
+      "allStatus": "Todos los Estados",
+      "sortBy": "Ordenar por:",
+      "newest": "Más Recientes",
+      "oldest": "Más Antiguas",
+      "title": "Título A-Z",
+      "size": "Tamaño de Archivo"
+    },
+    "history": {
+      "title": "Historial de Descargas",
+      "empty": {
+        "title": "No se encontraron descargas",
+        "description": "Intenta ajustar tus criterios de búsqueda o filtro",
+        "noDownloads": "Comienza a descargar medios para ver tu historial aquí"
+      }
+    },
+    "actions": {
+      "play": "Reproducir medio",
+      "download": "Descargar archivo",
+      "delete": "Eliminar del historial",
+      "retry": "Reintentar descarga"
+    },
+    "status": {
+      "completed": "Completada",
+      "failed": "Fallida",
+      "downloading": "Descargando",
+      "pending": "Pendiente"
+    },
+    "timeAgo": {
+      "justNow": "Ahora mismo",
+      "minutesAgo": "hace {{minutes}}m",
+      "hoursAgo": "hace {{hours}}h",
+      "daysAgo": "hace {{days}}d"
+    },
+    "authRequired": {
+      "title": "Acceso Restringido",
+      "description": "Necesitas iniciar sesión para acceder a tu panel de descargas y ver tu historial de descargas.",
+      "button": "Iniciar Sesión para Continuar",
+      "note": "¿No tienes cuenta? El registro es gratuito y toma menos de un minuto."
+    }
+  },
+  "mediaPlayer": {
+    "downloadFile": "Descargar Archivo",
+    "controls": {
+      "play": "Reproducir",
+      "pause": "Pausar",
+      "mute": "Silenciar",
+      "unmute": "Activar Sonido",
+      "fullscreen": "Pantalla Completa",
+      "volume": "Volumen"
+    }
+  },
+  "systemStatus": {
+    "checking": "Verificando estado del sistema...",
+    "ready": "Sistema listo - you-get {{version}} está instalado y funcionando",
+    "notMet": {
+      "title": "Requisitos del Sistema No Cumplidos",
+      "description": "you-get no está instalado o no es accesible",
+      "install": "Para usar este servicio, por favor instala you-get:",
+      "visitGithub": "O visita github.com/soimort/you-get para instrucciones de instalación.",
+      "recheck": "Verificar Estado Nuevamente"
+    }
+  },
+  "footer": {
+    "copyright": "© 2025 MediaGet",
+    "builtWith": {
+      "prefix": "Construido con",
+      "suffix": "y ♥"
+    }
+  },
+  "errors": {
+    "urlRequired": "Se requiere URL",
+    "invalidUrl": "Formato de URL inválido",
+    "noMediaFound": "No se encontraron medios en esta URL",
+    "analysisError": "Error al analizar URL. Por favor verifica si la URL es válida y compatible.",
+    "downloadError": "Error en la descarga. Por favor inténtalo de nuevo.",
+    "networkError": "Error de red",
+    "serverError": "Error del servidor",
+    "authRequired": "Autenticación requerida",
+    "permissionDenied": "Permiso denegado",
+    "fileNotFound": "Archivo no encontrado",
+    "unsupportedFormat": "Formato no compatible",
+    "quotaExceeded": "Cuota de descarga excedida"
+  },
+  "success": {
+    "downloadCompleted": "¡Descarga completada! Archivo: {{filename}}",
+    "downloadStarted": "Descarga iniciada exitosamente",
+    "analysisCompleted": "Análisis completado exitosamente",
+    "fileDeleted": "Archivo eliminado exitosamente",
+    "settingsSaved": "Configuración guardada exitosamente"
+  },
+  "language": {
+    "current": "Español",
+    "switch": "Cambiar Idioma",
+    "english": "English",
+    "chinese": "中文",
+    "spanish": "Español",
+    "french": "Français",
+    "german": "Deutsch",
+    "japanese": "日本語",
+    "korean": "한국어",
+    "portuguese": "Português",
+    "russian": "Русский",
+    "arabic": "العربية"
+  }
+}

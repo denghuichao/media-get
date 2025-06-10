@@ -1,0 +1,249 @@
+{
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラー",
+    "success": "成功",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "delete": "削除",
+    "download": "ダウンロード",
+    "play": "再生",
+    "pause": "一時停止",
+    "retry": "再試行",
+    "refresh": "更新",
+    "search": "検索",
+    "filter": "フィルター",
+    "sort": "並び替え",
+    "close": "閉じる",
+    "save": "保存",
+    "edit": "編集",
+    "view": "表示",
+    "back": "戻る",
+    "next": "次へ",
+    "previous": "前へ",
+    "home": "ホーム",
+    "dashboard": "ダッシュボード",
+    "settings": "設定",
+    "help": "ヘルプ",
+    "about": "について",
+    "contact": "お問い合わせ",
+    "privacy": "プライバシー",
+    "terms": "利用規約",
+    "signIn": "サインイン",
+    "signOut": "サインアウト",
+    "signUp": "サインアップ",
+    "profile": "プロフィール",
+    "account": "アカウント",
+    "source": "ソース"
+  },
+  "header": {
+    "title": "MediaGet",
+    "subtitle": {
+      "prefix": "",
+      "suffix": "と ♥ で構築"
+    },
+    "nav": {
+      "home": "ホーム",
+      "dashboard": "ダッシュボード"
+    },
+    "auth": {
+      "signIn": "サインイン",
+      "signOut": "サインアウト"
+    }
+  },
+  "hero": {
+    "title": "どこからでも",
+    "titleHighlight": "メディアをダウンロード",
+    "subtitle": "URLだけで100以上の人気ウェブサイトから動画、音声、画像を抽出",
+    "placeholder": "動画、音声、画像のURLをここに貼り付けてください...",
+    "analyze": "分析",
+    "analyzing": "分析中...",
+    "downloadNow": "今すぐダウンロード",
+    "downloading": "ダウンロード中...",
+    "selectFormat": "フォーマットと品質を選択",
+    "authRequired": {
+      "title": "ダウンロードにはサインインが必要",
+      "description": "無料アカウントを作成してメディアファイルをダウンロードし、ダウンロード履歴にアクセスしてください。",
+      "button": "サインインしてダウンロード",
+      "benefits": "無料アカウント • クレジットカード不要 • ダウンロード履歴付き"
+    },
+    "authStatus": {
+      "signedIn": "{{name}}としてサインイン中 • ダウンロード準備完了",
+      "signedOut": "ダウンロードにはサインインが必要 • 分析はアカウントなしで利用可能"
+    },
+    "poweredBy": {
+      "prefix": "",
+      "suffix": "と ♥ で動作 - 世界中の数千人のユーザーに信頼されています"
+    },
+    "features": [
+      "100以上のプラットフォームに対応",
+      "複数のフォーマットオプション",
+      "超高速ダウンロード"
+    ]
+  },
+  "features": {
+    "title": "あらゆるニーズに対応する強力な機能",
+    "subtitle": "堅牢なyou-getエンジンをベースに、追加のWebインターフェース機能強化を実装",
+    "items": {
+      "multipleFormats": {
+        "title": "複数フォーマット",
+        "description": "様々なフォーマットと品質レベルでダウンロード - 144pから4K、MP4からWebM、MP3からFLACまで。"
+      },
+      "lightningFast": {
+        "title": "超高速",
+        "description": "you-getの最適化された抽出エンジンによる高速分析と高速ダウンロード。"
+      },
+      "privacyFirst": {
+        "title": "プライバシー第一",
+        "description": "トラッキングなし、データ収集なし。すべての処理は当社のサーバーで行われ、お客様の情報は保存されません。"
+      },
+      "advancedOptions": {
+        "title": "高度なオプション",
+        "description": "プロキシサポート、カスタム出力パス、字幕ダウンロード、バッチ処理機能。"
+      },
+      "streamDownload": {
+        "title": "ストリーミング＆ダウンロード",
+        "description": "ダウンロード前にコンテンツをプレビューするか、お好みのメディアプレーヤーに直接ストリーミング。"
+      },
+      "mobileFriendly": {
+        "title": "モバイル対応",
+        "description": "デスクトップ、タブレット、モバイルなど、すべてのデバイスで完璧に動作する完全レスポンシブデザイン。"
+      }
+    },
+    "status": "すべての機能が現在利用可能"
+  },
+  "supportedSites": {
+    "title": "100以上のプラットフォームに対応",
+    "subtitle": "世界で最も人気のある動画、音声、画像共有プラットフォームからダウンロード",
+    "types": {
+      "video": "動画ダウンロード",
+      "audio": "音声ダウンロード",
+      "image": "画像ダウンロード"
+    },
+    "universal": {
+      "title": "ユニバーサル抽出器",
+      "description": "お探しのプラットフォームが見つかりませんか？当社のユニバーサル抽出器は、ダウンロード可能なコンテンツを持つほとんどのウェブサイトを処理できます",
+      "features": [
+        "自動検出",
+        "スマート抽出",
+        "複数フォーマット"
+      ]
+    }
+  },
+  "dashboard": {
+    "welcome": "おかえりなさい、{{name}}さん！",
+    "subtitle": "ダウンロードを管理し、ダウンロード履歴を表示",
+    "stats": {
+      "total": "総ダウンロード数",
+      "completed": "完了",
+      "downloading": "ダウンロード中",
+      "pending": "待機中",
+      "failed": "失敗"
+    },
+    "filters": {
+      "search": "ダウンロードを検索...",
+      "allStatus": "すべてのステータス",
+      "sortBy": "並び替え:",
+      "newest": "新しい順",
+      "oldest": "古い順",
+      "title": "タイトル A-Z",
+      "size": "ファイルサイズ"
+    },
+    "history": {
+      "title": "ダウンロード履歴",
+      "empty": {
+        "title": "ダウンロードが見つかりません",
+        "description": "検索またはフィルター条件を調整してみてください",
+        "noDownloads": "メディアのダウンロードを開始して、ここに履歴を表示してください"
+      }
+    },
+    "actions": {
+      "play": "メディアを再生",
+      "download": "ファイルをダウンロード",
+      "delete": "履歴から削除",
+      "retry": "ダウンロードを再試行"
+    },
+    "status": {
+      "completed": "完了",
+      "failed": "失敗",
+      "downloading": "ダウンロード中",
+      "pending": "待機中"
+    },
+    "timeAgo": {
+      "justNow": "たった今",
+      "minutesAgo": "{{minutes}}分前",
+      "hoursAgo": "{{hours}}時間前",
+      "daysAgo": "{{days}}日前"
+    },
+    "authRequired": {
+      "title": "アクセス制限",
+      "description": "ダウンロードダッシュボードにアクセスし、ダウンロード履歴を表示するにはサインインが必要です。",
+      "button": "サインインして続行",
+      "note": "アカウントをお持ちでないですか？サインアップは無料で1分もかかりません。"
+    }
+  },
+  "mediaPlayer": {
+    "downloadFile": "ファイルをダウンロード",
+    "controls": {
+      "play": "再生",
+      "pause": "一時停止",
+      "mute": "ミュート",
+      "unmute": "ミュート解除",
+      "fullscreen": "フルスクリーン",
+      "volume": "音量"
+    }
+  },
+  "systemStatus": {
+    "checking": "システム状態を確認中...",
+    "ready": "システム準備完了 - you-get {{version}} がインストールされ、動作しています",
+    "notMet": {
+      "title": "システム要件が満たされていません",
+      "description": "you-getがインストールされていないか、アクセスできません",
+      "install": "このサービスを使用するには、you-getをインストールしてください:",
+      "visitGithub": "または、インストール手順についてはgithub.com/soimort/you-getをご覧ください。",
+      "recheck": "ステータスを再確認"
+    }
+  },
+  "footer": {
+    "copyright": "© 2025 MediaGet",
+    "builtWith": {
+      "prefix": "",
+      "suffix": "と ♥ で構築"
+    }
+  },
+  "errors": {
+    "urlRequired": "URLが必要です",
+    "invalidUrl": "無効なURL形式",
+    "noMediaFound": "このURLでメディアが見つかりません",
+    "analysisError": "URLの分析に失敗しました。URLが有効でサポートされているかご確認ください。",
+    "downloadError": "ダウンロードに失敗しました。もう一度お試しください。",
+    "networkError": "ネットワークエラー",
+    "serverError": "サーバーエラー",
+    "authRequired": "認証が必要です",
+    "permissionDenied": "アクセス拒否",
+    "fileNotFound": "ファイルが見つかりません",
+    "unsupportedFormat": "サポートされていない形式",
+    "quotaExceeded": "ダウンロード制限を超過"
+  },
+  "success": {
+    "downloadCompleted": "ダウンロード完了！ファイル: {{filename}}",
+    "downloadStarted": "ダウンロードが正常に開始されました",
+    "analysisCompleted": "分析が正常に完了しました",
+    "fileDeleted": "ファイルが正常に削除されました",
+    "settingsSaved": "設定が正常に保存されました"
+  },
+  "language": {
+    "current": "日本語",
+    "switch": "言語を切り替え",
+    "english": "English",
+    "chinese": "中文",
+    "spanish": "Español",
+    "french": "Français",
+    "german": "Deutsch",
+    "japanese": "日本語",
+    "korean": "한국어",
+    "portuguese": "Português",
+    "russian": "Русский",
+    "arabic": "العربية"
+  }
+}
