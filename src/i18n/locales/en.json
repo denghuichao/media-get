@@ -39,7 +39,7 @@
   "header": {
     "title": "MediaGet",
     "subtitle": {
-      "prefix": "Built with",
+      "prefix": "Powered by",
       "suffix": ""
     },
     "nav": {
@@ -72,7 +72,7 @@
       "signedOut": "Sign in required for downloads • Analysis available without account"
     },
     "poweredBy": {
-      "prefix": "Built with",
+      "prefix": "Powered by",
       "suffix": "- Trusted by thousands of users worldwide"
     },
     "features": [
@@ -207,7 +207,7 @@
   "footer": {
     "copyright": "© 2025 MediaGet",
     "builtWith": {
-      "prefix": "Built with",
+      "prefix": "Powered by",
       "suffix": ""
     }
   },
