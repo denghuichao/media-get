@@ -39,8 +39,8 @@
   "header": {
     "title": "MediaGet",
     "subtitle": {
-      "prefix": "Создано с",
-      "suffix": "и ♥"
+      "prefix": "Работает на",
+      "suffix": "и"
     },
     "nav": {
       "home": "Главная",
@@ -73,7 +73,7 @@
     },
     "poweredBy": {
       "prefix": "Работает на",
-      "suffix": "и ♥ - Доверяют тысячи пользователей по всему миру"
+      "suffix": "и - Доверяют тысячи пользователей по всему миру"
     },
     "features": [
       "Поддержка 100+ платформ",
@@ -207,8 +207,8 @@
   "footer": {
     "copyright": "© 2025 MediaGet",
     "builtWith": {
-      "prefix": "Создано с",
-      "suffix": "и ♥"
+      "prefix": "Работает на",
+      "suffix": "и"
     }
   },
   "errors": {
@@ -244,6 +244,6 @@
     "korean": "한국어",
     "portuguese": "Português",
     "russian": "Русский",
-    "arabic": "العربية"
+    "arabic": "الع ربية"
   }
 }

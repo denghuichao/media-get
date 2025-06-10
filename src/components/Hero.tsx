@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo } from '../services/api';
@@ -261,6 +261,7 @@ export default function Hero() {
               you-get
             </a>
             <span>{t('hero.poweredBy.suffix')}</span>
+            <Heart className="h-4 w-4 text-red-500 fill-red-500" />
           </p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
             {t('hero.features', { returnObjects: true }).map((feature: string, index: number) => (

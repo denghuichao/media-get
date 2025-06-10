@@ -39,8 +39,8 @@
   "header": {
     "title": "MediaGet",
     "subtitle": {
-      "prefix": "",
-      "suffix": "と ♥ で構築"
+      "prefix": "you-getで",
+      "suffix": "と"
     },
     "nav": {
       "home": "ホーム",
@@ -72,8 +72,8 @@
       "signedOut": "ダウンロードにはサインインが必要 • 分析はアカウントなしで利用可能"
     },
     "poweredBy": {
-      "prefix": "",
-      "suffix": "と ♥ で動作 - 世界中の数千人のユーザーに信頼されています"
+      "prefix": "you-getで",
+      "suffix": "と 動作 - 世界中の数千人のユーザーに信頼されています"
     },
     "features": [
       "100以上のプラットフォームに対応",
@@ -207,8 +207,8 @@
   "footer": {
     "copyright": "© 2025 MediaGet",
     "builtWith": {
-      "prefix": "",
-      "suffix": "と ♥ で構築"
+      "prefix": "you-getで",
+      "suffix": "と"
     }
   },
   "errors": {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Home, LayoutDashboard } from 'lucide-react';
+import { Download, Home, LayoutDashboard, Heart } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -28,6 +28,7 @@ export default function Header() {
                   you-get
                 </a>
                 <span>{t('header.subtitle.suffix')}</span>
+                <Heart className="h-3 w-3 text-red-500 fill-red-500" />
               </p>
             </div>
           </div>

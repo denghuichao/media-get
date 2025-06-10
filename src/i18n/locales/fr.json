@@ -39,8 +39,8 @@
   "header": {
     "title": "MediaGet",
     "subtitle": {
-      "prefix": "Construit avec",
-      "suffix": "et ♥"
+      "prefix": "Alimenté par",
+      "suffix": "et"
     },
     "nav": {
       "home": "Accueil",
@@ -73,7 +73,7 @@
     },
     "poweredBy": {
       "prefix": "Alimenté par",
-      "suffix": "et ♥ - Approuvé par des milliers d'utilisateurs dans le monde"
+      "suffix": "et - Approuvé par des milliers d'utilisateurs dans le monde"
     },
     "features": [
       "Plus de 100 plateformes supportées",
@@ -207,8 +207,8 @@
   "footer": {
     "copyright": "© 2025 MediaGet",
     "builtWith": {
-      "prefix": "Construit avec",
-      "suffix": "et ♥"
+      "prefix": "Alimenté par",
+      "suffix": "et"
     }
   },
   "errors": {

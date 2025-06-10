@@ -40,7 +40,7 @@
     "title": "MediaGet",
     "subtitle": {
       "prefix": "基于",
-      "suffix": "和 ♥ 构建"
+      "suffix": "和"
     },
     "nav": {
       "home": "首页",
@@ -73,7 +73,7 @@
     },
     "poweredBy": {
       "prefix": "基于",
-      "suffix": "和 ♥ 构建 - 受到全球数千用户信赖"
+      "suffix": "和 构建 - 受到全球数千用户信赖"
     },
     "features": [
       "支持100多个平台",
@@ -208,7 +208,7 @@
     "copyright": "© 2025 MediaGet",
     "builtWith": {
       "prefix": "基于",
-      "suffix": "和 ♥ 构建"
+      "suffix": "和"
     }
   },
   "errors": {

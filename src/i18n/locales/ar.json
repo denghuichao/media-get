@@ -39,8 +39,8 @@
   "header": {
     "title": "MediaGet",
     "subtitle": {
-      "prefix": "مبني بـ",
-      "suffix": "و ♥"
+      "prefix": "مدعوم بـ",
+      "suffix": "و"
     },
     "nav": {
       "home": "الرئيسية",
@@ -73,7 +73,7 @@
     },
     "poweredBy": {
       "prefix": "مدعوم بـ",
-      "suffix": "و ♥ - موثوق من آلاف المستخدمين حول العالم"
+      "suffix": "و - موثوق من آلاف المستخدمين حول العالم"
     },
     "features": [
       "أكثر من 100 منصة مدعومة",
@@ -207,8 +207,8 @@
   "footer": {
     "copyright": "© 2025 MediaGet",
     "builtWith": {
-      "prefix": "مبني بـ",
-      "suffix": "و ♥"
+      "prefix": "مدعوم بـ",
+      "suffix": "و"
     }
   },
   "errors": {

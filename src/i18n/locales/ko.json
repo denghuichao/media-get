@@ -39,8 +39,8 @@
   "header": {
     "title": "MediaGet",
     "subtitle": {
-      "prefix": "",
-      "suffix": "와 ♥로 제작"
+      "prefix": "you-get으로",
+      "suffix": "와"
     },
     "nav": {
       "home": "홈",
@@ -72,8 +72,8 @@
       "signedOut": "다운로드하려면 로그인 필요 • 계정 없이도 분석 가능"
     },
     "poweredBy": {
-      "prefix": "",
-      "suffix": "와 ♥로 구동 - 전 세계 수천 명의 사용자가 신뢰"
+      "prefix": "you-get으로",
+      "suffix": "와 구동 - 전 세계 수천 명의 사용자가 신뢰"
     },
     "features": [
       "100개 이상의 플랫폼 지원",
@@ -207,8 +207,8 @@
   "footer": {
     "copyright": "© 2025 MediaGet",
     "builtWith": {
-      "prefix": "",
-      "suffix": "와 ♥로 제작"
+      "prefix": "you-get으로",
+      "suffix": "와"
     }
   },
   "errors": {

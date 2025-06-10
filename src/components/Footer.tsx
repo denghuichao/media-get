@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Github, Twitter, Mail } from 'lucide-react';
+import { Download, Github, Twitter, Mail, Heart } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
@@ -29,6 +29,7 @@ export default function Footer() {
                   you-get
                 </a>
                 <span>{t('footer.builtWith.suffix')}</span>
+                <Heart className="h-3 w-3 text-red-500 fill-red-500" />
               </p>
             </div>
           </div>
