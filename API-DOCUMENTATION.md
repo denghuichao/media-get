@@ -25,7 +25,7 @@ Analyzes a URL to extract available media formats and information.
 **Request Body**:
 ```json
 {
-  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+  "url": "https://www.bilibili.com/video/BV1QwT9zKE8gQ"
 }
 ```
 
