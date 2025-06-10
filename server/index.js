@@ -132,6 +132,46 @@ function parseYouGetJson(output) {
   }
 }
 
+// Helper function to filter downloaded files
+function findMainMediaFile(files) {
+  // Filter out comment files, metadata files, and temporary files
+  const filteredFiles = files.filter(file => {
+    const fileName = file.toLowerCase();
+    
+    // Skip comment and metadata files
+    if (fileName.endsWith('.cmt.xml') || 
+        fileName.endsWith('.info.json') || 
+        fileName.endsWith('.description') ||
+        fileName.endsWith('.annotations.xml') ||
+        fileName.endsWith('.srt') ||
+        fileName.endsWith('.vtt') ||
+        fileName.endsWith('.ass') ||
+        fileName.endsWith('.ssa')) {
+      return false;
+    }
+    
+    // Skip temporary files and partial downloads
+    if (fileName.includes('.part') || 
+        fileName.includes('.tmp') || 
+        fileName.startsWith('.') ||
+        fileName.includes('~')) {
+      return false;
+    }
+    
+    // Look for main media files
+    const mediaExtensions = [
+      '.mp4', '.mkv', '.webm', '.flv', '.avi', '.mov', '.wmv', '.m4v',  // Video
+      '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav', '.wma',         // Audio
+      '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'        // Image
+    ];
+    
+    return mediaExtensions.some(ext => fileName.endsWith(ext));
+  });
+  
+  // Return the first main media file found
+  return filteredFiles.length > 0 ? filteredFiles[0] : null;
+}
+
 // API Routes
 
 // Analyze URL endpoint
@@ -211,18 +251,8 @@ app.post('/api/download', async (req, res) => {
     const files = fs.readdirSync(downloadsDir);
     console.log('Files in downloads directory:', files);
     
-    // For DASH formats, you-get should merge streams automatically
-    // Look for the main video file (not temporary files)
-    const downloadedFile = files.find(file => {
-      // Skip temporary files and partial downloads
-      if (file.includes('.part') || file.includes('.tmp') || file.startsWith('.')) {
-        return false;
-      }
-      
-      // Look for video files
-      const videoExtensions = ['.mp4', '.mkv', '.webm', '.flv', '.avi'];
-      return videoExtensions.some(ext => file.toLowerCase().endsWith(ext));
-    });
+    // Find the main media file (excluding comments and metadata)
+    const downloadedFile = findMainMediaFile(files);
     
     if (downloadedFile) {
       const downloadUrl = `/downloads/${downloadedFile}`;
@@ -233,10 +263,10 @@ app.post('/api/download', async (req, res) => {
         message: 'Download completed successfully'
       });
     } else {
-      // If no merged file found, list all files for debugging
-      console.log('No merged video file found. Available files:', files);
+      // If no main media file found, list all files for debugging
+      console.log('No main media file found. Available files:', files);
       res.status(500).json({ 
-        error: 'Download completed but merged video file not found',
+        error: 'Download completed but main media file not found',
         details: `Available files: ${files.join(', ')}`
       });
     }
