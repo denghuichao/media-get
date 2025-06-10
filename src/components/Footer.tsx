@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Github, Twitter, Mail, Heart } from 'lucide-react';
+import { Download, Github, Twitter, Mail } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
@@ -18,19 +18,7 @@ export default function Footer() {
             </div>
             <div>
               <h3 className="text-lg font-bold">{t('header.title')}</h3>
-              <div className="flex items-center space-x-1 text-xs text-gray-400">
-                <span>A simple and universal media downloader built with</span>
-                <a 
-                  href="https://github.com/soimort/you-get" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-400 hover:text-blue-300 underline hover:no-underline transition-colors font-medium"
-                >
-                  you-get
-                </a>
-                <span>and</span>
-                <Heart className="h-3 w-3 text-red-500 fill-current" />
-              </div>
+              <p className="text-xs text-gray-400">{t('header.subtitle')}</p>
             </div>
           </div>
           

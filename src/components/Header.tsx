@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Home, LayoutDashboard, Heart } from 'lucide-react';
+import { Download, Home, LayoutDashboard } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -17,19 +17,7 @@ export default function Header() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{t('header.title')}</h1>
-              <div className="flex items-center space-x-1 text-xs text-gray-500">
-                <span>A simple and universal media downloader built with</span>
-                <a 
-                  href="https://github.com/soimort/you-get" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 underline hover:no-underline transition-colors font-medium"
-                >
-                  you-get
-                </a>
-                <span>and</span>
-                <Heart className="h-3 w-3 text-red-500 fill-current" />
-              </div>
+              <p className="text-xs text-gray-500">{t('header.subtitle')}</p>
             </div>
           </div>
           
