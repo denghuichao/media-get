@@ -17,7 +17,18 @@ export default function Header() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{t('header.title')}</h1>
-              <p className="text-xs text-gray-500">{t('header.subtitle')}</p>
+              <p className="text-xs text-gray-500 flex items-center space-x-1">
+                <span>{t('header.subtitle.prefix')}</span>
+                <a 
+                  href="https://github.com/soimort/you-get" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 transition-colors underline"
+                >
+                  you-get
+                </a>
+                <span className="text-red-500">♥</span>
+              </p>
             </div>
           </div>
           

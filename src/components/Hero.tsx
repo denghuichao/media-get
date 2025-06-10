@@ -250,7 +250,19 @@ export default function Hero() {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-600 mb-4">{t('hero.poweredBy')}</p>
+          <p className="text-gray-600 mb-4 flex items-center justify-center space-x-1">
+            <span>{t('hero.poweredBy.prefix')}</span>
+            <a 
+              href="https://github.com/soimort/you-get" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 transition-colors underline"
+            >
+              you-get
+            </a>
+            <span className="text-red-500">♥</span>
+            <span>{t('hero.poweredBy.suffix')}</span>
+          </p>
           <div className="flex justify-center space-x-8 text-sm text-gray-500">
             {t('hero.features', { returnObjects: true }).map((feature: string, index: number) => (
               <span key={index}>✓ {feature}</span>

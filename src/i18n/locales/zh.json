@@ -33,11 +33,15 @@
     "signOut": "退出",
     "signUp": "注册",
     "profile": "个人资料",
-    "account": "账户"
+    "account": "账户",
+    "source": "来源"
   },
   "header": {
     "title": "MediaGet",
-    "subtitle": "基于 you-get 构建",
+    "subtitle": {
+      "prefix": "基于",
+      "suffix": "构建"
+    },
     "nav": {
       "home": "首页",
       "dashboard": "仪表板"
@@ -67,7 +71,10 @@
       "signedIn": "已登录为 {{name}} • 准备下载",
       "signedOut": "下载需要登录 • 分析功能无需账户"
     },
-    "poweredBy": "基于 you-get 构建 - 受到全球数千用户信赖",
+    "poweredBy": {
+      "prefix": "基于",
+      "suffix": "构建 - 受到全球数千用户信赖"
+    },
     "features": [
       "支持100多个平台",
       "多种格式选项",
@@ -198,7 +205,11 @@
     }
   },
   "footer": {
-    "copyright": "© 2025 MediaGet"
+    "copyright": "© 2025 MediaGet",
+    "builtWith": {
+      "prefix": "基于",
+      "suffix": "构建"
+    }
   },
   "errors": {
     "urlRequired": "需要URL",

@@ -33,11 +33,15 @@
     "signOut": "Sign Out",
     "signUp": "Sign Up",
     "profile": "Profile",
-    "account": "Account"
+    "account": "Account",
+    "source": "Source"
   },
   "header": {
     "title": "MediaGet",
-    "subtitle": "Powered by you-get",
+    "subtitle": {
+      "prefix": "Built with",
+      "suffix": ""
+    },
     "nav": {
       "home": "Home",
       "dashboard": "Dashboard"
@@ -67,7 +71,10 @@
       "signedIn": "Signed in as {{name}} • Ready to download",
       "signedOut": "Sign in required for downloads • Analysis available without account"
     },
-    "poweredBy": "Powered by you-get - Trusted by thousands of users worldwide",
+    "poweredBy": {
+      "prefix": "Built with",
+      "suffix": "- Trusted by thousands of users worldwide"
+    },
     "features": [
       "100+ supported platforms",
       "Multiple format options",
@@ -198,7 +205,11 @@
     }
   },
   "footer": {
-    "copyright": "© 2025 MediaGet"
+    "copyright": "© 2025 MediaGet",
+    "builtWith": {
+      "prefix": "Built with",
+      "suffix": ""
+    }
   },
   "errors": {
     "urlRequired": "URL is required",

@@ -18,7 +18,18 @@ export default function Footer() {
             </div>
             <div>
               <h3 className="text-lg font-bold">{t('header.title')}</h3>
-              <p className="text-xs text-gray-400">{t('header.subtitle')}</p>
+              <p className="text-xs text-gray-400 flex items-center space-x-1">
+                <span>{t('footer.builtWith.prefix')}</span>
+                <a 
+                  href="https://github.com/soimort/you-get" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 transition-colors underline"
+                >
+                  you-get
+                </a>
+                <span className="text-red-400">♥</span>
+              </p>
             </div>
           </div>
           
