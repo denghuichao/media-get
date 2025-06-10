@@ -22,6 +22,12 @@ if (!fs.existsSync(downloadsDir)) {
   fs.mkdirSync(downloadsDir, { recursive: true });
 }
 
+// Helper function to remove ANSI escape codes
+function stripAnsiCodes(text) {
+  // Remove ANSI escape sequences like [7m, [0m, [1m, etc.
+  return text.replace(/\x1b\[[0-9;]*m/g, '');
+}
+
 // Helper function to execute you-get commands
 function executeYouGet(args) {
   return new Promise((resolve, reject) => {
@@ -51,9 +57,12 @@ function executeYouGet(args) {
   });
 }
 
-// Parse you-get info output - Updated to handle real format
+// Parse you-get info output - Updated to handle real format and strip ANSI codes
 function parseYouGetInfo(output) {
-  const lines = output.split('\n');
+  // First, strip all ANSI escape codes from the output
+  const cleanOutput = stripAnsiCodes(output);
+  const lines = cleanOutput.split('\n');
+  
   const info = {
     site: '',
     title: '',
@@ -186,7 +195,7 @@ app.post('/api/analyze', async (req, res) => {
     
     // Execute you-get with info flag
     const output = await executeYouGet(['-i', url]);
-    console.log('you-get output:', output); // Debug log
+    console.log('you-get raw output:', output); // Debug log
     
     const mediaInfo = parseYouGetInfo(output);
     console.log('Parsed info:', mediaInfo); // Debug log
