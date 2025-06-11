@@ -824,8 +824,8 @@ function DashboardContent() {
               filteredDownloads.map((download) => {
                 return (
                   <div key={download.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1 min-w-0">
                         {/* Download Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center space-x-2 mb-1">
@@ -880,61 +880,11 @@ function DashboardContent() {
                               </div>
                             </div>
                           )}
-
-                          {/* Multi-file details */}
-                          {download.files && download.files.length > 1 && download.status === 'completed' && (
-                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                              <div className="flex items-center space-x-1 text-blue-800 mb-1">
-                                <FolderOpen className="h-3 w-3" />
-                                <span className="font-medium">Multiple Files Downloaded</span>
-                              </div>
-                              <div className="space-y-1">
-                                {download.files.slice(0, 3).map((file, index) => (
-                                  <div key={index} className="flex items-center space-x-2 text-blue-700">
-                                    {file.type === 'video' && <Play className="h-2 w-2" />}
-                                    {file.type === 'audio' && <Music className="h-2 w-2" />}
-                                    {file.type === 'image' && <Image className="h-2 w-2" />}
-                                    <span className="truncate">{file.filename}</span>
-                                    <span className="text-blue-600">({file.size})</span>
-                                  </div>
-                                ))}
-                                {download.files.length > 3 && (
-                                  <div className="text-blue-600">
-                                    +{download.files.length - 3} more files...
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Brief error message for failed tasks */}
-                          {download.status === 'failed' && download.error && (
-                            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                              <div className="flex items-start space-x-2">
-                                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <div className="text-sm text-red-700">
-                                    {getBriefErrorMessage(download.error, download.url)}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Invalid status message */}
-                          {download.status === 'invalid' && (
-                            <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
-                              <div className="flex items-center space-x-1">
-                                <AlertTriangle className="h-3 w-3" />
-                                <span>{t('dashboard.status.invalidMessage')}</span>
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </div>
                       
-                      {/* Actions */}
-                      <div className="flex items-center space-x-2 ml-4">
+                      {/* Actions - Aligned Right */}
+                      <div className="flex items-start space-x-2 ml-4 flex-shrink-0">
                         {/* Play Button */}
                         {canPlay(download) && (
                           <button 
@@ -967,6 +917,62 @@ function DashboardContent() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Multi-file details - Aligned Right */}
+                    {download.files && download.files.length > 1 && download.status === 'completed' && (
+                      <div className="mt-2 flex justify-end">
+                        <div className="max-w-md p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                          <div className="flex items-center space-x-1 text-blue-800 mb-1">
+                            <FolderOpen className="h-3 w-3" />
+                            <span className="font-medium">Multiple Files Downloaded</span>
+                          </div>
+                          <div className="space-y-1">
+                            {download.files.slice(0, 3).map((file, index) => (
+                              <div key={index} className="flex items-center space-x-2 text-blue-700">
+                                {file.type === 'video' && <Play className="h-2 w-2" />}
+                                {file.type === 'audio' && <Music className="h-2 w-2" />}
+                                {file.type === 'image' && <Image className="h-2 w-2" />}
+                                <span className="truncate">{file.filename}</span>
+                                <span className="text-blue-600">({file.size})</span>
+                              </div>
+                            ))}
+                            {download.files.length > 3 && (
+                              <div className="text-blue-600">
+                                +{download.files.length - 3} more files...
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Brief error message for failed tasks - Aligned Right */}
+                    {download.status === 'failed' && download.error && (
+                      <div className="mt-2 flex justify-end">
+                        <div className="max-w-md p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <div className="flex items-start space-x-2">
+                            <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                            <div className="flex-1">
+                              <div className="text-sm text-red-700">
+                                {getBriefErrorMessage(download.error, download.url)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Invalid status message - Aligned Right */}
+                    {download.status === 'invalid' && (
+                      <div className="mt-2 flex justify-end">
+                        <div className="max-w-md p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                          <div className="flex items-center space-x-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            <span>{t('dashboard.status.invalidMessage')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })
