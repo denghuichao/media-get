@@ -414,17 +414,38 @@ function DashboardContent() {
     }
   };
 
-  // Helper function to get brief, user-friendly error message
-  const getBriefErrorMessage = (errorMessage: string): string => {
+  // Helper function to get platform name from URL
+  const getPlatformFromUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YouTube';
+      if (hostname.includes('bilibili.com')) return 'Bilibili';
+      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'Twitter/X';
+      if (hostname.includes('instagram.com')) return 'Instagram';
+      if (hostname.includes('tiktok.com')) return 'TikTok';
+      if (hostname.includes('facebook.com')) return 'Facebook';
+      if (hostname.includes('vimeo.com')) return 'Vimeo';
+      
+      return hostname.replace('www.', '');
+    } catch {
+      return 'the website';
+    }
+  };
+
+  // Helper function to get brief, user-friendly error message with website name
+  const getBriefErrorMessage = (errorMessage: string, url?: string): string => {
     if (!errorMessage) {
       return 'Download failed due to an unknown error';
     }
 
     const message = errorMessage.toLowerCase();
+    const platform = url ? getPlatformFromUrl(url) : 'the website';
 
-    // Check for common error patterns and return brief messages
+    // Check for common error patterns and return brief messages with platform name
     if (message.includes('login cookies') || message.includes('need login') || message.includes('authentication required')) {
-      return 'Login required - Please sign in to the website first';
+      return `Login required - Please sign in to ${platform} first and then retry later`;
     }
     
     if (message.includes('network') || message.includes('connection') || message.includes('timeout')) {
@@ -436,7 +457,7 @@ function DashboardContent() {
     }
     
     if (message.includes('permission denied') || message.includes('403') || message.includes('unauthorized')) {
-      return 'Access denied - You may need to sign in to view this content';
+      return `Access denied - You may need to sign in to ${platform} to view this content`;
     }
     
     if (message.includes('unsupported') || message.includes('not supported')) {
@@ -893,7 +914,7 @@ function DashboardContent() {
                                 <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div className="flex-1">
                                   <div className="text-sm text-red-700">
-                                    {getBriefErrorMessage(download.error)}
+                                    {getBriefErrorMessage(download.error, download.url)}
                                   </div>
                                 </div>
                               </div>
