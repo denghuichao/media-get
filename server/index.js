@@ -3,6 +3,7 @@ import cors from 'cors';
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
@@ -14,8 +15,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Default data directory: ~/data/media-get
+const DEFAULT_DATA_DIR = path.join(os.homedir(), 'data', 'media-get');
+const DATA_DIR = process.env.DATA_DIR || DEFAULT_DATA_DIR;
+
 // Configuration from environment
-const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(__dirname, 'downloads');
+const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(DATA_DIR, 'downloads');
 
 // Middleware
 app.use(cors());
@@ -25,6 +30,7 @@ app.use('/downloads', express.static(DOWNLOADS_DIR));
 // Ensure downloads directory exists
 if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
+  console.log(`Created downloads directory: ${DOWNLOADS_DIR}`);
 }
 
 // Initialize database on startup
@@ -463,5 +469,6 @@ app.get('/api/check-youget', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`MediaGet API Server running on port ${PORT}`);
+  console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads will be served from: ${DOWNLOADS_DIR}`);
 });

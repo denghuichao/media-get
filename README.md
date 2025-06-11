@@ -22,6 +22,17 @@ The application now uses an asynchronous architecture:
 3. **Database**: SQLite database for persistent storage
 4. **Worker Process**: Background worker that processes download tasks
 
+## Data Storage
+
+By default, all data is stored in `~/data/media-get/`:
+- **Database**: `~/data/media-get/mediaget.db`
+- **Downloads**: `~/data/media-get/downloads/`
+
+You can customize the data directory by setting the `DATA_DIR` environment variable:
+```bash
+export DATA_DIR=/custom/path/to/data
+```
+
 ## Prerequisites
 
 Before running this application, you need to have you-get installed on your system:
@@ -122,6 +133,12 @@ CREATE TABLE download_tasks (
 3. **completed**: Download finished successfully
 4. **failed**: Download failed with error
 
+## File Organization
+
+- **Task Directories**: Each download task gets its own directory named with the task_id
+- **File Naming**: Downloaded files are renamed with `{title}_{itag}` prefix
+- **Example**: `~/data/media-get/downloads/abc123-def456/Rick-Astley-Never-Gonna-Give-You-Up_22.mp4`
+
 ## Usage
 
 1. **Sign up or sign in** to create your account
@@ -156,12 +173,15 @@ Create a `.env.local` file with:
 ```
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
 
+# Optional data directory configuration
+DATA_DIR=/custom/path/to/data              # Default: ~/data/media-get
+DOWNLOADS_DIR=/custom/path/to/downloads    # Default: ~/data/media-get/downloads
+
 # Optional worker configuration
-WORKER_INTERVAL=5000                    # Worker polling interval (ms)
-MAX_CONCURRENT_DOWNLOADS=3              # Max simultaneous downloads
-CLEANUP_INTERVAL_HOURS=24               # How often to cleanup old files
-MAX_DOWNLOAD_AGE_HOURS=24               # Max age before files are deleted
-DOWNLOADS_DIR=./server/downloads        # Download directory
+WORKER_INTERVAL=5000                       # Worker polling interval (ms)
+MAX_CONCURRENT_DOWNLOADS=3                 # Max simultaneous downloads
+CLEANUP_INTERVAL_HOURS=24                  # How often to cleanup old files
+MAX_DOWNLOAD_AGE_HOURS=24                  # Max age before files are deleted
 ```
 
 ## Development
@@ -213,11 +233,11 @@ pip install you-get
 
 ### Database Issues
 
-The SQLite database is automatically created in `server/mediaget.db`. If you encounter issues:
+The SQLite database is automatically created in `~/data/media-get/mediaget.db`. If you encounter issues:
 
 ```bash
 # Delete the database to reset
-rm server/mediaget.db
+rm ~/data/media-get/mediaget.db
 
 # Restart the server to recreate
 npm run server
@@ -235,6 +255,16 @@ npm run server
 1. **Check Clerk setup**: Ensure your publishable key is correctly set in `.env.local`
 2. **Domain configuration**: Make sure your development domain is configured in Clerk dashboard
 3. **Browser issues**: Clear browser cache and cookies if experiencing login issues
+
+### Data Directory Permissions
+
+If you encounter permission errors:
+
+```bash
+# Make sure the data directory is writable
+chmod 755 ~/data/media-get
+chmod 755 ~/data/media-get/downloads
+```
 
 ## License
 

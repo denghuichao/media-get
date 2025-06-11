@@ -2,14 +2,19 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { initializeDatabase, DownloadTaskDB } from './database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Default data directory: ~/data/media-get
+const DEFAULT_DATA_DIR = path.join(os.homedir(), 'data', 'media-get');
+const DATA_DIR = process.env.DATA_DIR || DEFAULT_DATA_DIR;
+
 // Configuration
-const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(__dirname, 'downloads');
+const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(DATA_DIR, 'downloads');
 const WORKER_INTERVAL = parseInt(process.env.WORKER_INTERVAL) || 5000; // 5 seconds
 const MAX_CONCURRENT_DOWNLOADS = parseInt(process.env.MAX_CONCURRENT_DOWNLOADS) || 3;
 const CLEANUP_INTERVAL_HOURS = parseInt(process.env.CLEANUP_INTERVAL_HOURS) || 24;
@@ -18,6 +23,7 @@ const MAX_DOWNLOAD_AGE_HOURS = parseInt(process.env.MAX_DOWNLOAD_AGE_HOURS) || 2
 // Ensure downloads directory exists
 if (!fs.existsSync(DOWNLOADS_DIR)) {
   fs.mkdirSync(DOWNLOADS_DIR, { recursive: true });
+  console.log(`Created downloads directory: ${DOWNLOADS_DIR}`);
 }
 
 // Track active downloads
@@ -601,6 +607,7 @@ class DownloadWorker {
 // Initialize and start the dispatcher
 async function startWorkerSystem() {
   console.log('Starting MediaGet Download Worker System...');
+  console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads directory: ${DOWNLOADS_DIR}`);
   console.log(`Worker interval: ${WORKER_INTERVAL}ms`);
   console.log(`Max concurrent downloads: ${MAX_CONCURRENT_DOWNLOADS}`);

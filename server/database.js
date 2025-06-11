@@ -2,17 +2,22 @@ import sqlite3 from 'sqlite3';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Database file path
-const DB_PATH = path.join(__dirname, 'mediaget.db');
+// Default data directory: ~/data/media-get
+const DEFAULT_DATA_DIR = path.join(os.homedir(), 'data', 'media-get');
+const DATA_DIR = process.env.DATA_DIR || DEFAULT_DATA_DIR;
 
-// Ensure database directory exists
-const dbDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Database file path
+const DB_PATH = path.join(DATA_DIR, 'mediaget.db');
+
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  console.log(`Created data directory: ${DATA_DIR}`);
 }
 
 // Create database connection
@@ -20,7 +25,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);
   } else {
-    console.log('Connected to SQLite database');
+    console.log(`Connected to SQLite database at: ${DB_PATH}`);
   }
 });
 
