@@ -25,4 +25,8 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+      - VITE_CONTACT_EMAIL=${VITE_CONTACT_EMAIL}
+      - VITE_GITHUB_URL=${VITE_GITHUB_URL}
+      - VITE_TWITTER_URL=${VITE_TWITTER_URL}
     command: npm run dev
