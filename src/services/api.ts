@@ -28,7 +28,7 @@ export interface DownloadResponse {
 
 export interface TaskStatus {
   id: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'invalid';
   progress: number;
   title: string;
   site: string;
@@ -60,7 +60,7 @@ export interface DownloadRecord {
   format: string;
   quality: string;
   size: string;
-  status: 'completed' | 'failed' | 'processing' | 'pending';
+  status: 'completed' | 'failed' | 'processing' | 'pending' | 'invalid';
   timestamp: string;
   downloadPath?: string;
   type: 'video' | 'audio' | 'image';
@@ -82,6 +82,13 @@ export interface UserStats {
   processing: number;
   completed: number;
   failed: number;
+  invalid: number;
+}
+
+export interface CookieData {
+  platform: string;
+  cookies: string;
+  updatedAt: string;
 }
 
 class ApiService {
@@ -102,13 +109,13 @@ class ApiService {
     return response.json();
   }
 
-  async downloadMedia(url: string, userId: string, itag?: string, outputName?: string): Promise<DownloadResponse> {
+  async downloadMedia(url: string, userId: string, itag?: string, outputName?: string, cookies?: string): Promise<DownloadResponse> {
     const response = await fetch(`${API_BASE_URL}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, userId, itag, outputName }),
+      body: JSON.stringify({ url, userId, itag, outputName, cookies }),
     });
 
     if (!response.ok) {
@@ -156,6 +163,55 @@ class ApiService {
 
     if (!response.ok) {
       throw new Error('Failed to delete download');
+    }
+
+    return response.json();
+  }
+
+  // Cookie management methods
+  async saveCookies(userId: string, platform: string, cookies: string): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/cookies/${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ platform, cookies }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save cookies');
+    }
+
+    return response.json();
+  }
+
+  async getCookies(userId: string, platform: string): Promise<CookieData> {
+    const response = await fetch(`${API_BASE_URL}/cookies/${userId}/${platform}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch cookies');
+    }
+
+    return response.json();
+  }
+
+  async getUserCookies(userId: string): Promise<Array<{ platform: string; updatedAt: string }>> {
+    const response = await fetch(`${API_BASE_URL}/cookies/${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user cookies');
+    }
+
+    return response.json();
+  }
+
+  async deleteCookies(userId: string, platform: string): Promise<{ success: boolean; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/cookies/${userId}/${platform}`, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete cookies');
     }
 
     return response.json();

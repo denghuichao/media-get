@@ -140,7 +140,8 @@
       "completed": "Completed",
       "downloading": "Downloading",
       "pending": "Pending",
-      "failed": "Failed"
+      "failed": "Failed",
+      "invalid": "Files Cleaned"
     },
     "filters": {
       "search": "Search downloads...",
@@ -169,7 +170,14 @@
       "completed": "Completed",
       "failed": "Failed",
       "downloading": "Downloading",
-      "pending": "Pending"
+      "pending": "Pending",
+      "invalid": "Files Cleaned",
+      "invalidMessage": "Files have been automatically cleaned up. Please save downloads locally to avoid losing them."
+    },
+    "cleanup": {
+      "title": "File Cleanup Notice",
+      "description": "{{count}} download(s) have had their files automatically cleaned up due to age.",
+      "reminder": "💡 Tip: Save important files to your local device immediately after downloading to prevent loss."
     },
     "timeAgo": {
       "justNow": "Just now",

@@ -20,7 +20,9 @@ import {
   Maximize,
   X,
   Calendar,
-  MapPin
+  MapPin,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
@@ -290,7 +292,7 @@ function DashboardContent() {
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'completed' | 'failed' | 'processing' | 'pending'>('all');
+  const [filter, setFilter] = useState<'all' | 'completed' | 'failed' | 'processing' | 'pending' | 'invalid'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'size' | 'title'>('newest');
   const [selectedDownload, setSelectedDownload] = useState<DownloadRecord | null>(null);
@@ -299,7 +301,8 @@ function DashboardContent() {
     pending: 0,
     processing: 0,
     completed: 0,
-    failed: 0
+    failed: 0,
+    invalid: 0
   });
 
   // Get user's timezone info
@@ -375,6 +378,7 @@ function DashboardContent() {
       case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
       case 'processing': return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'invalid': return <AlertTriangle className="h-4 w-4 text-orange-500" />;
       default: return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
@@ -394,6 +398,7 @@ function DashboardContent() {
       case 'failed': return 'bg-red-100 text-red-800';
       case 'processing': return 'bg-blue-100 text-blue-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'invalid': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -430,6 +435,17 @@ function DashboardContent() {
     return download.status === 'completed' && 
            download.downloadPath && 
            ['video', 'audio', 'image'].includes(download.type);
+  };
+
+  const getStatusMessage = (download: DownloadRecord) => {
+    switch (download.status) {
+      case 'invalid':
+        return t('dashboard.status.invalid');
+      case 'failed':
+        return download.error || t('dashboard.status.failed');
+      default:
+        return t(`dashboard.status.${download.status}`);
+    }
   };
 
   if (loading) {
@@ -475,7 +491,7 @@ function DashboardContent() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
             <div className="flex items-center">
               <Download className="h-8 w-8 text-blue-600" />
@@ -525,7 +541,33 @@ function DashboardContent() {
               </div>
             </div>
           </div>
+
+          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+            <div className="flex items-center">
+              <AlertTriangle className="h-8 w-8 text-orange-600" />
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.invalid')}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.invalid}</p>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* File Cleanup Notice */}
+        {stats.invalid > 0 && (
+          <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg flex items-start space-x-3">
+            <Info className="h-5 w-5 text-orange-500 mt-0.5" />
+            <div className="flex-1">
+              <h4 className="font-medium text-orange-800">{t('dashboard.cleanup.title')}</h4>
+              <p className="text-orange-700 text-sm mt-1">
+                {t('dashboard.cleanup.description', { count: stats.invalid })}
+              </p>
+              <p className="text-orange-600 text-xs mt-2">
+                {t('dashboard.cleanup.reminder')}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
@@ -556,6 +598,7 @@ function DashboardContent() {
                   <option value="processing">{t('dashboard.status.downloading')}</option>
                   <option value="pending">{t('dashboard.status.pending')}</option>
                   <option value="failed">{t('dashboard.status.failed')}</option>
+                  <option value="invalid">{t('dashboard.status.invalid')}</option>
                 </select>
               </div>
             </div>
@@ -621,7 +664,7 @@ function DashboardContent() {
                           </h3>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(download.status)}`}>
                             {getStatusIcon(download.status)}
-                            <span className="ml-1 capitalize">{t(`dashboard.status.${download.status}`)}</span>
+                            <span className="ml-1 capitalize">{getStatusMessage(download)}</span>
                           </span>
                         </div>
                         
@@ -665,6 +708,16 @@ function DashboardContent() {
                         {download.status === 'failed' && download.error && (
                           <div className="mt-2 text-xs text-red-600">
                             Error: {download.error}
+                          </div>
+                        )}
+
+                        {/* Invalid status message */}
+                        {download.status === 'invalid' && (
+                          <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                            <div className="flex items-center space-x-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              <span>{t('dashboard.status.invalidMessage')}</span>
+                            </div>
                           </div>
                         )}
                       </div>

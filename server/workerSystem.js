@@ -4,7 +4,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import os from 'os';
 import { fileURLToPath } from 'url';
-import { DownloadTaskDB } from './database.js';
+import { DownloadTaskDB, UserCookiesDB } from './database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -142,7 +142,7 @@ export class DownloadDispatcher {
     });
   }
 
-  // Cleanup old download directories
+  // Cleanup old download directories and mark files as invalid
   cleanupOldDownloads() {
     try {
       const now = Date.now();
@@ -150,20 +150,38 @@ export class DownloadDispatcher {
       
       const items = fs.readdirSync(DOWNLOADS_DIR);
       let cleanedCount = 0;
+      const cleanedTaskIds = [];
       
       for (const item of items) {
         const itemPath = path.join(DOWNLOADS_DIR, item);
-        const stats = fs.statSync(itemPath);
         
-        if (stats.isDirectory() && (now - stats.mtime.getTime()) > maxAge) {
-          fs.rmSync(itemPath, { recursive: true, force: true });
-          cleanedCount++;
-          console.log(`Cleaned up old download directory: ${item}`);
+        try {
+          const stats = fs.statSync(itemPath);
+          
+          if (stats.isDirectory() && (now - stats.mtime.getTime()) > maxAge) {
+            // The directory name should be the task_id
+            cleanedTaskIds.push(item);
+            
+            fs.rmSync(itemPath, { recursive: true, force: true });
+            cleanedCount++;
+            console.log(`Cleaned up old download directory: ${item}`);
+          }
+        } catch (statError) {
+          console.warn(`Error checking stats for ${item}:`, statError.message);
         }
       }
       
       if (cleanedCount > 0) {
         console.log(`Cleanup completed: removed ${cleanedCount} old download directories`);
+        
+        // Mark corresponding tasks as invalid in database
+        if (cleanedTaskIds.length > 0) {
+          DownloadTaskDB.markFilesCleanedUp(cleanedTaskIds).then(result => {
+            console.log(`Marked ${result.changes} tasks as invalid due to file cleanup`);
+          }).catch(error => {
+            console.error('Error marking tasks as invalid:', error);
+          });
+        }
       }
     } catch (error) {
       console.error('Error during cleanup:', error);
@@ -214,6 +232,13 @@ export class DownloadWorker {
         args.push(`--format=${this.task.media_info.itag}`);
       }
       
+      // Add cookies if available
+      const cookiesFile = await this.prepareCookiesFile();
+      if (cookiesFile) {
+        args.push('--cookies', cookiesFile);
+        console.log(`Worker ${this.taskId} using cookies file: ${cookiesFile}`);
+      }
+      
       args.push(this.task.url);
       
       console.log(`Worker ${this.taskId} executing you-get with args:`, args);
@@ -235,9 +260,117 @@ export class DownloadWorker {
       await DownloadTaskDB.completeTask(this.taskId, result);
       console.log(`Worker completed task: ${this.taskId}`);
       
+      // Clean up cookies file if it was created
+      if (cookiesFile) {
+        this.cleanupCookiesFile(cookiesFile);
+      }
+      
     } catch (error) {
       console.error(`Worker failed for task ${this.taskId}:`, error.message);
-      await DownloadTaskDB.failTask(this.taskId, error.message);
+      
+      // Clean error message by removing ANSI escape codes
+      const cleanError = this.cleanErrorMessage(error.message);
+      await DownloadTaskDB.failTask(this.taskId, cleanError);
+    }
+  }
+
+  // Clean error message by removing ANSI escape codes and formatting
+  cleanErrorMessage(errorMessage) {
+    if (!errorMessage) return 'Unknown error';
+    
+    // Remove ANSI escape codes (color codes, formatting)
+    let cleaned = errorMessage.replace(/\x1b\[[0-9;]*m/g, '');
+    
+    // Remove extra whitespace and newlines
+    cleaned = cleaned.replace(/\s+/g, ' ').trim();
+    
+    // Extract the most relevant error information
+    const lines = cleaned.split('\n').filter(line => line.trim());
+    
+    // Look for specific you-get error patterns
+    const errorPatterns = [
+      /you-get: You will need login cookies/,
+      /you-get: \[error\]/,
+      /you-get: don't panic/,
+      /Process exited with code/
+    ];
+    
+    let relevantLines = [];
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      
+      // Skip empty lines and debug info
+      if (!trimmedLine || trimmedLine.startsWith('you-get:   (')) {
+        continue;
+      }
+      
+      // Include error lines
+      if (errorPatterns.some(pattern => pattern.test(trimmedLine))) {
+        relevantLines.push(trimmedLine);
+      }
+      
+      // Include the first few meaningful lines
+      if (relevantLines.length === 0 && trimmedLine.length > 10) {
+        relevantLines.push(trimmedLine);
+      }
+      
+      // Limit to 3 most relevant lines
+      if (relevantLines.length >= 3) {
+        break;
+      }
+    }
+    
+    if (relevantLines.length === 0) {
+      return cleaned.substring(0, 200) + (cleaned.length > 200 ? '...' : '');
+    }
+    
+    return relevantLines.join(' | ');
+  }
+
+  // Prepare cookies file for you-get
+  async prepareCookiesFile() {
+    try {
+      // Check if task has cookies or if user has saved cookies for this platform
+      let cookiesData = null;
+      
+      if (this.task.cookies) {
+        cookiesData = this.task.cookies;
+      } else {
+        // Try to get user's saved cookies for this platform
+        const userCookies = await UserCookiesDB.getCookies(this.task.user_id, this.task.platform_name);
+        if (userCookies) {
+          cookiesData = userCookies.cookies_data;
+        }
+      }
+      
+      if (!cookiesData) {
+        return null;
+      }
+      
+      // Create temporary cookies file
+      const cookiesFileName = `cookies_${this.taskId}_${Date.now()}.txt`;
+      const cookiesFilePath = path.join(DOWNLOADS_DIR, cookiesFileName);
+      
+      fs.writeFileSync(cookiesFilePath, cookiesData, 'utf8');
+      
+      return cookiesFilePath;
+      
+    } catch (error) {
+      console.warn(`Worker ${this.taskId} failed to prepare cookies file:`, error.message);
+      return null;
+    }
+  }
+
+  // Clean up temporary cookies file
+  cleanupCookiesFile(cookiesFilePath) {
+    try {
+      if (fs.existsSync(cookiesFilePath)) {
+        fs.unlinkSync(cookiesFilePath);
+        console.log(`Worker ${this.taskId} cleaned up cookies file`);
+      }
+    } catch (error) {
+      console.warn(`Worker ${this.taskId} failed to cleanup cookies file:`, error.message);
     }
   }
 

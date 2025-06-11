@@ -47,12 +47,31 @@ export function initializeDatabase() {
           progress INTEGER DEFAULT 0,
           result TEXT,
           error TEXT,
+          cookies TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
       `, (err) => {
         if (err) {
           console.error('Error creating download_tasks table:', err);
+          reject(err);
+        }
+      });
+
+      // Create user_cookies table for storing user cookies
+      db.run(`
+        CREATE TABLE IF NOT EXISTS user_cookies (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT NOT NULL,
+          platform_name TEXT NOT NULL,
+          cookies_data TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(user_id, platform_name)
+        )
+      `, (err) => {
+        if (err) {
+          console.error('Error creating user_cookies table:', err);
           reject(err);
         }
       });
@@ -64,6 +83,8 @@ export function initializeDatabase() {
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_platform ON download_tasks(platform_name)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_media_type ON download_tasks(media_type)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_created_at ON download_tasks(created_at)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_user_cookies_user_id ON user_cookies(user_id)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_user_cookies_platform ON user_cookies(platform_name)`);
 
       // Create trigger to update updated_at timestamp
       db.run(`
@@ -71,6 +92,14 @@ export function initializeDatabase() {
         AFTER UPDATE ON download_tasks
         BEGIN
           UPDATE download_tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END
+      `);
+
+      db.run(`
+        CREATE TRIGGER IF NOT EXISTS update_user_cookies_updated_at 
+        AFTER UPDATE ON user_cookies
+        BEGIN
+          UPDATE user_cookies SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
         END
       `, (err) => {
         if (err) {
@@ -96,13 +125,14 @@ export class DownloadTaskDB {
         media_type,
         platform_name,
         url,
-        media_info
+        media_info,
+        cookies
       } = taskData;
 
       const stmt = db.prepare(`
         INSERT INTO download_tasks (
-          user_id, task_id, media_type, platform_name, url, media_info
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          user_id, task_id, media_type, platform_name, url, media_info, cookies
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run([
@@ -111,7 +141,8 @@ export class DownloadTaskDB {
         media_type,
         platform_name,
         url,
-        JSON.stringify(media_info)
+        JSON.stringify(media_info),
+        cookies || null
       ], function(err) {
         if (err) {
           reject(err);
@@ -183,6 +214,27 @@ export class DownloadTaskDB {
           }
         }
       );
+    });
+  }
+
+  // Mark files as cleaned up (invalid status)
+  static async markFilesCleanedUp(task_ids) {
+    return new Promise((resolve, reject) => {
+      if (!Array.isArray(task_ids) || task_ids.length === 0) {
+        resolve({ changes: 0 });
+        return;
+      }
+
+      const placeholders = task_ids.map(() => '?').join(',');
+      const query = `UPDATE download_tasks SET status = 'invalid' WHERE task_id IN (${placeholders}) AND status = 'completed'`;
+      
+      db.run(query, task_ids, function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ changes: this.changes });
+        }
+      });
     });
   }
 
@@ -376,7 +428,8 @@ export class DownloadTaskDB {
               pending: 0,
               processing: 0,
               completed: 0,
-              failed: 0
+              failed: 0,
+              invalid: 0
             };
 
             rows.forEach(row => {
@@ -451,7 +504,7 @@ export class DownloadTaskDB {
       
       db.run(
         `DELETE FROM download_tasks 
-         WHERE status IN ('completed', 'failed') 
+         WHERE status IN ('completed', 'failed', 'invalid') 
          AND created_at < ?`,
         [cutoffDate.toISOString()],
         function(err) {
@@ -459,6 +512,85 @@ export class DownloadTaskDB {
             reject(err);
           } else {
             resolve({ deletedCount: this.changes });
+          }
+        }
+      );
+    });
+  }
+}
+
+// Database operations for user cookies
+export class UserCookiesDB {
+  // Save or update user cookies for a platform
+  static async saveCookies(user_id, platform_name, cookies_data) {
+    return new Promise((resolve, reject) => {
+      const stmt = db.prepare(`
+        INSERT OR REPLACE INTO user_cookies (user_id, platform_name, cookies_data)
+        VALUES (?, ?, ?)
+      `);
+
+      stmt.run([user_id, platform_name, cookies_data], function(err) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({
+            id: this.lastID,
+            user_id,
+            platform_name,
+            cookies_data
+          });
+        }
+      });
+
+      stmt.finalize();
+    });
+  }
+
+  // Get user cookies for a platform
+  static async getCookies(user_id, platform_name) {
+    return new Promise((resolve, reject) => {
+      db.get(
+        'SELECT * FROM user_cookies WHERE user_id = ? AND platform_name = ?',
+        [user_id, platform_name],
+        (err, row) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(row);
+          }
+        }
+      );
+    });
+  }
+
+  // Get all cookies for a user
+  static async getUserCookies(user_id) {
+    return new Promise((resolve, reject) => {
+      db.all(
+        'SELECT * FROM user_cookies WHERE user_id = ? ORDER BY platform_name',
+        [user_id],
+        (err, rows) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(rows);
+          }
+        }
+      );
+    });
+  }
+
+  // Delete cookies for a platform
+  static async deleteCookies(user_id, platform_name) {
+    return new Promise((resolve, reject) => {
+      db.run(
+        'DELETE FROM user_cookies WHERE user_id = ? AND platform_name = ?',
+        [user_id, platform_name],
+        function(err) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve({ changes: this.changes });
           }
         }
       );

@@ -7,7 +7,7 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
-import { initializeDatabase, DownloadTaskDB } from './database.js';
+import { initializeDatabase, DownloadTaskDB, UserCookiesDB } from './database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -217,7 +217,7 @@ app.post('/api/analyze', async (req, res) => {
 // Create download task endpoint
 app.post('/api/download', async (req, res) => {
   try {
-    const { url, itag, outputName, userId } = req.body;
+    const { url, itag, outputName, userId, cookies } = req.body;
     
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
@@ -267,7 +267,8 @@ app.post('/api/download', async (req, res) => {
         itag: itag,
         selectedFormat: selectedFormat,
         outputName: outputName
-      }
+      },
+      cookies: cookies || null
     };
 
     const task = await DownloadTaskDB.createTask(taskData);
@@ -431,6 +432,84 @@ app.get('/api/stats/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching stats:', error);
     res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Save user cookies for a platform
+app.post('/api/cookies/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { platform, cookies } = req.body;
+    
+    if (!platform || !cookies) {
+      return res.status(400).json({ error: 'Platform and cookies are required' });
+    }
+    
+    await UserCookiesDB.saveCookies(userId, platform, cookies);
+    
+    res.json({ 
+      success: true, 
+      message: 'Cookies saved successfully' 
+    });
+  } catch (error) {
+    console.error('Error saving cookies:', error);
+    res.status(500).json({ error: 'Failed to save cookies' });
+  }
+});
+
+// Get user cookies for a platform
+app.get('/api/cookies/:userId/:platform', async (req, res) => {
+  try {
+    const { userId, platform } = req.params;
+    
+    const cookies = await UserCookiesDB.getCookies(userId, platform);
+    
+    if (!cookies) {
+      return res.status(404).json({ error: 'No cookies found for this platform' });
+    }
+    
+    res.json({
+      platform: cookies.platform_name,
+      cookies: cookies.cookies_data,
+      updatedAt: cookies.updated_at
+    });
+  } catch (error) {
+    console.error('Error fetching cookies:', error);
+    res.status(500).json({ error: 'Failed to fetch cookies' });
+  }
+});
+
+// Get all user cookies
+app.get('/api/cookies/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const cookies = await UserCookiesDB.getUserCookies(userId);
+    
+    res.json(cookies.map(cookie => ({
+      platform: cookie.platform_name,
+      updatedAt: cookie.updated_at
+    })));
+  } catch (error) {
+    console.error('Error fetching user cookies:', error);
+    res.status(500).json({ error: 'Failed to fetch user cookies' });
+  }
+});
+
+// Delete user cookies for a platform
+app.delete('/api/cookies/:userId/:platform', async (req, res) => {
+  try {
+    const { userId, platform } = req.params;
+    
+    await UserCookiesDB.deleteCookies(userId, platform);
+    
+    res.json({ 
+      success: true, 
+      message: 'Cookies deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Error deleting cookies:', error);
+    res.status(500).json({ error: 'Failed to delete cookies' });
   }
 });
 
