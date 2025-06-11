@@ -138,7 +138,8 @@
       "completed": "완료됨",
       "downloading": "다운로드 중",
       "pending": "대기 중",
-      "failed": "실패함"
+      "failed": "실패함",
+      "invalid": "삭제된 파일"
     },
     "filters": {
       "search": "다운로드 검색...",
@@ -167,7 +168,9 @@
       "completed": "완료됨",
       "failed": "실패함",
       "downloading": "다운로드 중",
-      "pending": "대기 중"
+      "pending": "대기 중",
+      "invalid": "삭제됨",
+      "invalidMessage": "파일이 서버에서 삭제되었습니다"
     },
     "timeAgo": {
       "justNow": "방금 전",
@@ -180,6 +183,14 @@
       "description": "다운로드 대시보드에 액세스하고 다운로드 기록을 보려면 로그인해야 합니다.",
       "button": "로그인하여 계속",
       "note": "계정이 없으신가요? 가입은 무료이며 1분도 걸리지 않습니다."
+    },
+    "cleanup": {
+      "title": "파일 정리",
+      "description": "다운로드된 파일은 서버 공간을 절약하기 위해 24시간 후 자동으로 삭제됩니다.",
+      "notice": "삭제된 파일은 복구할 수 없습니다. 만료되기 전에 파일을 다운로드하세요.",
+      "cleanupTime": "정리 시간: {{time}}",
+      "filesRemoved": "{{count}}개 파일 제거됨",
+      "lastCleanup": "마지막 정리: {{time}}"
     }
   },
   "mediaPlayer": {

@@ -138,7 +138,8 @@
       "completed": "完了",
       "downloading": "ダウンロード中",
       "pending": "待機中",
-      "failed": "失敗"
+      "failed": "失敗",
+      "invalid": "削除されたファイル"
     },
     "filters": {
       "search": "ダウンロードを検索...",
@@ -167,7 +168,9 @@
       "completed": "完了",
       "failed": "失敗",
       "downloading": "ダウンロード中",
-      "pending": "待機中"
+      "pending": "待機中",
+      "invalid": "削除済み",
+      "invalidMessage": "ファイルはサーバーから削除されました"
     },
     "timeAgo": {
       "justNow": "たった今",
@@ -180,6 +183,14 @@
       "description": "ダウンロードダッシュボードにアクセスし、ダウンロード履歴を表示するにはサインインが必要です。",
       "button": "サインインして続行",
       "note": "アカウントをお持ちでないですか？サインアップは無料で1分もかかりません。"
+    },
+    "cleanup": {
+      "title": "ファイルクリーンアップ",
+      "description": "ダウンロードされたファイルは、サーバー容量を節約するため24時間後に自動的に削除されます。",
+      "notice": "削除されたファイルは復元できません。期限切れになる前にファイルをダウンロードしてください。",
+      "cleanupTime": "クリーンアップ時刻: {{time}}",
+      "filesRemoved": "{{count}}個のファイルを削除",
+      "lastCleanup": "最後のクリーンアップ: {{time}}"
     }
   },
   "mediaPlayer": {

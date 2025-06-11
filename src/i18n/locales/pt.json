@@ -138,7 +138,8 @@
       "completed": "Concluídos",
       "downloading": "Baixando",
       "pending": "Pendentes",
-      "failed": "Falharam"
+      "failed": "Falharam",
+      "invalid": "Arquivos excluídos"
     },
     "filters": {
       "search": "Pesquisar downloads...",
@@ -167,7 +168,9 @@
       "completed": "Concluído",
       "failed": "Falhou",
       "downloading": "Baixando",
-      "pending": "Pendente"
+      "pending": "Pendente",
+      "invalid": "Excluído",
+      "invalidMessage": "O arquivo foi excluído do servidor"
     },
     "timeAgo": {
       "justNow": "Agora mesmo",
@@ -180,6 +183,14 @@
       "description": "Você precisa entrar para acessar seu painel de downloads e visualizar seu histórico de downloads.",
       "button": "Entrar para continuar",
       "note": "Não tem uma conta? O cadastro é gratuito e leva menos de um minuto."
+    },
+    "cleanup": {
+      "title": "Limpeza de arquivos",
+      "description": "Os arquivos baixados são automaticamente excluídos após 24 horas para economizar espaço do servidor.",
+      "notice": "Arquivos excluídos não podem ser recuperados. Certifique-se de baixar seus arquivos antes que expirem.",
+      "cleanupTime": "Horário de limpeza: {{time}}",
+      "filesRemoved": "{{count}} arquivos removidos",
+      "lastCleanup": "Última limpeza: {{time}}"
     }
   },
   "mediaPlayer": {

@@ -138,7 +138,8 @@
       "completed": "Abgeschlossen",
       "downloading": "Herunterladen",
       "pending": "Ausstehend",
-      "failed": "Fehlgeschlagen"
+      "failed": "Fehlgeschlagen",
+      "invalid": "Gelöschte Dateien"
     },
     "filters": {
       "search": "Downloads suchen...",
@@ -167,7 +168,9 @@
       "completed": "Abgeschlossen",
       "failed": "Fehlgeschlagen",
       "downloading": "Herunterladen",
-      "pending": "Ausstehend"
+      "pending": "Ausstehend",
+      "invalid": "Gelöscht",
+      "invalidMessage": "Datei wurde vom Server gelöscht"
     },
     "timeAgo": {
       "justNow": "Gerade eben",
@@ -180,6 +183,14 @@
       "description": "Sie müssen sich anmelden, um auf Ihr Download-Dashboard zuzugreifen und Ihren Download-Verlauf zu sehen.",
       "button": "Anmelden zum Fortfahren",
       "note": "Haben Sie kein Konto? Die Registrierung ist kostenlos und dauert weniger als eine Minute."
+    },
+    "cleanup": {
+      "title": "Datei-Bereinigung",
+      "description": "Heruntergeladene Dateien werden automatisch nach 24 Stunden gelöscht, um Serverplatz zu sparen.",
+      "notice": "Gelöschte Dateien können nicht wiederhergestellt werden. Stellen Sie sicher, dass Sie Ihre Dateien vor Ablauf herunterladen.",
+      "cleanupTime": "Bereinigungszeit: {{time}}",
+      "filesRemoved": "{{count}} Dateien entfernt",
+      "lastCleanup": "Letzte Bereinigung: {{time}}"
     }
   },
   "mediaPlayer": {

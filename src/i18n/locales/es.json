@@ -138,7 +138,8 @@
       "completed": "Completadas",
       "downloading": "Descargando",
       "pending": "Pendientes",
-      "failed": "Fallidas"
+      "failed": "Fallidas",
+      "invalid": "Archivos Eliminados"
     },
     "filters": {
       "search": "Buscar descargas...",
@@ -167,7 +168,9 @@
       "completed": "Completada",
       "failed": "Fallida",
       "downloading": "Descargando",
-      "pending": "Pendiente"
+      "pending": "Pendiente",
+      "invalid": "Eliminado",
+      "invalidMessage": "El archivo fue eliminado del servidor"
     },
     "timeAgo": {
       "justNow": "Ahora mismo",
@@ -180,6 +183,14 @@
       "description": "Necesitas iniciar sesión para acceder a tu panel de descargas y ver tu historial de descargas.",
       "button": "Iniciar Sesión para Continuar",
       "note": "¿No tienes cuenta? El registro es gratuito y toma menos de un minuto."
+    },
+    "cleanup": {
+      "title": "Limpieza de Archivos",
+      "description": "Los archivos descargados se eliminan automáticamente después de 24 horas para ahorrar espacio del servidor.",
+      "notice": "Los archivos eliminados no se pueden recuperar. Asegúrate de descargar tus archivos antes de que expiren.",
+      "cleanupTime": "Tiempo de limpieza: {{time}}",
+      "filesRemoved": "{{count}} archivos eliminados",
+      "lastCleanup": "Última limpieza: {{time}}"
     }
   },
   "mediaPlayer": {

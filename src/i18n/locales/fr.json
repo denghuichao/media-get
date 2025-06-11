@@ -138,7 +138,8 @@
       "completed": "Terminés",
       "downloading": "En cours",
       "pending": "En attente",
-      "failed": "Échoués"
+      "failed": "Échoués",
+      "invalid": "Fichiers supprimés"
     },
     "filters": {
       "search": "Rechercher des téléchargements...",
@@ -167,7 +168,9 @@
       "completed": "Terminé",
       "failed": "Échoué",
       "downloading": "En cours",
-      "pending": "En attente"
+      "pending": "En attente",
+      "invalid": "Supprimé",
+      "invalidMessage": "Le fichier a été supprimé du serveur"
     },
     "timeAgo": {
       "justNow": "À l'instant",
@@ -180,6 +183,14 @@
       "description": "Vous devez vous connecter pour accéder à votre tableau de bord de téléchargements et voir votre historique de téléchargements.",
       "button": "Se connecter pour continuer",
       "note": "Vous n'avez pas de compte ? L'inscription est gratuite et prend moins d'une minute."
+    },
+    "cleanup": {
+      "title": "Nettoyage des fichiers",
+      "description": "Les fichiers téléchargés sont automatiquement supprimés après 24 heures pour économiser l'espace serveur.",
+      "notice": "Les fichiers supprimés ne peuvent pas être récupérés. Assurez-vous de télécharger vos fichiers avant leur expiration.",
+      "cleanupTime": "Heure de nettoyage : {{time}}",
+      "filesRemoved": "{{count}} fichiers supprimés",
+      "lastCleanup": "Dernier nettoyage : {{time}}"
     }
   },
   "mediaPlayer": {

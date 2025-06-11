@@ -138,7 +138,8 @@
       "completed": "已完成",
       "downloading": "下载中",
       "pending": "等待中",
-      "failed": "失败"
+      "failed": "失败",
+      "invalid": "已删除文件"
     },
     "filters": {
       "search": "搜索下载...",
@@ -167,7 +168,9 @@
       "completed": "已完成",
       "failed": "失败",
       "downloading": "下载中",
-      "pending": "等待中"
+      "pending": "等待中",
+      "invalid": "已删除",
+      "invalidMessage": "文件已从服务器删除"
     },
     "timeAgo": {
       "justNow": "刚刚",
@@ -180,6 +183,14 @@
       "description": "您需要登录才能访问下载仪表板并查看下载历史。",
       "button": "登录以继续",
       "note": "没有账户？注册是免费的，只需不到一分钟。"
+    },
+    "cleanup": {
+      "title": "文件清理",
+      "description": "下载的文件会在24小时后自动删除以节省服务器空间。",
+      "notice": "已删除的文件无法恢复。请确保在文件过期前下载。",
+      "cleanupTime": "清理时间：{{time}}",
+      "filesRemoved": "已移除{{count}}个文件",
+      "lastCleanup": "上次清理：{{time}}"
     }
   },
   "mediaPlayer": {
