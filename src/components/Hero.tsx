@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw, Calendar } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw, Calendar, ExternalLink } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
@@ -21,6 +21,109 @@ export default function Hero() {
   // Auto-hide timers
   const [successTimer, setSuccessTimer] = useState<NodeJS.Timeout | null>(null);
   const [taskTimer, setTaskTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Helper function to detect if error is related to login cookies
+  const isLoginCookieError = (errorMessage: string): boolean => {
+    const cookieKeywords = [
+      'login cookies',
+      'need login',
+      'authentication required',
+      'sign in required',
+      'login required',
+      'cookies.txt',
+      'need to login',
+      'requires login'
+    ];
+    
+    return cookieKeywords.some(keyword => 
+      errorMessage.toLowerCase().includes(keyword.toLowerCase())
+    );
+  };
+
+  // Helper function to get platform name from URL
+  const getPlatformFromUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YouTube';
+      if (hostname.includes('bilibili.com')) return 'Bilibili';
+      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'Twitter/X';
+      if (hostname.includes('instagram.com')) return 'Instagram';
+      if (hostname.includes('tiktok.com')) return 'TikTok';
+      if (hostname.includes('facebook.com')) return 'Facebook';
+      if (hostname.includes('vimeo.com')) return 'Vimeo';
+      
+      return hostname.replace('www.', '');
+    } catch {
+      return 'the website';
+    }
+  };
+
+  // Helper function to get platform login URL
+  const getPlatformLoginUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'https://accounts.google.com/signin';
+      if (hostname.includes('bilibili.com')) return 'https://passport.bilibili.com/login';
+      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'https://twitter.com/login';
+      if (hostname.includes('instagram.com')) return 'https://www.instagram.com/accounts/login/';
+      if (hostname.includes('tiktok.com')) return 'https://www.tiktok.com/login';
+      if (hostname.includes('facebook.com')) return 'https://www.facebook.com/login';
+      if (hostname.includes('vimeo.com')) return 'https://vimeo.com/log_in';
+      
+      return `https://${hostname}/login`;
+    } catch {
+      return '#';
+    }
+  };
+
+  // Helper function to format error message for display
+  const formatErrorForDisplay = (errorMessage: string): { message: string; isLong: boolean; needsLogin: boolean; platform: string; loginUrl: string } => {
+    if (!errorMessage) {
+      return { 
+        message: 'Unknown error occurred', 
+        isLong: false, 
+        needsLogin: false, 
+        platform: '', 
+        loginUrl: '' 
+      };
+    }
+
+    // Check if it's a login cookie error
+    const needsLogin = isLoginCookieError(errorMessage);
+    const platform = needsLogin ? getPlatformFromUrl(url) : '';
+    const loginUrl = needsLogin ? getPlatformLoginUrl(url) : '';
+
+    // Clean up the error message
+    let cleanMessage = errorMessage;
+    
+    // Remove common prefixes
+    cleanMessage = cleanMessage.replace(/^(Error: |Download failed: |Analysis error: )/i, '');
+    
+    // For login cookie errors, provide a cleaner message
+    if (needsLogin) {
+      cleanMessage = `This content requires you to be logged in to ${platform}. Please sign in to ${platform} first, then try again.`;
+    }
+    
+    // Check if message is too long (more than 150 characters)
+    const isLong = cleanMessage.length > 150;
+    
+    // If too long, truncate and add ellipsis
+    if (isLong && !needsLogin) {
+      cleanMessage = cleanMessage.substring(0, 150) + '...';
+    }
+
+    return {
+      message: cleanMessage,
+      isLong: errorMessage.length > 150,
+      needsLogin,
+      platform,
+      loginUrl
+    };
+  };
 
   const handleAnalyze = async () => {
     if (!url) return;
@@ -220,6 +323,9 @@ export default function Hero() {
     }
   };
 
+  // Format error for display
+  const errorInfo = error ? formatErrorForDisplay(error) : null;
+
   return (
     <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -263,11 +369,51 @@ export default function Hero() {
             </button>
           </div>
 
-          {/* Error Message */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
-              <span className="text-red-700">{error}</span>
+          {/* Enhanced Error Message */}
+          {errorInfo && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="text-red-700">
+                    {errorInfo.message}
+                  </div>
+                  
+                  {/* Login reminder for cookie errors */}
+                  {errorInfo.needsLogin && errorInfo.loginUrl !== '#' && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center space-x-2 text-blue-800 text-sm">
+                        <Info className="h-4 w-4" />
+                        <span className="font-medium">Login Required</span>
+                      </div>
+                      <p className="text-blue-700 text-sm mt-1">
+                        Please sign in to {errorInfo.platform} in your browser first, then try downloading again.
+                      </p>
+                      <a
+                        href={errorInfo.loginUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-1 mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        <span>Sign in to {errorInfo.platform}</span>
+                      </a>
+                    </div>
+                  )}
+                  
+                  {/* Show full error details for long errors */}
+                  {errorInfo.isLong && !errorInfo.needsLogin && (
+                    <details className="mt-2">
+                      <summary className="text-red-600 text-sm cursor-pointer hover:text-red-800">
+                        Show full error details
+                      </summary>
+                      <div className="mt-2 p-2 bg-red-100 rounded text-xs text-red-800 font-mono whitespace-pre-wrap">
+                        {error}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

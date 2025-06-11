@@ -21,8 +21,8 @@ import {
   X,
   Calendar,
   MapPin,
-  AlertTriangle,
-  Info
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
@@ -137,14 +137,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             {download.type === 'image' && <Image className="h-5 w-5 text-purple-600" />}
             <div>
               <h3 className="font-semibold text-gray-900 truncate">{download.title}</h3>
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <span>{download.site} • {download.format.toUpperCase()}</span>
-                <span>•</span>
-                <div className="flex items-center space-x-1">
-                  <Calendar className="h-3 w-3" />
-                  <span>{formatSmartTimestampWithUTC(download.timestamp)}</span>
-                </div>
-              </div>
+              <p className="text-sm text-gray-500">{download.site} • {download.format.toUpperCase()}</p>
             </div>
           </div>
           <button
@@ -309,6 +302,109 @@ function DashboardContent() {
   const userTimezone = getUserTimezone();
   const timezoneOffset = getTimezoneOffset();
 
+  // Helper function to detect if error is related to login cookies
+  const isLoginCookieError = (errorMessage: string): boolean => {
+    const cookieKeywords = [
+      'login cookies',
+      'need login',
+      'authentication required',
+      'sign in required',
+      'login required',
+      'cookies.txt',
+      'need to login',
+      'requires login'
+    ];
+    
+    return cookieKeywords.some(keyword => 
+      errorMessage.toLowerCase().includes(keyword.toLowerCase())
+    );
+  };
+
+  // Helper function to get platform name from URL
+  const getPlatformFromUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YouTube';
+      if (hostname.includes('bilibili.com')) return 'Bilibili';
+      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'Twitter/X';
+      if (hostname.includes('instagram.com')) return 'Instagram';
+      if (hostname.includes('tiktok.com')) return 'TikTok';
+      if (hostname.includes('facebook.com')) return 'Facebook';
+      if (hostname.includes('vimeo.com')) return 'Vimeo';
+      
+      return hostname.replace('www.', '');
+    } catch {
+      return 'the website';
+    }
+  };
+
+  // Helper function to get platform login URL
+  const getPlatformLoginUrl = (url: string): string => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'https://accounts.google.com/signin';
+      if (hostname.includes('bilibili.com')) return 'https://passport.bilibili.com/login';
+      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'https://twitter.com/login';
+      if (hostname.includes('instagram.com')) return 'https://www.instagram.com/accounts/login/';
+      if (hostname.includes('tiktok.com')) return 'https://www.tiktok.com/login';
+      if (hostname.includes('facebook.com')) return 'https://www.facebook.com/login';
+      if (hostname.includes('vimeo.com')) return 'https://vimeo.com/log_in';
+      
+      return `https://${hostname}/login`;
+    } catch {
+      return '#';
+    }
+  };
+
+  // Helper function to format error message for display
+  const formatErrorForDisplay = (errorMessage: string, url?: string): { message: string; isLong: boolean; needsLogin: boolean; platform: string; loginUrl: string } => {
+    if (!errorMessage) {
+      return { 
+        message: 'Unknown error occurred', 
+        isLong: false, 
+        needsLogin: false, 
+        platform: '', 
+        loginUrl: '' 
+      };
+    }
+
+    // Check if it's a login cookie error
+    const needsLogin = isLoginCookieError(errorMessage);
+    const platform = needsLogin && url ? getPlatformFromUrl(url) : '';
+    const loginUrl = needsLogin && url ? getPlatformLoginUrl(url) : '';
+
+    // Clean up the error message
+    let cleanMessage = errorMessage;
+    
+    // Remove common prefixes
+    cleanMessage = cleanMessage.replace(/^(Error: |Download failed: |Analysis error: )/i, '');
+    
+    // For login cookie errors, provide a cleaner message
+    if (needsLogin) {
+      cleanMessage = `This content requires you to be logged in to ${platform}. Please sign in to ${platform} first, then try again.`;
+    }
+    
+    // Check if message is too long (more than 150 characters)
+    const isLong = cleanMessage.length > 150;
+    
+    // If too long, truncate and add ellipsis
+    if (isLong && !needsLogin) {
+      cleanMessage = cleanMessage.substring(0, 150) + '...';
+    }
+
+    return {
+      message: cleanMessage,
+      isLong: errorMessage.length > 150,
+      needsLogin,
+      platform,
+      loginUrl
+    };
+  };
+
   // Load user downloads and stats
   useEffect(() => {
     if (user?.id) {
@@ -378,7 +474,7 @@ function DashboardContent() {
       case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
       case 'processing': return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 'invalid': return <AlertTriangle className="h-4 w-4 text-orange-500" />;
+      case 'invalid': return <AlertCircle className="h-4 w-4 text-orange-500" />;
       default: return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
@@ -652,113 +748,160 @@ function DashboardContent() {
                 </p>
               </div>
             ) : (
-              filteredDownloads.map((download) => (
-                <div key={download.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4 flex-1 min-w-0">
-                      {/* Download Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {download.title}
-                          </h3>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(download.status)}`}>
-                            {getStatusIcon(download.status)}
-                            <span className="ml-1 capitalize">{getStatusMessage(download)}</span>
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span className="flex items-center space-x-1">
-                            {getTypeIcon(download.type)}
-                            <span>{download.site}</span>
-                          </span>
-                          <span>•</span>
-                          <span>{download.format.toUpperCase()}</span>
-                          <span>•</span>
-                          <span>{download.quality}</span>
-                          <span>•</span>
-                          <span>{download.size}</span>
-                          <span>•</span>
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-3 w-3" />
-                            <span title={formatTimestampWithUTC(download.timestamp, { format: 'absolute' })}>
-                              {formatTimestampWithUTC(download.timestamp, { format: 'relative' })}
+              filteredDownloads.map((download) => {
+                const errorInfo = download.status === 'failed' && download.error 
+                  ? formatErrorForDisplay(download.error, download.url) 
+                  : null;
+
+                return (
+                  <div key={download.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 flex-1 min-w-0">
+                        {/* Download Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className="text-sm font-medium text-gray-900 truncate">
+                              {download.title}
+                            </h3>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(download.status)}`}>
+                              {getStatusIcon(download.status)}
+                              <span className="ml-1 capitalize">{getStatusMessage(download)}</span>
                             </span>
                           </div>
-                        </div>
-
-                        {/* Progress bar for processing tasks */}
-                        {download.status === 'processing' && download.progress !== undefined && (
-                          <div className="mt-2">
-                            <div className="flex justify-between text-xs text-gray-600 mb-1">
-                              <span>Progress</span>
-                              <span>{download.progress}%</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-1.5">
-                              <div 
-                                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-                                style={{ width: `${download.progress}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Error message for failed tasks */}
-                        {download.status === 'failed' && download.error && (
-                          <div className="mt-2 text-xs text-red-600">
-                            Error: {download.error}
-                          </div>
-                        )}
-
-                        {/* Invalid status message */}
-                        {download.status === 'invalid' && (
-                          <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                          
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span className="flex items-center space-x-1">
+                              {getTypeIcon(download.type)}
+                              <span>{download.site}</span>
+                            </span>
+                            <span>•</span>
+                            <span>{download.format.toUpperCase()}</span>
+                            <span>•</span>
+                            <span>{download.quality}</span>
+                            <span>•</span>
+                            <span>{download.size}</span>
+                            <span>•</span>
                             <div className="flex items-center space-x-1">
-                              <AlertTriangle className="h-3 w-3" />
-                              <span>{t('dashboard.status.invalidMessage')}</span>
+                              <Calendar className="h-3 w-3" />
+                              <span title={formatTimestampWithUTC(download.timestamp, { format: 'absolute' })}>
+                                {formatTimestampWithUTC(download.timestamp, { format: 'relative' })}
+                              </span>
                             </div>
                           </div>
+
+                          {/* Progress bar for processing tasks */}
+                          {download.status === 'processing' && download.progress !== undefined && (
+                            <div className="mt-2">
+                              <div className="flex justify-between text-xs text-gray-600 mb-1">
+                                <span>Progress</span>
+                                <span>{download.progress}%</span>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                <div 
+                                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                  style={{ width: `${download.progress}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Enhanced Error message for failed tasks */}
+                          {download.status === 'failed' && errorInfo && (
+                            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-start space-x-2">
+                                <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="text-sm text-red-700">
+                                    {errorInfo.message}
+                                  </div>
+                                  
+                                  {/* Login reminder for cookie errors */}
+                                  {errorInfo.needsLogin && errorInfo.loginUrl !== '#' && (
+                                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
+                                      <div className="flex items-center space-x-1 text-blue-800 text-xs">
+                                        <Info className="h-3 w-3" />
+                                        <span className="font-medium">Login Required</span>
+                                      </div>
+                                      <p className="text-blue-700 text-xs mt-1">
+                                        Sign in to {errorInfo.platform} first, then try again.
+                                      </p>
+                                      <a
+                                        href={errorInfo.loginUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center space-x-1 mt-1 text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors"
+                                      >
+                                        <ExternalLink className="h-2 w-2" />
+                                        <span>Sign in to {errorInfo.platform}</span>
+                                      </a>
+                                    </div>
+                                  )}
+                                  
+                                  {/* Show full error details for long errors */}
+                                  {errorInfo.isLong && !errorInfo.needsLogin && (
+                                    <details className="mt-1">
+                                      <summary className="text-red-600 text-xs cursor-pointer hover:text-red-800">
+                                        Show full error details
+                                      </summary>
+                                      <div className="mt-1 p-1 bg-red-100 rounded text-xs text-red-800 font-mono whitespace-pre-wrap max-h-20 overflow-y-auto">
+                                        {download.error}
+                                      </div>
+                                    </details>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Invalid status message */}
+                          {download.status === 'invalid' && (
+                            <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                              <div className="flex items-center space-x-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                <span>{t('dashboard.status.invalidMessage')}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex items-center space-x-2 ml-4">
+                        {/* Play Button */}
+                        {canPlay(download) && (
+                          <button 
+                            onClick={() => setSelectedDownload(download)}
+                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                            title={t('dashboard.actions.play')}
+                          >
+                            <Play className="h-4 w-4" />
+                          </button>
                         )}
+                        
+                        {/* Download Button */}
+                        {download.status === 'completed' && download.downloadPath && (
+                          <button 
+                            onClick={() => handleDownloadFile(download)}
+                            className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                            title={t('dashboard.actions.download')}
+                          >
+                            <Download className="h-4 w-4" />
+                          </button>
+                        )}
+                        
+                        {/* Delete Button */}
+                        <button 
+                          onClick={() => deleteDownload(download.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                          title={t('dashboard.actions.delete')}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
-                    
-                    {/* Actions */}
-                    <div className="flex items-center space-x-2 ml-4">
-                      {/* Play Button */}
-                      {canPlay(download) && (
-                        <button 
-                          onClick={() => setSelectedDownload(download)}
-                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                          title={t('dashboard.actions.play')}
-                        >
-                          <Play className="h-4 w-4" />
-                        </button>
-                      )}
-                      
-                      {/* Download Button */}
-                      {download.status === 'completed' && download.downloadPath && (
-                        <button 
-                          onClick={() => handleDownloadFile(download)}
-                          className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                          title={t('dashboard.actions.download')}
-                        >
-                          <Download className="h-4 w-4" />
-                        </button>
-                      )}
-                      
-                      {/* Delete Button */}
-                      <button 
-                        onClick={() => deleteDownload(download.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                        title={t('dashboard.actions.delete')}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>
