@@ -18,6 +18,10 @@ export default function Hero() {
   const [currentTask, setCurrentTask] = useState<TaskStatus | null>(null);
   const [taskPolling, setTaskPolling] = useState<NodeJS.Timeout | null>(null);
 
+  // Auto-hide timers
+  const [successTimer, setSuccessTimer] = useState<NodeJS.Timeout | null>(null);
+  const [taskTimer, setTaskTimer] = useState<NodeJS.Timeout | null>(null);
+
   const handleAnalyze = async () => {
     if (!url) return;
     
@@ -26,6 +30,16 @@ export default function Hero() {
     setMediaInfo(null);
     setDownloadSuccess('');
     setCurrentTask(null);
+    
+    // Clear any existing timers
+    if (successTimer) {
+      clearTimeout(successTimer);
+      setSuccessTimer(null);
+    }
+    if (taskTimer) {
+      clearTimeout(taskTimer);
+      setTaskTimer(null);
+    }
     
     try {
       const info = await apiService.analyzeUrl(url);
@@ -50,6 +64,12 @@ export default function Hero() {
       if (taskStatus.status === 'completed') {
         setDownloadSuccess(t('success.downloadCompleted', { filename: taskStatus.filename || 'file' }));
         
+        // Auto-hide success message after 5 seconds
+        const timer = setTimeout(() => {
+          setDownloadSuccess('');
+        }, 5000);
+        setSuccessTimer(timer);
+        
         // Trigger file download if available
         if (taskStatus.downloadUrl) {
           const link = document.createElement('a');
@@ -66,6 +86,13 @@ export default function Hero() {
           setTaskPolling(null);
         }
         setIsSubmitting(false);
+
+        // Auto-hide task status after 8 seconds (longer than success message)
+        const taskHideTimer = setTimeout(() => {
+          setCurrentTask(null);
+        }, 8000);
+        setTaskTimer(taskHideTimer);
+        
       } else if (taskStatus.status === 'failed') {
         setError(taskStatus.error || t('errors.downloadError'));
         
@@ -75,6 +102,12 @@ export default function Hero() {
           setTaskPolling(null);
         }
         setIsSubmitting(false);
+
+        // Auto-hide task status after 8 seconds
+        const taskHideTimer = setTimeout(() => {
+          setCurrentTask(null);
+        }, 8000);
+        setTaskTimer(taskHideTimer);
       }
       // Continue polling for pending/processing status
     } catch (err) {
@@ -90,12 +123,28 @@ export default function Hero() {
     setDownloadSuccess('');
     setCurrentTask(null);
     
+    // Clear any existing timers
+    if (successTimer) {
+      clearTimeout(successTimer);
+      setSuccessTimer(null);
+    }
+    if (taskTimer) {
+      clearTimeout(taskTimer);
+      setTaskTimer(null);
+    }
+    
     try {
       const result = await apiService.downloadMedia(url, user.id, selectedFormat);
       
       if (result.success && result.taskId) {
         // Show success message immediately
         setDownloadSuccess(t('success.downloadStarted'));
+        
+        // Auto-hide success message after 4 seconds
+        const timer = setTimeout(() => {
+          setDownloadSuccess('');
+        }, 4000);
+        setSuccessTimer(timer);
         
         // Reset form fields
         setUrl('');
@@ -137,14 +186,20 @@ export default function Hero() {
     }
   };
 
-  // Cleanup polling on unmount
+  // Cleanup polling and timers on unmount
   React.useEffect(() => {
     return () => {
       if (taskPolling) {
         clearInterval(taskPolling);
       }
+      if (successTimer) {
+        clearTimeout(successTimer);
+      }
+      if (taskTimer) {
+        clearTimeout(taskTimer);
+      }
     };
-  }, [taskPolling]);
+  }, [taskPolling, successTimer, taskTimer]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -218,7 +273,7 @@ export default function Hero() {
 
           {/* Success Message */}
           {downloadSuccess && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2">
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center space-x-2 animate-in fade-in duration-300">
               <CheckCircle className="h-5 w-5 text-green-500" />
               <span className="text-green-700">{downloadSuccess}</span>
             </div>
@@ -226,7 +281,7 @@ export default function Hero() {
 
           {/* Task Status */}
           {currentTask && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg animate-in fade-in duration-300">
               <div className="flex items-center space-x-3 mb-2">
                 {getStatusIcon(currentTask.status)}
                 <div className="flex-1">
