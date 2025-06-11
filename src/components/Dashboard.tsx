@@ -396,62 +396,6 @@ function DashboardContent() {
   const userTimezone = getUserTimezone();
   const timezoneOffset = getTimezoneOffset();
 
-  // Helper function to calculate total size of all files in a download task
-  const calculateTotalSize = (download: DownloadRecord): string => {
-    if (download.files && download.files.length > 0) {
-      // Sum up all file sizes
-      let totalBytes = 0;
-      let hasValidSizes = false;
-      
-      for (const file of download.files) {
-        const sizeStr = file.size;
-        if (sizeStr && sizeStr !== '0 MB') {
-          // Parse size string like "45.2 MB", "1.5 GB", etc.
-          const match = sizeStr.match(/^([\d.]+)\s*(MB|GB|KB|B)$/i);
-          if (match) {
-            const value = parseFloat(match[1]);
-            const unit = match[2].toUpperCase();
-            
-            let bytes = 0;
-            switch (unit) {
-              case 'B':
-                bytes = value;
-                break;
-              case 'KB':
-                bytes = value * 1024;
-                break;
-              case 'MB':
-                bytes = value * 1024 * 1024;
-                break;
-              case 'GB':
-                bytes = value * 1024 * 1024 * 1024;
-                break;
-            }
-            
-            totalBytes += bytes;
-            hasValidSizes = true;
-          }
-        }
-      }
-      
-      if (hasValidSizes && totalBytes > 0) {
-        // Convert back to human readable format
-        if (totalBytes >= 1024 * 1024 * 1024) {
-          return `${(totalBytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-        } else if (totalBytes >= 1024 * 1024) {
-          return `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`;
-        } else if (totalBytes >= 1024) {
-          return `${(totalBytes / 1024).toFixed(1)} KB`;
-        } else {
-          return `${totalBytes} B`;
-        }
-      }
-    }
-    
-    // Fallback to original size if no files or calculation failed
-    return download.size || '0 MB';
-  };
-
   // Helper function to detect if error is related to login cookies
   const isLoginCookieError = (errorMessage: string): boolean => {
     const cookieKeywords = [
@@ -555,7 +499,7 @@ function DashboardContent() {
     };
   };
 
-  // Helper function to get clean status message for display
+  // Helper function to get clean status message for status tags
   const getCleanStatusMessage = (download: DownloadRecord): string => {
     switch (download.status) {
       case 'completed':
@@ -567,26 +511,35 @@ function DashboardContent() {
       case 'invalid':
         return t('dashboard.status.invalid');
       case 'failed':
-        // For failed status, show a clean user-friendly message instead of raw error
-        if (download.error) {
-          const errorInfo = formatErrorForDisplay(download.error, download.url);
-          if (errorInfo.needsLogin) {
-            return `Login required for ${errorInfo.platform}`;
-          }
-          // Return a simplified error message for the status tag
-          if (download.error.toLowerCase().includes('network')) {
-            return 'Network error';
-          } else if (download.error.toLowerCase().includes('not found') || download.error.toLowerCase().includes('404')) {
-            return 'Content not found';
-          } else if (download.error.toLowerCase().includes('permission') || download.error.toLowerCase().includes('403')) {
-            return 'Access denied';
-          } else if (download.error.toLowerCase().includes('timeout')) {
-            return 'Connection timeout';
-          } else {
-            return 'Download failed';
-          }
+        if (!download.error) {
+          return t('dashboard.status.failed');
         }
-        return t('dashboard.status.failed');
+        
+        // Clean error message for status display
+        const errorLower = download.error.toLowerCase();
+        
+        if (errorLower.includes('login') || errorLower.includes('cookies')) {
+          const platform = getPlatformFromUrl(download.url);
+          return `Login required for ${platform}`;
+        }
+        
+        if (errorLower.includes('network') || errorLower.includes('connection')) {
+          return 'Network error';
+        }
+        
+        if (errorLower.includes('not found') || errorLower.includes('404')) {
+          return 'Content not found';
+        }
+        
+        if (errorLower.includes('permission') || errorLower.includes('403') || errorLower.includes('unauthorized')) {
+          return 'Access denied';
+        }
+        
+        if (errorLower.includes('timeout')) {
+          return 'Connection timeout';
+        }
+        
+        return 'Download failed';
       default:
         return download.status;
     }
@@ -698,28 +651,7 @@ function DashboardContent() {
         case 'newest': return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
         case 'oldest': return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
         case 'title': return a.title.localeCompare(b.title);
-        case 'size': {
-          // Parse size for sorting - convert to bytes for accurate comparison
-          const parseSize = (sizeStr: string): number => {
-            const match = sizeStr.match(/^([\d.]+)\s*(MB|GB|KB|B)$/i);
-            if (!match) return 0;
-            
-            const value = parseFloat(match[1]);
-            const unit = match[2].toUpperCase();
-            
-            switch (unit) {
-              case 'B': return value;
-              case 'KB': return value * 1024;
-              case 'MB': return value * 1024 * 1024;
-              case 'GB': return value * 1024 * 1024 * 1024;
-              default: return 0;
-            }
-          };
-          
-          const sizeA = parseSize(calculateTotalSize(a));
-          const sizeB = parseSize(calculateTotalSize(b));
-          return sizeB - sizeA;
-        }
+        case 'size': return parseFloat(b.size) - parseFloat(a.size);
         default: return 0;
       }
     });
@@ -963,8 +895,6 @@ function DashboardContent() {
                   ? formatErrorForDisplay(download.error, download.url) 
                   : null;
 
-                const totalSize = calculateTotalSize(download);
-
                 return (
                   <div key={download.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center justify-between">
@@ -986,13 +916,6 @@ function DashboardContent() {
                                 <span>{download.files.length} files</span>
                               </span>
                             )}
-                            {/* Playlist indicator */}
-                            {download.isPlaylist && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                                <List className="h-3 w-3 mr-1" />
-                                <span>Playlist</span>
-                              </span>
-                            )}
                           </div>
                           
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
@@ -1005,7 +928,7 @@ function DashboardContent() {
                             <span>•</span>
                             <span>{download.quality}</span>
                             <span>•</span>
-                            <span>{totalSize}</span>
+                            <span>{download.size}</span>
                             <span>•</span>
                             <div className="flex items-center space-x-1">
                               <Calendar className="h-3 w-3" />
@@ -1130,14 +1053,14 @@ function DashboardContent() {
                           </button>
                         )}
                         
-                        {/* Download Button */}
+                        {/* Download Button - Fixed to use proper Download icon */}
                         {download.status === 'completed' && (download.downloadPath || (download.files && download.files.length > 0)) && (
                           <button 
                             onClick={() => handleDownloadFile(download)}
                             className="p-2 text-gray-400 hover:text-green-600 transition-colors"
                             title={download.files && download.files.length > 1 ? `Download all ${download.files.length} files` : t('dashboard.actions.download')}
                           >
-                            {download.files && download.files.length > 1 ? <Files className="h-4 w-4" /> : <Download className="h-4 w-4" />}
+                            <Download className="h-4 w-4" />
                           </button>
                         )}
                         
