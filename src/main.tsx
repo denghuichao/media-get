@@ -18,12 +18,8 @@ if (!isValidKey) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {isValidKey ? (
-      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
-        <App />
-      </ClerkProvider>
-    ) : (
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY || ''} afterSignOutUrl="/">
       <App />
-    )}
+    </ClerkProvider>
   </StrictMode>
 );
