@@ -55,6 +55,8 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const mediaRef = React.useRef<HTMLVideoElement | HTMLAudioElement>(null);
 
   // Get current file or use primary download
@@ -99,31 +101,56 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
     if (!media) return;
 
     const updateTime = () => setCurrentTime(media.currentTime);
-    const updateDuration = () => setDuration(media.duration);
+    const updateDuration = () => {
+      setDuration(media.duration);
+      setIsLoading(false);
+    };
+    const handleLoadStart = () => setIsLoading(true);
+    const handleCanPlay = () => setIsLoading(false);
+    const handleError = () => {
+      setHasError(true);
+      setIsLoading(false);
+      console.error('Media load error for:', mediaUrl);
+    };
+    const handleEnded = () => setIsPlaying(false);
 
     media.addEventListener('timeupdate', updateTime);
     media.addEventListener('loadedmetadata', updateDuration);
-    media.addEventListener('ended', () => setIsPlaying(false));
+    media.addEventListener('loadstart', handleLoadStart);
+    media.addEventListener('canplay', handleCanPlay);
+    media.addEventListener('error', handleError);
+    media.addEventListener('ended', handleEnded);
+
+    // Reset states when file changes
+    setIsLoading(true);
+    setHasError(false);
+    setIsPlaying(false);
 
     return () => {
       media.removeEventListener('timeupdate', updateTime);
       media.removeEventListener('loadedmetadata', updateDuration);
-      media.removeEventListener('ended', () => setIsPlaying(false));
+      media.removeEventListener('loadstart', handleLoadStart);
+      media.removeEventListener('canplay', handleCanPlay);
+      media.removeEventListener('error', handleError);
+      media.removeEventListener('ended', handleEnded);
     };
-  }, [currentFileIndex]);
+  }, [currentFileIndex, mediaUrl]);
 
   const togglePlay = () => {
     const media = mediaRef.current;
-    if (!media) return;
+    if (!media || hasError) return;
 
     if (isPlaying) {
       media.pause();
+      setIsPlaying(false);
     } else {
-      media.play().catch(error => {
+      media.play().then(() => {
+        setIsPlaying(true);
+      }).catch(error => {
         console.error('Error playing media:', error);
+        setHasError(true);
       });
     }
-    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
@@ -163,6 +190,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   };
 
   const formatTime = (time: number) => {
+    if (isNaN(time)) return '0:00';
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
@@ -269,39 +297,114 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                 className="max-w-full max-h-96 mx-auto rounded-lg shadow-lg"
                 onError={(e) => {
                   console.error('Image load error:', e);
+                  setHasError(true);
                 }}
               />
+              {hasError && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-700 text-sm">Failed to load image</p>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
               {/* Video/Audio Element */}
-              {isVideo ? (
-                <video
-                  ref={mediaRef as React.RefObject<HTMLVideoElement>}
-                  src={mediaUrl}
-                  className="w-full max-h-96 rounded-lg bg-black"
-                  controls={false}
-                  onError={(e) => {
-                    console.error('Video load error:', e);
-                  }}
-                />
-              ) : (
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center">
-                  <Music className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">{download.title}</h4>
-                  <p className="text-gray-600">{download.site}</p>
-                  <audio
-                    ref={mediaRef as React.RefObject<HTMLAudioElement>}
-                    src={mediaUrl}
-                    onError={(e) => {
-                      console.error('Audio load error:', e);
-                    }}
-                  />
-                </div>
-              )}
+              <div className="relative">
+                {isVideo ? (
+                  <div className="relative bg-black rounded-lg overflow-hidden">
+                    <video
+                      ref={mediaRef as React.RefObject<HTMLVideoElement>}
+                      src={mediaUrl}
+                      className="w-full max-h-96 rounded-lg"
+                      onError={(e) => {
+                        console.error('Video load error:', e);
+                        setHasError(true);
+                      }}
+                    />
+                    {/* Video Overlay Controls */}
+                    {!hasError && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        {isLoading ? (
+                          <div className="bg-black bg-opacity-50 rounded-full p-4">
+                            <RefreshCw className="h-8 w-8 text-white animate-spin" />
+                          </div>
+                        ) : (
+                          <button
+                            onClick={togglePlay}
+                            className="bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full p-4 transition-all"
+                          >
+                            {isPlaying ? (
+                              <Pause className="h-8 w-8 text-white" />
+                            ) : (
+                              <Play className="h-8 w-8 text-white ml-1" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center">
+                    <div className="relative">
+                      <Music className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                      {!hasError && !isLoading && (
+                        <button
+                          onClick={togglePlay}
+                          className="absolute inset-0 flex items-center justify-center bg-blue-600 bg-opacity-10 hover:bg-opacity-20 rounded-full transition-all"
+                        >
+                          {isPlaying ? (
+                            <Pause className="h-8 w-8 text-blue-600" />
+                          ) : (
+                            <Play className="h-8 w-8 text-blue-600 ml-1" />
+                          )}
+                        </button>
+                      )}
+                      {isLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <RefreshCw className="h-6 w-6 text-blue-600 animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">{download.title}</h4>
+                    <p className="text-gray-600">{download.site}</p>
+                    <audio
+                      ref={mediaRef as React.RefObject<HTMLAudioElement>}
+                      src={mediaUrl}
+                      onError={(e) => {
+                        console.error('Audio load error:', e);
+                        setHasError(true);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Error State */}
+                {hasError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <h4 className="text-lg font-medium text-red-800 mb-2">Failed to load media</h4>
+                    <p className="text-red-600 text-sm mb-4">
+                      The media file could not be loaded. It may have been moved or deleted.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setHasError(false);
+                        setIsLoading(true);
+                        const media = mediaRef.current;
+                        if (media) {
+                          media.load();
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Media Controls */}
-              {(isVideo || isAudio) && (
+              {(isVideo || isAudio) && !hasError && (
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                   {/* Progress Bar */}
                   <div className="space-y-2">
@@ -312,6 +415,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                       value={currentTime}
                       onChange={handleSeek}
                       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      disabled={isLoading}
                     />
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>{formatTime(currentTime)}</span>
@@ -324,10 +428,17 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={togglePlay}
-                        className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                        disabled={isLoading}
+                        className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
                         title={isPlaying ? t('mediaPlayer.controls.pause') : t('mediaPlayer.controls.play')}
                       >
-                        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                        {isLoading ? (
+                          <RefreshCw className="h-5 w-5 animate-spin" />
+                        ) : isPlaying ? (
+                          <Pause className="h-5 w-5" />
+                        ) : (
+                          <Play className="h-5 w-5" />
+                        )}
                       </button>
 
                       <div className="flex items-center space-x-2">
