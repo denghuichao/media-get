@@ -555,6 +555,43 @@ function DashboardContent() {
     };
   };
 
+  // Helper function to get clean status message for display
+  const getCleanStatusMessage = (download: DownloadRecord): string => {
+    switch (download.status) {
+      case 'completed':
+        return t('dashboard.status.completed');
+      case 'processing':
+        return t('dashboard.status.downloading');
+      case 'pending':
+        return t('dashboard.status.pending');
+      case 'invalid':
+        return t('dashboard.status.invalid');
+      case 'failed':
+        // For failed status, show a clean user-friendly message instead of raw error
+        if (download.error) {
+          const errorInfo = formatErrorForDisplay(download.error, download.url);
+          if (errorInfo.needsLogin) {
+            return `Login required for ${errorInfo.platform}`;
+          }
+          // Return a simplified error message for the status tag
+          if (download.error.toLowerCase().includes('network')) {
+            return 'Network error';
+          } else if (download.error.toLowerCase().includes('not found') || download.error.toLowerCase().includes('404')) {
+            return 'Content not found';
+          } else if (download.error.toLowerCase().includes('permission') || download.error.toLowerCase().includes('403')) {
+            return 'Access denied';
+          } else if (download.error.toLowerCase().includes('timeout')) {
+            return 'Connection timeout';
+          } else {
+            return 'Download failed';
+          }
+        }
+        return t('dashboard.status.failed');
+      default:
+        return download.status;
+    }
+  };
+
   // Load user downloads and stats
   useEffect(() => {
     if (user?.id) {
@@ -686,17 +723,6 @@ function DashboardContent() {
         default: return 0;
       }
     });
-
-  const getStatusMessage = (download: DownloadRecord) => {
-    switch (download.status) {
-      case 'invalid':
-        return t('dashboard.status.invalid');
-      case 'failed':
-        return download.error || t('dashboard.status.failed');
-      default:
-        return t(`dashboard.status.${download.status}`);
-    }
-  };
 
   const handleDownloadFile = (download: DownloadRecord) => {
     if (download.files && download.files.length > 1) {
@@ -951,7 +977,7 @@ function DashboardContent() {
                             </h3>
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(download.status)}`}>
                               {getStatusIcon(download.status)}
-                              <span className="ml-1 capitalize">{getStatusMessage(download)}</span>
+                              <span className="ml-1 capitalize">{getCleanStatusMessage(download)}</span>
                             </span>
                             {/* Multi-file indicator */}
                             {download.files && download.files.length > 1 && (
