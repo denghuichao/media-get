@@ -396,24 +396,6 @@ function DashboardContent() {
   const userTimezone = getUserTimezone();
   const timezoneOffset = getTimezoneOffset();
 
-  // Helper function to detect if error is related to login cookies
-  const isLoginCookieError = (errorMessage: string): boolean => {
-    const cookieKeywords = [
-      'login cookies',
-      'need login',
-      'authentication required',
-      'sign in required',
-      'login required',
-      'cookies.txt',
-      'need to login',
-      'requires login'
-    ];
-    
-    return cookieKeywords.some(keyword => 
-      errorMessage.toLowerCase().includes(keyword.toLowerCase())
-    );
-  };
-
   // Helper function to get platform name from URL
   const getPlatformFromUrl = (url: string): string => {
     try {
@@ -434,27 +416,25 @@ function DashboardContent() {
     }
   };
 
-  // Helper function to get platform login URL
-  const getPlatformLoginUrl = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-      
-      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'https://accounts.google.com/signin';
-      if (hostname.includes('bilibili.com')) return 'https://passport.bilibili.com/login';
-      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'https://twitter.com/login';
-      if (hostname.includes('instagram.com')) return 'https://www.instagram.com/accounts/login/';
-      if (hostname.includes('tiktok.com')) return 'https://www.tiktok.com/login';
-      if (hostname.includes('facebook.com')) return 'https://www.facebook.com/login';
-      if (hostname.includes('vimeo.com')) return 'https://vimeo.com/log_in';
-      
-      return `https://${hostname}/login`;
-    } catch {
-      return '#';
+  // Helper function to get clean status message for status tags - ONLY STATUS
+  const getCleanStatusMessage = (download: DownloadRecord): string => {
+    switch (download.status) {
+      case 'completed':
+        return t('dashboard.status.completed');
+      case 'processing':
+        return t('dashboard.status.downloading');
+      case 'pending':
+        return t('dashboard.status.pending');
+      case 'invalid':
+        return t('dashboard.status.invalid');
+      case 'failed':
+        return t('dashboard.status.failed');
+      default:
+        return download.status;
     }
   };
 
-  // Helper function to format error message for display
+  // Helper function to format error message for display in error section (NOT status tag)
   const formatErrorForDisplay = (errorMessage: string, url?: string): { message: string; isLong: boolean; needsLogin: boolean; platform: string; loginUrl: string } => {
     if (!errorMessage) {
       return { 
@@ -467,9 +447,9 @@ function DashboardContent() {
     }
 
     // Check if it's a login cookie error
-    const needsLogin = isLoginCookieError(errorMessage);
-    const platform = needsLogin && url ? getPlatformFromUrl(url) : '';
-    const loginUrl = needsLogin && url ? getPlatformLoginUrl(url) : '';
+    const needsLogin = false; // Removed login detection since we're removing the login block
+    const platform = '';
+    const loginUrl = '';
 
     // Clean up the error message
     let cleanMessage = errorMessage;
@@ -477,72 +457,21 @@ function DashboardContent() {
     // Remove common prefixes
     cleanMessage = cleanMessage.replace(/^(Error: |Download failed: |Analysis error: )/i, '');
     
-    // For login cookie errors, provide a cleaner message
-    if (needsLogin) {
-      cleanMessage = `This content requires you to be logged in to ${platform}. Please sign in to ${platform} first, then try again.`;
-    }
-    
     // Check if message is too long (more than 150 characters)
     const isLong = cleanMessage.length > 150;
     
     // If too long, truncate and add ellipsis
-    if (isLong && !needsLogin) {
+    if (isLong) {
       cleanMessage = cleanMessage.substring(0, 150) + '...';
     }
 
     return {
       message: cleanMessage,
       isLong: errorMessage.length > 150,
-      needsLogin,
+      needsLogin: false, // Always false now
       platform,
       loginUrl
     };
-  };
-
-  // Helper function to get clean status message for status tags
-  const getCleanStatusMessage = (download: DownloadRecord): string => {
-    switch (download.status) {
-      case 'completed':
-        return t('dashboard.status.completed');
-      case 'processing':
-        return t('dashboard.status.downloading');
-      case 'pending':
-        return t('dashboard.status.pending');
-      case 'invalid':
-        return t('dashboard.status.invalid');
-      case 'failed':
-        if (!download.error) {
-          return t('dashboard.status.failed');
-        }
-        
-        // Clean error message for status display
-        const errorLower = download.error.toLowerCase();
-        
-        if (errorLower.includes('login') || errorLower.includes('cookies')) {
-          const platform = getPlatformFromUrl(download.url);
-          return `Login required for ${platform}`;
-        }
-        
-        if (errorLower.includes('network') || errorLower.includes('connection')) {
-          return 'Network error';
-        }
-        
-        if (errorLower.includes('not found') || errorLower.includes('404')) {
-          return 'Content not found';
-        }
-        
-        if (errorLower.includes('permission') || errorLower.includes('403') || errorLower.includes('unauthorized')) {
-          return 'Access denied';
-        }
-        
-        if (errorLower.includes('timeout')) {
-          return 'Connection timeout';
-        }
-        
-        return 'Download failed';
-      default:
-        return download.status;
-    }
   };
 
   // Load user downloads and stats
@@ -980,7 +909,7 @@ function DashboardContent() {
                             </div>
                           )}
 
-                          {/* Enhanced Error message for failed tasks */}
+                          {/* Error message for failed tasks - NO LOGIN BLOCK */}
                           {download.status === 'failed' && errorInfo && (
                             <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                               <div className="flex items-start space-x-2">
@@ -990,30 +919,8 @@ function DashboardContent() {
                                     {errorInfo.message}
                                   </div>
                                   
-                                  {/* Login reminder for cookie errors */}
-                                  {errorInfo.needsLogin && errorInfo.loginUrl !== '#' && (
-                                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                                      <div className="flex items-center space-x-1 text-blue-800 text-xs">
-                                        <Info className="h-3 w-3" />
-                                        <span className="font-medium">Login Required</span>
-                                      </div>
-                                      <p className="text-blue-700 text-xs mt-1">
-                                        Sign in to {errorInfo.platform} first, then try again.
-                                      </p>
-                                      <a
-                                        href={errorInfo.loginUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center space-x-1 mt-1 text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors"
-                                      >
-                                        <ExternalLink className="h-2 w-2" />
-                                        <span>Sign in to {errorInfo.platform}</span>
-                                      </a>
-                                    </div>
-                                  )}
-                                  
                                   {/* Show full error details for long errors */}
-                                  {errorInfo.isLong && !errorInfo.needsLogin && (
+                                  {errorInfo.isLong && (
                                     <details className="mt-1">
                                       <summary className="text-red-600 text-xs cursor-pointer hover:text-red-800">
                                         Show full error details
