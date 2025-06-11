@@ -18,11 +18,14 @@ import {
   Volume2,
   VolumeX,
   Maximize,
-  X
+  X,
+  Calendar,
+  MapPin
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, DownloadRecord } from '../services/api';
+import { formatTimestamp, formatSmartTimestamp, getUserTimezone, getTimezoneOffset } from '../utils/dateUtils';
 
 interface MediaPlayerProps {
   download: DownloadRecord;
@@ -127,7 +130,14 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             {download.type === 'image' && <Image className="h-5 w-5 text-purple-600" />}
             <div>
               <h3 className="font-semibold text-gray-900 truncate">{download.title}</h3>
-              <p className="text-sm text-gray-500">{download.site} • {download.format.toUpperCase()}</p>
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <span>{download.site} • {download.format.toUpperCase()}</span>
+                <span>•</span>
+                <div className="flex items-center space-x-1">
+                  <Calendar className="h-3 w-3" />
+                  <span>{formatSmartTimestamp(download.timestamp)}</span>
+                </div>
+              </div>
             </div>
           </div>
           <button
@@ -287,6 +297,10 @@ function DashboardContent() {
     failed: 0
   });
 
+  // Get user's timezone info
+  const userTimezone = getUserTimezone();
+  const timezoneOffset = getTimezoneOffset();
+
   // Load user downloads and stats
   useEffect(() => {
     if (user?.id) {
@@ -395,20 +409,6 @@ function DashboardContent() {
       }
     });
 
-  const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (minutes < 1) return t('dashboard.timeAgo.justNow');
-    if (minutes < 60) return t('dashboard.timeAgo.minutesAgo', { minutes });
-    if (hours < 24) return t('dashboard.timeAgo.hoursAgo', { hours });
-    return t('dashboard.timeAgo.daysAgo', { days });
-  };
-
   const handleDownloadFile = (download: DownloadRecord) => {
     if (download.downloadPath && download.filename) {
       const link = document.createElement('a');
@@ -445,7 +445,13 @@ function DashboardContent() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             {t('dashboard.welcome', { name: user?.firstName || 'User' })}
           </h1>
-          <p className="text-gray-600">{t('dashboard.subtitle')}</p>
+          <div className="flex items-center space-x-4 text-sm text-gray-600">
+            <p>{t('dashboard.subtitle')}</p>
+            <div className="flex items-center space-x-1">
+              <MapPin className="h-4 w-4" />
+              <span>{userTimezone} ({timezoneOffset})</span>
+            </div>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -625,7 +631,12 @@ function DashboardContent() {
                           <span>•</span>
                           <span>{download.size}</span>
                           <span>•</span>
-                          <span>{formatTimestamp(download.timestamp)}</span>
+                          <div className="flex items-center space-x-1">
+                            <Calendar className="h-3 w-3" />
+                            <span title={formatTimestamp(download.timestamp, { format: 'absolute' })}>
+                              {formatTimestamp(download.timestamp, { format: 'relative' })}
+                            </span>
+                          </div>
                         </div>
 
                         {/* Progress bar for processing tasks */}

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw, Calendar } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
+import { formatTimestamp, formatSmartTimestamp } from '../utils/dateUtils';
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -220,9 +221,16 @@ export default function Hero() {
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center space-x-3 mb-2">
                 {getStatusIcon(currentTask.status)}
-                <div>
+                <div className="flex-1">
                   <h4 className="font-medium text-gray-900">{currentTask.title}</h4>
-                  <p className="text-sm text-gray-600">{currentTask.site} • {currentTask.status}</p>
+                  <div className="flex items-center space-x-2 text-sm text-gray-600">
+                    <span>{currentTask.site} • {currentTask.status}</span>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>{formatSmartTimestamp(currentTask.createdAt)}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
               {currentTask.status === 'processing' && (

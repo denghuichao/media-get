@@ -34,7 +34,9 @@
     "signUp": "Sign Up",
     "profile": "Profile",
     "account": "Account",
-    "source": "Source"
+    "source": "Source",
+    "timezone": "Timezone",
+    "localTime": "Local Time"
   },
   "header": {
     "title": "MediaGet",
@@ -245,5 +247,27 @@
     "portuguese": "Português",
     "russian": "Русский",
     "arabic": "العربية"
+  },
+  "time": {
+    "formats": {
+      "today": "Today at {{time}}",
+      "yesterday": "Yesterday at {{time}}",
+      "thisWeek": "{{day}} at {{time}}",
+      "absolute": "{{date}} at {{time}}",
+      "relative": {
+        "now": "now",
+        "minutesAgo": "{{minutes}} minutes ago",
+        "hoursAgo": "{{hours}} hours ago",
+        "daysAgo": "{{days}} days ago",
+        "weeksAgo": "{{weeks}} weeks ago",
+        "monthsAgo": "{{months}} months ago",
+        "yearsAgo": "{{years}} years ago"
+      }
+    },
+    "timezone": {
+      "detected": "Detected timezone: {{timezone}}",
+      "offset": "UTC{{offset}}",
+      "local": "Local time"
+    }
   }
 }
