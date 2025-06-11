@@ -142,16 +142,19 @@ export function getTimezoneOffset(timezone?: string): string {
   const tz = timezone || getUserTimezone();
   const date = new Date();
   
-  // Create a date formatter for the timezone
-  const formatter = new Intl.DateTimeFormat('en', {
-    timeZone: tz,
-    timeZoneName: 'longOffset'
-  });
+  // Get the offset in minutes
+  const offsetMinutes = date.getTimezoneOffset();
+  const offsetHours = Math.abs(offsetMinutes) / 60;
+  const sign = offsetMinutes <= 0 ? '+' : '-';
   
-  const parts = formatter.formatToParts(date);
-  const offsetPart = parts.find(part => part.type === 'timeZoneName');
-  
-  return offsetPart?.value || 'UTC';
+  // Format as UTC±X
+  if (offsetHours === Math.floor(offsetHours)) {
+    return `UTC${sign}${Math.floor(offsetHours)}`;
+  } else {
+    const hours = Math.floor(offsetHours);
+    const minutes = Math.abs(offsetMinutes) % 60;
+    return `UTC${sign}${hours}:${minutes.toString().padStart(2, '0')}`;
+  }
 }
 
 /**
@@ -237,4 +240,60 @@ export function formatSmartTimestamp(
       return formatAbsoluteTime(date, tz, loc);
     }
   }
+}
+
+/**
+ * Convert UTC timestamp to local timezone
+ * This is the key function to fix the 8-hour offset issue
+ */
+export function convertUTCToLocal(utcTimestamp: string): Date {
+  // The database stores timestamps as UTC strings like "2025-01-27 10:30:00"
+  // But JavaScript Date constructor treats them as local time
+  // We need to explicitly parse them as UTC
+  
+  // If the timestamp already has timezone info, use it directly
+  if (utcTimestamp.includes('T') || utcTimestamp.includes('Z') || utcTimestamp.includes('+')) {
+    return new Date(utcTimestamp);
+  }
+  
+  // If it's a simple format like "2025-01-27 10:30:00", treat it as UTC
+  const utcDate = new Date(utcTimestamp + ' UTC');
+  return utcDate;
+}
+
+/**
+ * Enhanced formatTimestamp that handles UTC conversion
+ */
+export function formatTimestampWithUTC(
+  timestamp: string | Date,
+  options: TimezoneOptions = {}
+): string {
+  let date: Date;
+  
+  if (typeof timestamp === 'string') {
+    date = convertUTCToLocal(timestamp);
+  } else {
+    date = timestamp;
+  }
+  
+  return formatTimestamp(date, options);
+}
+
+/**
+ * Enhanced formatSmartTimestamp that handles UTC conversion
+ */
+export function formatSmartTimestampWithUTC(
+  timestamp: string | Date,
+  timezone?: string,
+  locale?: string
+): string {
+  let date: Date;
+  
+  if (typeof timestamp === 'string') {
+    date = convertUTCToLocal(timestamp);
+  } else {
+    date = timestamp;
+  }
+  
+  return formatSmartTimestamp(date, timezone, locale);
 }

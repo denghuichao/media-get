@@ -25,7 +25,12 @@ import {
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, DownloadRecord } from '../services/api';
-import { formatTimestamp, formatSmartTimestamp, getUserTimezone, getTimezoneOffset } from '../utils/dateUtils';
+import { 
+  formatTimestampWithUTC, 
+  formatSmartTimestampWithUTC, 
+  getUserTimezone, 
+  getTimezoneOffset 
+} from '../utils/dateUtils';
 
 interface MediaPlayerProps {
   download: DownloadRecord;
@@ -135,7 +140,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                 <span>•</span>
                 <div className="flex items-center space-x-1">
                   <Calendar className="h-3 w-3" />
-                  <span>{formatSmartTimestamp(download.timestamp)}</span>
+                  <span>{formatSmartTimestampWithUTC(download.timestamp)}</span>
                 </div>
               </div>
             </div>
@@ -634,8 +639,8 @@ function DashboardContent() {
                           <span>•</span>
                           <div className="flex items-center space-x-1">
                             <Calendar className="h-3 w-3" />
-                            <span title={formatTimestamp(download.timestamp, { format: 'absolute' })}>
-                              {formatTimestamp(download.timestamp, { format: 'relative' })}
+                            <span title={formatTimestampWithUTC(download.timestamp, { format: 'absolute' })}>
+                              {formatTimestampWithUTC(download.timestamp, { format: 'relative' })}
                             </span>
                           </div>
                         </div>

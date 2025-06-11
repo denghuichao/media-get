@@ -3,7 +3,7 @@ import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, L
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
-import { formatTimestamp, formatSmartTimestamp } from '../utils/dateUtils';
+import { formatTimestampWithUTC, formatSmartTimestampWithUTC } from '../utils/dateUtils';
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -291,7 +291,7 @@ export default function Hero() {
                     <span>•</span>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-3 w-3" />
-                      <span>{formatSmartTimestamp(currentTask.createdAt)}</span>
+                      <span>{formatSmartTimestampWithUTC(currentTask.createdAt)}</span>
                     </div>
                   </div>
                 </div>
