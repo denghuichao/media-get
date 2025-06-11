@@ -275,17 +275,41 @@ function DashboardContent() {
   const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filter, setFilter] = useState<'all' | 'completed' | 'failed' | 'downloading' | 'pending'>('all');
+  const [filter, setFilter] = useState<'all' | 'completed' | 'failed' | 'processing' | 'pending'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'size' | 'title'>('newest');
   const [selectedDownload, setSelectedDownload] = useState<DownloadRecord | null>(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    pending: 0,
+    processing: 0,
+    completed: 0,
+    failed: 0
+  });
 
-  // Load user downloads
+  // Load user downloads and stats
   useEffect(() => {
     if (user?.id) {
       loadDownloads();
+      loadStats();
     }
   }, [user?.id]);
+
+  // Auto-refresh for pending/processing tasks
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const hasActiveTasks = downloads.some(d => d.status === 'pending' || d.status === 'processing');
+    
+    if (hasActiveTasks) {
+      const interval = setInterval(() => {
+        loadDownloads();
+        loadStats();
+      }, 3000); // Refresh every 3 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [downloads, user?.id]);
 
   const loadDownloads = async () => {
     if (!user?.id) return;
@@ -302,12 +326,24 @@ function DashboardContent() {
     }
   };
 
+  const loadStats = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const userStats = await apiService.getUserStats(user.id);
+      setStats(userStats);
+    } catch (err) {
+      console.error('Error loading stats:', err);
+    }
+  };
+
   const deleteDownload = async (downloadId: string) => {
     if (!user?.id) return;
     
     try {
       await apiService.deleteDownload(user.id, downloadId);
       setDownloads(downloads.filter(d => d.id !== downloadId));
+      loadStats(); // Refresh stats
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.serverError'));
     }
@@ -317,7 +353,7 @@ function DashboardContent() {
     switch (status) {
       case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'failed': return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'downloading': return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'processing': return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
       case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
       default: return <Clock className="h-4 w-4 text-gray-500" />;
     }
@@ -336,7 +372,7 @@ function DashboardContent() {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
       case 'failed': return 'bg-red-100 text-red-800';
-      case 'downloading': return 'bg-blue-100 text-blue-800';
+      case 'processing': return 'bg-blue-100 text-blue-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -358,14 +394,6 @@ function DashboardContent() {
         default: return 0;
       }
     });
-
-  const stats = {
-    total: downloads.length,
-    completed: downloads.filter(d => d.status === 'completed').length,
-    failed: downloads.filter(d => d.status === 'failed').length,
-    downloading: downloads.filter(d => d.status === 'downloading').length,
-    pending: downloads.filter(d => d.status === 'pending').length
-  };
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -461,7 +489,7 @@ function DashboardContent() {
               <RefreshCw className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.downloading')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.downloading}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.processing}</p>
               </div>
             </div>
           </div>
@@ -513,7 +541,7 @@ function DashboardContent() {
                 >
                   <option value="all">{t('dashboard.filters.allStatus')}</option>
                   <option value="completed">{t('dashboard.status.completed')}</option>
-                  <option value="downloading">{t('dashboard.status.downloading')}</option>
+                  <option value="processing">{t('dashboard.status.downloading')}</option>
                   <option value="pending">{t('dashboard.status.pending')}</option>
                   <option value="failed">{t('dashboard.status.failed')}</option>
                 </select>
@@ -537,7 +565,10 @@ function DashboardContent() {
               </div>
               
               <button
-                onClick={loadDownloads}
+                onClick={() => {
+                  loadDownloads();
+                  loadStats();
+                }}
                 className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                 title={t('common.refresh')}
               >
@@ -596,6 +627,29 @@ function DashboardContent() {
                           <span>•</span>
                           <span>{formatTimestamp(download.timestamp)}</span>
                         </div>
+
+                        {/* Progress bar for processing tasks */}
+                        {download.status === 'processing' && download.progress !== undefined && (
+                          <div className="mt-2">
+                            <div className="flex justify-between text-xs text-gray-600 mb-1">
+                              <span>Progress</span>
+                              <span>{download.progress}%</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div 
+                                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                style={{ width: `${download.progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Error message for failed tasks */}
+                        {download.status === 'failed' && download.error && (
+                          <div className="mt-2 text-xs text-red-600">
+                            Error: {download.error}
+                          </div>
+                        )}
                       </div>
                     </div>
                     

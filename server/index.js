@@ -258,7 +258,7 @@ app.get('/api/task/:taskId', async (req, res) => {
   try {
     const { taskId } = req.params;
     
-    const task = await DownloadTaskDB.getTaskById(taskId);
+    const task = await DownloadTaskDB.getTask(taskId);
     
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
@@ -292,13 +292,32 @@ app.get('/api/task/:taskId', async (req, res) => {
   }
 });
 
-// Get user downloads (tasks)
+// Get user downloads (tasks) with filtering
 app.get('/api/downloads/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { limit = 100, offset = 0 } = req.query;
+    const { 
+      limit = 100, 
+      offset = 0, 
+      platform, 
+      media_type, 
+      status 
+    } = req.query;
     
-    const tasks = await DownloadTaskDB.getUserTasks(userId, parseInt(limit), parseInt(offset));
+    const params = {
+      uid: userId,
+      page_info: { 
+        limit: parseInt(limit), 
+        offset: parseInt(offset) 
+      }
+    };
+
+    // Add filters if provided
+    if (platform) params.platform = platform;
+    if (media_type) params.media_type = media_type;
+    if (status) params.status = status;
+    
+    const tasks = await DownloadTaskDB.getTasksByUid(params);
     
     // Transform tasks to match frontend expectations
     const downloads = tasks.map(task => ({
@@ -332,7 +351,7 @@ app.delete('/api/downloads/:userId/:taskId', async (req, res) => {
     const { userId, taskId } = req.params;
     
     // Get task to find download directory
-    const task = await DownloadTaskDB.getTaskById(taskId);
+    const task = await DownloadTaskDB.getTask(taskId);
     
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
@@ -369,6 +388,17 @@ app.get('/api/stats/:userId', async (req, res) => {
   } catch (error) {
     console.error('Error fetching stats:', error);
     res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// Get global statistics (admin endpoint)
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const stats = await DownloadTaskDB.getGlobalStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching global stats:', error);
+    res.status(500).json({ error: 'Failed to fetch global statistics' });
   }
 });
 
