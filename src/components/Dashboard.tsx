@@ -309,17 +309,18 @@ function DashboardContent() {
     }
   }, [user?.id]);
 
-  // Auto-refresh for pending/processing tasks
+  // Smart auto-refresh: only refresh when there are active tasks and reduce frequency
   useEffect(() => {
     if (!user?.id) return;
 
     const hasActiveTasks = downloads.some(d => d.status === 'pending' || d.status === 'processing');
     
     if (hasActiveTasks) {
+      // Reduced frequency: refresh every 10 seconds instead of 3 seconds
       const interval = setInterval(() => {
         loadDownloads();
         loadStats();
-      }, 3000); // Refresh every 3 seconds
+      }, 10000); // 10 seconds instead of 3
 
       return () => clearInterval(interval);
     }
