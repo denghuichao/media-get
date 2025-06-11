@@ -464,22 +464,6 @@ export class DownloadTaskDB {
       );
     });
   }
-
-  // Legacy method aliases for backward compatibility
-  static async createTask(taskData) {
-    return this.createTask(taskData);
-  }
-
-  static async getTaskById(task_id) {
-    return this.getTask(task_id);
-  }
-
-  static async getUserTasks(user_id, limit = 100, offset = 0) {
-    return this.getTasksByUid({
-      uid: user_id,
-      page_info: { limit, offset }
-    });
-  }
 }
 
 export default db;
