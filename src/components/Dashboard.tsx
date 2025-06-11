@@ -396,26 +396,6 @@ function DashboardContent() {
   const userTimezone = getUserTimezone();
   const timezoneOffset = getTimezoneOffset();
 
-  // Helper function to get platform name from URL
-  const getPlatformFromUrl = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-      
-      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YouTube';
-      if (hostname.includes('bilibili.com')) return 'Bilibili';
-      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'Twitter/X';
-      if (hostname.includes('instagram.com')) return 'Instagram';
-      if (hostname.includes('tiktok.com')) return 'TikTok';
-      if (hostname.includes('facebook.com')) return 'Facebook';
-      if (hostname.includes('vimeo.com')) return 'Vimeo';
-      
-      return hostname.replace('www.', '');
-    } catch {
-      return 'the website';
-    }
-  };
-
   // Helper function to get clean status message for status tags - ONLY STATUS
   const getCleanStatusMessage = (download: DownloadRecord): string => {
     switch (download.status) {
@@ -434,44 +414,45 @@ function DashboardContent() {
     }
   };
 
-  // Helper function to format error message for display in error section (NOT status tag)
-  const formatErrorForDisplay = (errorMessage: string, url?: string): { message: string; isLong: boolean; needsLogin: boolean; platform: string; loginUrl: string } => {
+  // Helper function to get brief, user-friendly error message
+  const getBriefErrorMessage = (errorMessage: string): string => {
     if (!errorMessage) {
-      return { 
-        message: 'Unknown error occurred', 
-        isLong: false, 
-        needsLogin: false, 
-        platform: '', 
-        loginUrl: '' 
-      };
+      return 'Download failed due to an unknown error';
     }
 
-    // Check if it's a login cookie error
-    const needsLogin = false; // Removed login detection since we're removing the login block
-    const platform = '';
-    const loginUrl = '';
+    const message = errorMessage.toLowerCase();
 
-    // Clean up the error message
-    let cleanMessage = errorMessage;
+    // Check for common error patterns and return brief messages
+    if (message.includes('login cookies') || message.includes('need login') || message.includes('authentication required')) {
+      return 'Login required - Please sign in to the website first';
+    }
     
-    // Remove common prefixes
-    cleanMessage = cleanMessage.replace(/^(Error: |Download failed: |Analysis error: )/i, '');
+    if (message.includes('network') || message.includes('connection') || message.includes('timeout')) {
+      return 'Network connection error - Please check your internet connection';
+    }
     
-    // Check if message is too long (more than 150 characters)
-    const isLong = cleanMessage.length > 150;
+    if (message.includes('not found') || message.includes('404')) {
+      return 'Content not found - The video may have been removed or is private';
+    }
     
-    // If too long, truncate and add ellipsis
-    if (isLong) {
-      cleanMessage = cleanMessage.substring(0, 150) + '...';
+    if (message.includes('permission denied') || message.includes('403') || message.includes('unauthorized')) {
+      return 'Access denied - You may need to sign in to view this content';
+    }
+    
+    if (message.includes('unsupported') || message.includes('not supported')) {
+      return 'This website is not supported';
+    }
+    
+    if (message.includes('invalid url') || message.includes('malformed url')) {
+      return 'Invalid URL format';
+    }
+    
+    if (message.includes('oops') || message.includes('something went wrong')) {
+      return 'Download failed - Please try again';
     }
 
-    return {
-      message: cleanMessage,
-      isLong: errorMessage.length > 150,
-      needsLogin: false, // Always false now
-      platform,
-      loginUrl
-    };
+    // If no specific pattern matches, return a generic message
+    return 'Download failed - Please try again or check if the URL is valid';
   };
 
   // Load user downloads and stats
@@ -820,10 +801,6 @@ function DashboardContent() {
               </div>
             ) : (
               filteredDownloads.map((download) => {
-                const errorInfo = download.status === 'failed' && download.error 
-                  ? formatErrorForDisplay(download.error, download.url) 
-                  : null;
-
                 return (
                   <div key={download.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-center justify-between">
@@ -909,27 +886,15 @@ function DashboardContent() {
                             </div>
                           )}
 
-                          {/* Error message for failed tasks - NO LOGIN BLOCK */}
-                          {download.status === 'failed' && errorInfo && (
+                          {/* Brief error message for failed tasks */}
+                          {download.status === 'failed' && download.error && (
                             <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                               <div className="flex items-start space-x-2">
                                 <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div className="flex-1">
                                   <div className="text-sm text-red-700">
-                                    {errorInfo.message}
+                                    {getBriefErrorMessage(download.error)}
                                   </div>
-                                  
-                                  {/* Show full error details for long errors */}
-                                  {errorInfo.isLong && (
-                                    <details className="mt-1">
-                                      <summary className="text-red-600 text-xs cursor-pointer hover:text-red-800">
-                                        Show full error details
-                                      </summary>
-                                      <div className="mt-1 p-1 bg-red-100 rounded text-xs text-red-800 font-mono whitespace-pre-wrap max-h-20 overflow-y-auto">
-                                        {download.error}
-                                      </div>
-                                    </details>
-                                  )}
                                 </div>
                               </div>
                             </div>
@@ -960,7 +925,7 @@ function DashboardContent() {
                           </button>
                         )}
                         
-                        {/* Download Button - Fixed to use proper Download icon */}
+                        {/* Download Button */}
                         {download.status === 'completed' && (download.downloadPath || (download.files && download.files.length > 0)) && (
                           <button 
                             onClick={() => handleDownloadFile(download)}
