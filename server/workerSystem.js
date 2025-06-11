@@ -282,7 +282,7 @@ export class DownloadWorker {
 
   // Clean error message by removing ANSI escape codes and formatting
   cleanErrorMessage(errorMessage) {
-    if (!errorMessage) return 'Unknown error';
+    if (!errorMessage) return 'Download failed due to an unknown error';
     
     // Remove ANSI escape codes (color codes, formatting)
     let cleaned = errorMessage.replace(/\x1b\[[0-9;]*m/g, '');
@@ -290,48 +290,90 @@ export class DownloadWorker {
     // Remove extra whitespace and newlines
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
     
-    // Extract the most relevant error information
-    const lines = cleaned.split('\n').filter(line => line.trim());
+    // Split into lines and filter out empty/debug lines
+    const lines = cleaned.split('\n').filter(line => {
+      const trimmed = line.trim();
+      return trimmed && 
+             !trimmed.startsWith('you-get:   (') && // Debug info
+             !trimmed.startsWith('[0m') && // Color codes
+             !trimmed.startsWith('[33m') && // Color codes
+             trimmed.length > 5; // Meaningful content
+    });
     
-    // Look for specific you-get error patterns
+    // Look for specific you-get error patterns and extract meaningful messages
     const errorPatterns = [
-      /you-get: You will need login cookies/,
-      /you-get: \[error\]/,
-      /you-get: don't panic/,
-      /Process exited with code/
+      {
+        pattern: /you-get: You will need login cookies/i,
+        message: 'Login required - Please sign in to the website first'
+      },
+      {
+        pattern: /you-get: \[error\]/i,
+        message: 'Download error occurred'
+      },
+      {
+        pattern: /oops, something went wrong/i,
+        message: 'Download failed - Please try again'
+      },
+      {
+        pattern: /network.*error|connection.*error|timeout/i,
+        message: 'Network connection error - Please check your internet connection'
+      },
+      {
+        pattern: /not found|404/i,
+        message: 'Content not found - The video may have been removed or is private'
+      },
+      {
+        pattern: /permission denied|403|unauthorized/i,
+        message: 'Access denied - You may need to sign in to view this content'
+      },
+      {
+        pattern: /unsupported.*site|not.*supported/i,
+        message: 'This website is not supported'
+      },
+      {
+        pattern: /invalid.*url|malformed.*url/i,
+        message: 'Invalid URL format'
+      }
     ];
     
-    let relevantLines = [];
-    
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      
-      // Skip empty lines and debug info
-      if (!trimmedLine || trimmedLine.startsWith('you-get:   (')) {
-        continue;
-      }
-      
-      // Include error lines
-      if (errorPatterns.some(pattern => pattern.test(trimmedLine))) {
-        relevantLines.push(trimmedLine);
-      }
-      
-      // Include the first few meaningful lines
-      if (relevantLines.length === 0 && trimmedLine.length > 10) {
-        relevantLines.push(trimmedLine);
-      }
-      
-      // Limit to 3 most relevant lines
-      if (relevantLines.length >= 3) {
-        break;
+    // Check for known error patterns
+    for (const { pattern, message } of errorPatterns) {
+      if (pattern.test(cleaned)) {
+        return message;
       }
     }
     
-    if (relevantLines.length === 0) {
-      return cleaned.substring(0, 200) + (cleaned.length > 200 ? '...' : '');
+    // If no specific pattern matches, try to extract the most relevant error line
+    const relevantLines = lines.filter(line => {
+      const lower = line.toLowerCase();
+      return lower.includes('error') || 
+             lower.includes('failed') || 
+             lower.includes('wrong') ||
+             lower.includes('problem') ||
+             lower.includes('issue');
+    });
+    
+    if (relevantLines.length > 0) {
+      // Take the first relevant error line and clean it up
+      let errorLine = relevantLines[0];
+      
+      // Remove you-get prefixes
+      errorLine = errorLine.replace(/^you-get:\s*/i, '');
+      errorLine = errorLine.replace(/^\[error\]\s*/i, '');
+      
+      // Capitalize first letter
+      errorLine = errorLine.charAt(0).toUpperCase() + errorLine.slice(1);
+      
+      // Limit length
+      if (errorLine.length > 100) {
+        errorLine = errorLine.substring(0, 100) + '...';
+      }
+      
+      return errorLine;
     }
     
-    return relevantLines.join(' | ');
+    // Fallback: return a generic message
+    return 'Download failed - Please try again or check if the URL is valid';
   }
 
   // Prepare cookies file for you-get
