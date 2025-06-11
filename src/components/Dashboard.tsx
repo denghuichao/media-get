@@ -67,7 +67,29 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
         format: download.format
       };
 
-  const mediaUrl = `http://localhost:3001${currentFile.downloadPath}`;
+  // Ensure the download path starts with /downloads/
+  const getMediaUrl = (filePath: string) => {
+    if (!filePath) return '';
+    
+    // If it already starts with http, use as is
+    if (filePath.startsWith('http')) {
+      return filePath;
+    }
+    
+    // If it starts with /downloads/, use as is
+    if (filePath.startsWith('/downloads/')) {
+      return `http://localhost:3001${filePath}`;
+    }
+    
+    // If it doesn't start with /, add it
+    if (!filePath.startsWith('/')) {
+      return `http://localhost:3001/downloads/${filePath}`;
+    }
+    
+    return `http://localhost:3001${filePath}`;
+  };
+
+  const mediaUrl = getMediaUrl(currentFile.downloadPath);
   const isVideo = currentFile.type === 'video';
   const isAudio = currentFile.type === 'audio';
   const isImage = currentFile.type === 'image';
@@ -97,7 +119,9 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
     if (isPlaying) {
       media.pause();
     } else {
-      media.play();
+      media.play().catch(error => {
+        console.error('Error playing media:', error);
+      });
     }
     setIsPlaying(!isPlaying);
   };
@@ -158,7 +182,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
       download.files.forEach((file, index) => {
         setTimeout(() => {
           const link = document.createElement('a');
-          link.href = `http://localhost:3001${file.downloadPath}`;
+          link.href = getMediaUrl(file.downloadPath);
           link.download = file.filename;
           document.body.appendChild(link);
           link.click();
@@ -256,6 +280,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                   ref={mediaRef as React.RefObject<HTMLVideoElement>}
                   src={mediaUrl}
                   className="w-full max-h-96 rounded-lg bg-black"
+                  controls={false}
                   onError={(e) => {
                     console.error('Video load error:', e);
                   }}
