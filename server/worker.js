@@ -81,10 +81,9 @@ function executeFFmpeg(args) {
   });
 }
 
-// Generate unique download directory for task
+// Generate task download directory using task_id
 function generateTaskDownloadDir(taskId) {
-  const randomStr = crypto.randomBytes(8).toString('hex');
-  const dirName = `${taskId}_${randomStr}`;
+  const dirName = taskId; // Use task_id directly as directory name
   const taskDir = path.join(DOWNLOADS_DIR, dirName);
   
   if (!fs.existsSync(taskDir)) {
@@ -243,15 +242,53 @@ async function mergeVideoAudio(videoFile, audioFile, outputFile, downloadDir) {
   return outputFile;
 }
 
-// Generate a clean filename from title
-function generateCleanFilename(title, extension = 'mp4') {
+// Generate a clean filename from title and itag
+function generateCleanFilename(title, itag, extension = 'mp4') {
   const cleanTitle = title
     .replace(/[<>:"/\\|?*]/g, '')
     .replace(/\s+/g, '-')
     .replace(/[^\w\-\u4e00-\u9fff]/g, '')
-    .substring(0, 100);
+    .substring(0, 80); // Shorter to accommodate itag prefix
   
-  return `${cleanTitle}.${extension}`;
+  return `${cleanTitle}_${itag}.${extension}`;
+}
+
+// Rename downloaded files with title_itag prefix
+function renameDownloadedFiles(mediaFiles, downloadDir, title, itag) {
+  const renamedFiles = [];
+  
+  for (const originalFile of mediaFiles) {
+    const originalPath = path.join(downloadDir, originalFile);
+    const ext = path.extname(originalFile).slice(1); // Remove the dot
+    const newFilename = generateCleanFilename(title, itag, ext);
+    const newPath = path.join(downloadDir, newFilename);
+    
+    try {
+      // Check if the new filename already exists
+      if (fs.existsSync(newPath) && newPath !== originalPath) {
+        // Add a random suffix to avoid conflicts
+        const randomSuffix = crypto.randomBytes(4).toString('hex');
+        const baseName = path.parse(newFilename).name;
+        const extension = path.parse(newFilename).ext;
+        const uniqueFilename = `${baseName}_${randomSuffix}${extension}`;
+        const uniquePath = path.join(downloadDir, uniqueFilename);
+        fs.renameSync(originalPath, uniquePath);
+        renamedFiles.push(uniqueFilename);
+        console.log(`Renamed ${originalFile} to ${uniqueFilename}`);
+      } else if (originalPath !== newPath) {
+        fs.renameSync(originalPath, newPath);
+        renamedFiles.push(newFilename);
+        console.log(`Renamed ${originalFile} to ${newFilename}`);
+      } else {
+        renamedFiles.push(originalFile);
+      }
+    } catch (error) {
+      console.warn(`Failed to rename ${originalFile}:`, error.message);
+      renamedFiles.push(originalFile); // Keep original name if rename fails
+    }
+  }
+  
+  return renamedFiles;
 }
 
 // Process a single download task
@@ -263,7 +300,7 @@ async function processDownloadTask(task) {
     // Update task status to processing
     await DownloadTaskDB.updateTaskStatus(taskId, 'processing', 0);
     
-    // Generate unique download directory for this task
+    // Generate task download directory using task_id
     const { dirName, fullPath: downloadDir } = generateTaskDownloadDir(taskId);
     
     const ffmpegAvailable = await checkFFmpegAvailable();
@@ -298,22 +335,29 @@ async function processDownloadTask(task) {
     const { mediaFiles, metadataFiles } = findMediaFiles(newFiles);
     console.log('Media files:', mediaFiles);
     
+    // Get title and itag for renaming
+    const title = task.media_info?.title || 'download';
+    const itag = task.media_info?.itag || 'default';
+    
+    // Rename files with title_itag prefix
+    const renamedMediaFiles = renameDownloadedFiles(mediaFiles, downloadDir, title, itag);
+    
     let finalFiles = [];
     let message = 'Download completed successfully';
     
-    if (mediaFiles.length === 1) {
-      finalFiles = [mediaFiles[0]];
-    } else if (mediaFiles.length === 2 && ffmpegAvailable) {
+    if (renamedMediaFiles.length === 1) {
+      finalFiles = renamedMediaFiles;
+    } else if (renamedMediaFiles.length === 2 && ffmpegAvailable) {
       console.log('Attempting to merge DASH video and audio files...');
       
       try {
-        const { videoOnlyFile, audioOnlyFile } = await identifyDashFiles(mediaFiles, downloadDir);
+        const { videoOnlyFile, audioOnlyFile } = await identifyDashFiles(renamedMediaFiles, downloadDir);
         
         if (videoOnlyFile && audioOnlyFile) {
           console.log(`Identified video file: ${videoOnlyFile.filename}`);
           console.log(`Identified audio file: ${audioOnlyFile.filename}`);
           
-          const outputFilename = generateCleanFilename(task.media_info?.title || 'merged-video');
+          const outputFilename = generateCleanFilename(title, itag, 'mp4');
           
           const mergedFile = await mergeVideoAudio(
             videoOnlyFile.filename, 
@@ -326,18 +370,18 @@ async function processDownloadTask(task) {
           console.log('Successfully merged DASH streams into:', mergedFile);
         } else {
           console.log('Could not identify separate video/audio files, using all files');
-          finalFiles = mediaFiles;
+          finalFiles = renamedMediaFiles;
           message = 'Download completed (files could not be automatically merged)';
         }
       } catch (mergeError) {
         console.error('Failed to merge DASH files:', mergeError.message);
-        finalFiles = mediaFiles;
+        finalFiles = renamedMediaFiles;
         message = 'Download completed but merging failed - returning all files';
       }
-    } else if (mediaFiles.length > 0) {
-      finalFiles = mediaFiles;
-      message = `Download completed. ${mediaFiles.length} files downloaded${!ffmpegAvailable ? ' (install FFmpeg for automatic merging)' : ''}`;
-      console.log(`Multiple files downloaded (${mediaFiles.length}), returning all files`);
+    } else if (renamedMediaFiles.length > 0) {
+      finalFiles = renamedMediaFiles;
+      message = `Download completed. ${renamedMediaFiles.length} files downloaded${!ffmpegAvailable ? ' (install FFmpeg for automatic merging)' : ''}`;
+      console.log(`Multiple files downloaded (${renamedMediaFiles.length}), returning all files`);
     }
     
     if (finalFiles.length > 0) {
