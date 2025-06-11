@@ -14,11 +14,42 @@ export interface MediaInfo {
 
 export interface DownloadResponse {
   success: boolean;
-  downloadUrl?: string;
-  filename?: string;
+  taskId?: string;
   message?: string;
   error?: string;
-  downloadId?: string;
+  task?: {
+    id: string;
+    status: string;
+    title: string;
+    site: string;
+    url: string;
+  };
+}
+
+export interface TaskStatus {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  title: string;
+  site: string;
+  url: string;
+  mediaType: string;
+  createdAt: string;
+  updatedAt: string;
+  error?: string;
+  result?: {
+    files: Array<{
+      filename: string;
+      downloadPath: string;
+      size: string;
+      type: string;
+      format: string;
+    }>;
+    downloadDir: string;
+    message: string;
+  };
+  downloadUrl?: string;
+  filename?: string;
 }
 
 export interface DownloadRecord {
@@ -29,18 +60,28 @@ export interface DownloadRecord {
   format: string;
   quality: string;
   size: string;
-  status: 'completed' | 'failed' | 'downloading' | 'pending';
+  status: 'completed' | 'failed' | 'processing' | 'pending';
   timestamp: string;
   downloadPath?: string;
   type: 'video' | 'audio' | 'image';
   filename?: string;
   downloadDir?: string;
+  progress?: number;
+  error?: string;
 }
 
 export interface SupportedSite {
   name: string;
   url: string;
   types: string[];
+}
+
+export interface UserStats {
+  total: number;
+  pending: number;
+  processing: number;
+  completed: number;
+  failed: number;
 }
 
 class ApiService {
@@ -78,6 +119,16 @@ class ApiService {
     return response.json();
   }
 
+  async getTaskStatus(taskId: string): Promise<TaskStatus> {
+    const response = await fetch(`${API_BASE_URL}/task/${taskId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch task status');
+    }
+
+    return response.json();
+  }
+
   async getUserDownloads(userId: string): Promise<DownloadRecord[]> {
     const response = await fetch(`${API_BASE_URL}/downloads/${userId}`);
     
@@ -88,8 +139,18 @@ class ApiService {
     return response.json();
   }
 
-  async deleteDownload(userId: string, downloadId: string): Promise<{ success: boolean }> {
-    const response = await fetch(`${API_BASE_URL}/downloads/${userId}/${downloadId}`, {
+  async getUserStats(userId: string): Promise<UserStats> {
+    const response = await fetch(`${API_BASE_URL}/stats/${userId}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user statistics');
+    }
+
+    return response.json();
+  }
+
+  async deleteDownload(userId: string, taskId: string): Promise<{ success: boolean }> {
+    const response = await fetch(`${API_BASE_URL}/downloads/${userId}/${taskId}`, {
       method: 'DELETE',
     });
 

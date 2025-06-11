@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "server": "node server/index.js"
+    "server": "node server/index.js",
+    "worker": "node server/worker.js"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.15.0",
@@ -36,6 +37,8 @@
     "vite": "^5.4.2",
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.1"
   }
 }

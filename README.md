@@ -1,17 +1,26 @@
 # MediaGet - You-Get Web Interface
 
-A beautiful web interface for the powerful you-get media downloader utility with user authentication.
+A beautiful web interface for the powerful you-get media downloader utility with user authentication and asynchronous download processing.
 
 ## Features
 
 - **User Authentication**: Secure sign-in/sign-up with Clerk
 - **URL Analysis**: Analyze any media URL to see available formats and quality options
-- **Format Selection**: Choose from multiple video/audio formats and quality levels
-- **Direct Downloads**: Download media files directly through the web interface (requires authentication)
+- **Asynchronous Downloads**: Download tasks are queued and processed in the background
+- **Real-time Progress**: See download progress and status updates
 - **Download Dashboard**: View download history and manage downloads (authenticated users only)
 - **100+ Supported Sites**: Works with YouTube, Twitter, Instagram, TikTok, and many more
-- **Real-time Progress**: See download progress and status updates
+- **Database Persistence**: All user data and download tasks are stored in SQLite database
 - **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
+
+## Architecture
+
+The application now uses an asynchronous architecture:
+
+1. **Frontend**: React application with real-time task status polling
+2. **API Server**: Express.js server that handles requests and manages tasks
+3. **Database**: SQLite database for persistent storage
+4. **Worker Process**: Background worker that processes download tasks
 
 ## Prerequisites
 
@@ -62,19 +71,56 @@ sudo apt install ffmpeg
      VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
      ```
 
-4. **Start the backend server**:
+4. **Start the API server**:
    ```bash
    npm run server
    ```
    This starts the Express server on port 3001 that interfaces with you-get.
 
-5. **Start the frontend development server** (in a new terminal):
+5. **Start the download worker** (in a new terminal):
+   ```bash
+   npm run worker
+   ```
+   This starts the background worker that processes download tasks.
+
+6. **Start the frontend development server** (in a new terminal):
    ```bash
    npm run dev
    ```
    This starts the Vite development server on port 5173.
 
-6. **Open your browser** and navigate to `http://localhost:5173`
+7. **Open your browser** and navigate to `http://localhost:5173`
+
+## Database Schema
+
+The application uses SQLite with the following main table:
+
+### download_tasks
+
+```sql
+CREATE TABLE download_tasks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  task_id TEXT UNIQUE NOT NULL,
+  media_type TEXT NOT NULL,
+  platform_name TEXT NOT NULL,
+  url TEXT NOT NULL,
+  media_info TEXT,
+  status TEXT DEFAULT 'pending',
+  progress INTEGER DEFAULT 0,
+  result TEXT,
+  error TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### Task Status Flow
+
+1. **pending**: Task created, waiting to be processed
+2. **processing**: Worker is downloading the media
+3. **completed**: Download finished successfully
+4. **failed**: Download failed with error
 
 ## Usage
 
@@ -82,62 +128,74 @@ sudo apt install ffmpeg
 2. **Paste a URL** from any supported site (YouTube, Twitter, Instagram, etc.)
 3. **Click "Analyze"** to see available formats and quality options
 4. **Select your preferred format** from the available options
-5. **Click "Download Now"** to start the download (requires authentication)
-6. **View your downloads** in the Dashboard page
-7. **The file will be downloaded** to your browser's default download folder
-
-## Authentication Features
-
-- **Secure Authentication**: Powered by Clerk with industry-standard security
-- **Social Sign-in**: Support for Google, GitHub, and other providers (configurable)
-- **User Profiles**: Manage your account and preferences
-- **Download History**: Track all your downloads in a personal dashboard
-- **Protected Downloads**: Only authenticated users can download files
-
-## Supported Sites
-
-MediaGet supports 100+ websites including:
-
-- **Video**: YouTube, Vimeo, Dailymotion, TikTok, Twitter, Instagram, Facebook
-- **Audio**: SoundCloud, Bandcamp, various music platforms
-- **Images**: Instagram, Twitter, Pinterest, Flickr, Tumblr
-- **Chinese Sites**: Bilibili, Youku, iQIYI, and many more
-- **And many others**: See the full list in the app
+5. **Click "Download Now"** to create a download task
+6. **Monitor progress** in real-time as the task is processed
+7. **View your downloads** in the Dashboard page
+8. **The file will be downloaded** to your browser when ready
 
 ## API Endpoints
 
 The backend provides several REST API endpoints:
 
 - `POST /api/analyze` - Analyze a URL and get media information
-- `POST /api/download` - Download media with specified format
+- `POST /api/download` - Create a download task
+- `GET /api/task/:taskId` - Get task status and progress
+- `GET /api/downloads/:userId` - Get user's download history
+- `DELETE /api/downloads/:userId/:taskId` - Delete a download task
+- `GET /api/stats/:userId` - Get user download statistics
 - `GET /api/supported-sites` - Get list of supported sites
 - `GET /api/check-youget` - Check you-get installation status
 - `GET /api/health` - Health check endpoint
 
-## Project Structure
+## Configuration
 
-```
-├── src/
-│   ├── components/          # React components
-│   │   ├── Header.tsx      # Navigation with auth buttons
-│   │   ├── Hero.tsx        # Main download interface
-│   │   ├── Dashboard.tsx   # User dashboard (protected)
-│   │   └── ...
-│   ├── services/           # API service layer
-│   └── ...
-├── server/
-│   ├── index.js           # Express server
-│   └── downloads/         # Downloaded files storage
-└── ...
-```
-
-## Environment Variables
+### Environment Variables
 
 Create a `.env.local` file with:
 
 ```
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
+
+# Optional worker configuration
+WORKER_INTERVAL=5000                    # Worker polling interval (ms)
+MAX_CONCURRENT_DOWNLOADS=3              # Max simultaneous downloads
+CLEANUP_INTERVAL_HOURS=24               # How often to cleanup old files
+MAX_DOWNLOAD_AGE_HOURS=24               # Max age before files are deleted
+DOWNLOADS_DIR=./server/downloads        # Download directory
 ```
+
+## Development
+
+To contribute or modify the application:
+
+1. **Frontend**: Built with React, TypeScript, Tailwind CSS, and Clerk
+2. **Backend**: Node.js with Express, SQLite database
+3. **Worker**: Background process for handling downloads
+4. **Authentication**: Clerk for secure user management
+5. **API**: RESTful API design with proper error handling
+
+## Production Deployment
+
+### Running All Services
+
+```bash
+# Terminal 1: API Server
+npm run server
+
+# Terminal 2: Download Worker
+npm run worker
+
+# Terminal 3: Frontend (development)
+npm run dev
+
+# Or build for production
+npm run build
+npm run preview
+```
+
+### Docker Deployment
+
+The project includes Docker configuration for production deployment. See `README-Docker.md` for details.
 
 ## Troubleshooting
 
@@ -153,34 +211,30 @@ you-get --version
 pip install you-get
 ```
 
+### Database Issues
+
+The SQLite database is automatically created in `server/mediaget.db`. If you encounter issues:
+
+```bash
+# Delete the database to reset
+rm server/mediaget.db
+
+# Restart the server to recreate
+npm run server
+```
+
+### Worker Not Processing Tasks
+
+1. **Check worker status**: Make sure the worker process is running
+2. **Check logs**: Look for error messages in the worker terminal
+3. **Check database**: Verify tasks are being created with `pending` status
+4. **Restart worker**: Stop and restart the worker process
+
 ### Authentication Issues
 
 1. **Check Clerk setup**: Ensure your publishable key is correctly set in `.env.local`
 2. **Domain configuration**: Make sure your development domain is configured in Clerk dashboard
 3. **Browser issues**: Clear browser cache and cookies if experiencing login issues
-
-### Download Fails
-
-1. **Authentication required**: Make sure you're signed in
-2. **Check URL validity**: Make sure the URL is accessible and contains media
-3. **Site support**: Verify the site is supported by you-get
-4. **Network issues**: Some sites may be blocked or require specific network configurations
-5. **Format availability**: Try different format options if the selected one fails
-
-### Backend Connection Issues
-
-1. **Check server status**: Make sure the backend server is running on port 3001
-2. **Port conflicts**: If port 3001 is in use, modify the port in `server/index.js`
-3. **CORS issues**: The server includes CORS headers, but check browser console for any errors
-
-## Development
-
-To contribute or modify the application:
-
-1. **Frontend**: Built with React, TypeScript, Tailwind CSS, and Clerk
-2. **Backend**: Node.js with Express, interfacing with you-get via child processes
-3. **Authentication**: Clerk for secure user management
-4. **API**: RESTful API design with proper error handling
 
 ## License
 

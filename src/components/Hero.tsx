@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
-import { apiService, MediaInfo } from '../services/api';
+import { apiService, MediaInfo, TaskStatus } from '../services/api';
 
 export default function Hero() {
   const { t } = useTranslation();
   const { user } = useUser();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [selectedFormat, setSelectedFormat] = useState('');
   const [error, setError] = useState('');
   const [downloadSuccess, setDownloadSuccess] = useState('');
+  const [currentTask, setCurrentTask] = useState<TaskStatus | null>(null);
+  const [taskPolling, setTaskPolling] = useState<NodeJS.Timeout | null>(null);
 
   const handleAnalyze = async () => {
     if (!url) return;
@@ -22,6 +24,7 @@ export default function Hero() {
     setError('');
     setMediaInfo(null);
     setDownloadSuccess('');
+    setCurrentTask(null);
     
     try {
       const info = await apiService.analyzeUrl(url);
@@ -38,33 +41,101 @@ export default function Hero() {
     }
   };
 
+  const pollTaskStatus = async (taskId: string) => {
+    try {
+      const taskStatus = await apiService.getTaskStatus(taskId);
+      setCurrentTask(taskStatus);
+      
+      if (taskStatus.status === 'completed') {
+        setDownloadSuccess(t('success.downloadCompleted', { filename: taskStatus.filename || 'file' }));
+        
+        // Trigger file download if available
+        if (taskStatus.downloadUrl) {
+          const link = document.createElement('a');
+          link.href = `http://localhost:3001${taskStatus.downloadUrl}`;
+          link.download = taskStatus.filename || 'download';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        
+        // Stop polling
+        if (taskPolling) {
+          clearInterval(taskPolling);
+          setTaskPolling(null);
+        }
+        setIsSubmitting(false);
+      } else if (taskStatus.status === 'failed') {
+        setError(taskStatus.error || t('errors.downloadError'));
+        
+        // Stop polling
+        if (taskPolling) {
+          clearInterval(taskPolling);
+          setTaskPolling(null);
+        }
+        setIsSubmitting(false);
+      }
+      // Continue polling for pending/processing status
+    } catch (err) {
+      console.error('Error polling task status:', err);
+    }
+  };
+
   const handleDownload = async () => {
     if (!url || !selectedFormat || !user) return;
     
-    setIsDownloading(true);
+    setIsSubmitting(true);
     setError('');
     setDownloadSuccess('');
+    setCurrentTask(null);
     
     try {
       const result = await apiService.downloadMedia(url, user.id, selectedFormat);
       
-      if (result.success && result.downloadUrl) {
-        setDownloadSuccess(t('success.downloadCompleted', { filename: result.filename }));
+      if (result.success && result.taskId) {
+        setCurrentTask({
+          id: result.taskId,
+          status: 'pending',
+          progress: 0,
+          title: result.task?.title || 'Unknown',
+          site: result.task?.site || 'Unknown',
+          url: result.task?.url || url,
+          mediaType: 'video',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
         
-        // Trigger file download
-        const link = document.createElement('a');
-        link.href = `http://localhost:3001${result.downloadUrl}`;
-        link.download = result.filename || 'download';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Start polling for task status
+        const polling = setInterval(() => {
+          pollTaskStatus(result.taskId!);
+        }, 2000); // Poll every 2 seconds
+        
+        setTaskPolling(polling);
+        
+        // Set a timeout to stop polling after 10 minutes
+        setTimeout(() => {
+          if (polling) {
+            clearInterval(polling);
+            setTaskPolling(null);
+            setIsSubmitting(false);
+            setError(t('errors.downloadError') + ' (timeout)');
+          }
+        }, 600000); // 10 minutes
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.downloadError'));
-    } finally {
-      setIsDownloading(false);
+      setIsSubmitting(false);
     }
   };
+
+  // Cleanup polling on unmount
+  React.useEffect(() => {
+    return () => {
+      if (taskPolling) {
+        clearInterval(taskPolling);
+      }
+    };
+  }, [taskPolling]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -72,6 +143,16 @@ export default function Hero() {
       case 'audio': return <Music className="h-4 w-4" />;
       case 'image': return <Image className="h-4 w-4" />;
       default: return <Play className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending': return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'processing': return <RefreshCw className="h-4 w-4 text-blue-500 animate-spin" />;
+      case 'completed': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default: return <Clock className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -134,6 +215,33 @@ export default function Hero() {
             </div>
           )}
 
+          {/* Task Status */}
+          {currentTask && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center space-x-3 mb-2">
+                {getStatusIcon(currentTask.status)}
+                <div>
+                  <h4 className="font-medium text-gray-900">{currentTask.title}</h4>
+                  <p className="text-sm text-gray-600">{currentTask.site} • {currentTask.status}</p>
+                </div>
+              </div>
+              {currentTask.status === 'processing' && (
+                <div className="mt-3">
+                  <div className="flex justify-between text-sm text-gray-600 mb-1">
+                    <span>Progress</span>
+                    <span>{currentTask.progress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${currentTask.progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {mediaInfo && (
             <div className="border-t pt-6">
               <div className="flex items-center space-x-3 mb-4">
@@ -190,10 +298,10 @@ export default function Hero() {
                   {/* Authenticated users can download directly */}
                   <button
                     onClick={handleDownload}
-                    disabled={isDownloading || !selectedFormat}
+                    disabled={isSubmitting || !selectedFormat}
                     className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
                   >
-                    {isDownloading ? (
+                    {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                         <span>{t('hero.downloading')}</span>
@@ -260,6 +368,7 @@ export default function Hero() {
             >
               you-get
             </a>
+            <span>-</span>
             <span>{t('hero.poweredBy.suffix')}</span>
             <Heart className="h-4 w-4 text-red-500 fill-red-500" />
           </p>
