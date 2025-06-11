@@ -77,13 +77,22 @@ export function initializeDatabase() {
         }
       });
 
-      // Add is_playlist column to existing tables if it doesn't exist
+      // Add missing columns to existing tables if they don't exist
+      db.run(`
+        ALTER TABLE download_tasks ADD COLUMN cookies TEXT
+      `, (err) => {
+        // Ignore error if column already exists
+        if (err && !err.message.includes('duplicate column name')) {
+          console.warn('Note: cookies column may already exist or could not be added');
+        }
+      });
+
       db.run(`
         ALTER TABLE download_tasks ADD COLUMN is_playlist BOOLEAN DEFAULT 0
       `, (err) => {
         // Ignore error if column already exists
         if (err && !err.message.includes('duplicate column name')) {
-          console.error('Error adding is_playlist column:', err);
+          console.warn('Note: is_playlist column may already exist or could not be added');
         }
       });
 

@@ -234,8 +234,8 @@ export class DownloadWorker {
       
       // Add playlist option if this is a playlist download
       if (this.task.is_playlist) {
-        args.push('--playlist');
-        console.log(`Worker ${this.taskId} downloading playlist`);
+        args.push('-l');  // Use -l flag for playlist downloads
+        console.log(`Worker ${this.taskId} downloading playlist with -l flag`);
       }
       
       // Add cookies if available
