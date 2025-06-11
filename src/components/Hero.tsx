@@ -94,6 +94,14 @@ export default function Hero() {
       const result = await apiService.downloadMedia(url, user.id, selectedFormat);
       
       if (result.success && result.taskId) {
+        // Show success message immediately
+        setDownloadSuccess(t('success.downloadStarted'));
+        
+        // Reset form fields
+        setUrl('');
+        setSelectedFormat('');
+        setMediaInfo(null);
+        
         setCurrentTask({
           id: result.taskId,
           status: 'pending',
