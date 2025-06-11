@@ -26,7 +26,10 @@ import {
   AlertTriangle,
   List,
   FolderOpen,
-  Files
+  Files,
+  Globe,
+  User,
+  Zap
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
@@ -434,26 +437,6 @@ function DashboardContent() {
     }
   };
 
-  // Helper function to get platform login URL
-  const getPlatformLoginUrl = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-      
-      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'https://accounts.google.com/signin';
-      if (hostname.includes('bilibili.com')) return 'https://passport.bilibili.com/login';
-      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'https://twitter.com/login';
-      if (hostname.includes('instagram.com')) return 'https://www.instagram.com/accounts/login/';
-      if (hostname.includes('tiktok.com')) return 'https://www.tiktok.com/login';
-      if (hostname.includes('facebook.com')) return 'https://www.facebook.com/login';
-      if (hostname.includes('vimeo.com')) return 'https://vimeo.com/log_in';
-      
-      return `https://${hostname}/login`;
-    } catch {
-      return '#';
-    }
-  };
-
   // Helper function to format error message for display
   const formatErrorForDisplay = (errorMessage: string, url?: string): { message: string; isLong: boolean; needsLogin: boolean; platform: string; loginUrl: string } => {
     if (!errorMessage) {
@@ -469,7 +452,6 @@ function DashboardContent() {
     // Check if it's a login cookie error
     const needsLogin = isLoginCookieError(errorMessage);
     const platform = needsLogin && url ? getPlatformFromUrl(url) : '';
-    const loginUrl = needsLogin && url ? getPlatformLoginUrl(url) : '';
 
     // Clean up the error message
     let cleanMessage = errorMessage;
@@ -479,7 +461,7 @@ function DashboardContent() {
     
     // For login cookie errors, provide a cleaner message
     if (needsLogin) {
-      cleanMessage = `This content requires you to be logged in to ${platform}. Please sign in to ${platform} first, then try again.`;
+      cleanMessage = `Login required for this content quality. Please sign in to ${platform} first.`;
     }
     
     // Check if message is too long (more than 150 characters)
@@ -495,7 +477,7 @@ function DashboardContent() {
       isLong: errorMessage.length > 150,
       needsLogin,
       platform,
-      loginUrl
+      loginUrl: ''
     };
   };
 
@@ -584,12 +566,12 @@ function DashboardContent() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'failed': return 'bg-red-100 text-red-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'invalid': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
+      case 'failed': return 'bg-red-100 text-red-800 border-red-200';
+      case 'processing': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'invalid': return 'bg-orange-100 text-orange-800 border-orange-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
@@ -615,7 +597,7 @@ function DashboardContent() {
       case 'invalid':
         return t('dashboard.status.invalid');
       case 'failed':
-        return download.error || t('dashboard.status.failed');
+        return 'Download failed';
       default:
         return t(`dashboard.status.${download.status}`);
     }
@@ -667,14 +649,25 @@ function DashboardContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('dashboard.welcome', { name: user?.firstName || 'User' })}
-          </h1>
-          <div className="flex items-center space-x-4 text-sm text-gray-600">
-            <p>{t('dashboard.subtitle')}</p>
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl">
+              <User className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {t('dashboard.welcome', { name: user?.firstName || 'User' })}
+              </h1>
+              <p className="text-gray-600">{t('dashboard.subtitle')}</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4 text-sm text-gray-500">
             <div className="flex items-center space-x-1">
               <MapPin className="h-4 w-4" />
               <span>{userTimezone} ({timezoneOffset})</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Zap className="h-4 w-4" />
+              <span>Real-time updates</span>
             </div>
           </div>
         </div>
@@ -694,63 +687,75 @@ function DashboardContent() {
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <Download className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Download className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.total')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+                <p className="text-xl font-bold text-gray-900">{stats.total}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
+              <div className="bg-green-100 p-2 rounded-lg">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.completed')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
+                <p className="text-xl font-bold text-gray-900">{stats.completed}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <RefreshCw className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <RefreshCw className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.downloading')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.processing}</p>
+                <p className="text-xl font-bold text-gray-900">{stats.processing}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
+              <div className="bg-yellow-100 p-2 rounded-lg">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.pending')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+                <p className="text-xl font-bold text-gray-900">{stats.pending}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <XCircle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
+              <div className="bg-red-100 p-2 rounded-lg">
+                <XCircle className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.failed')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.failed}</p>
+                <p className="text-xl font-bold text-gray-900">{stats.failed}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
+              <div className="bg-orange-100 p-2 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+              </div>
+              <div className="ml-3">
                 <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.invalid')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.invalid}</p>
+                <p className="text-xl font-bold text-gray-900">{stats.invalid}</p>
               </div>
             </div>
           </div>
@@ -773,7 +778,7 @@ function DashboardContent() {
         )}
 
         {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               {/* Search */}
@@ -837,12 +842,12 @@ function DashboardContent() {
         </div>
 
         {/* Downloads List */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <div className="px-6 py-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.history.title')}</h2>
           </div>
           
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-100">
             {filteredDownloads.length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <Download className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -862,30 +867,44 @@ function DashboardContent() {
 
                 return (
                   <div key={download.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4 flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4 flex-1 min-w-0">
+                        {/* Type Icon */}
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="bg-gray-100 p-2 rounded-lg">
+                            {getTypeIcon(download.type)}
+                          </div>
+                        </div>
+
                         {/* Download Info */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="text-sm font-medium text-gray-900 truncate">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-base font-medium text-gray-900 truncate">
                               {download.title}
                             </h3>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(download.status)}`}>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(download.status)}`}>
                               {getStatusIcon(download.status)}
-                              <span className="ml-1 capitalize">{getStatusMessage(download)}</span>
+                              <span className="ml-1.5 capitalize">{getStatusMessage(download)}</span>
                             </span>
                             {/* Multi-file indicator */}
                             {download.files && download.files.length > 1 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
                                 <Files className="h-3 w-3 mr-1" />
                                 <span>{download.files.length} files</span>
                               </span>
                             )}
+                            {/* Playlist indicator */}
+                            {download.isPlaylist && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                <List className="h-3 w-3 mr-1" />
+                                <span>Playlist</span>
+                              </span>
+                            )}
                           </div>
                           
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
                             <span className="flex items-center space-x-1">
-                              {getTypeIcon(download.type)}
+                              <Globe className="h-3 w-3" />
                               <span>{download.site}</span>
                             </span>
                             <span>•</span>
@@ -905,14 +924,14 @@ function DashboardContent() {
 
                           {/* Progress bar for processing tasks */}
                           {download.status === 'processing' && download.progress !== undefined && (
-                            <div className="mt-2">
+                            <div className="mb-3">
                               <div className="flex justify-between text-xs text-gray-600 mb-1">
                                 <span>Progress</span>
                                 <span>{download.progress}%</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
                                 <div 
-                                  className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                                   style={{ width: `${download.progress}%` }}
                                 ></div>
                               </div>
@@ -921,8 +940,8 @@ function DashboardContent() {
 
                           {/* Multi-file details */}
                           {download.files && download.files.length > 1 && download.status === 'completed' && (
-                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                              <div className="flex items-center space-x-1 text-blue-800 mb-1">
+                            <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs">
+                              <div className="flex items-center space-x-1 text-blue-800 mb-2">
                                 <FolderOpen className="h-3 w-3" />
                                 <span className="font-medium">Multiple Files Downloaded</span>
                               </div>
@@ -945,9 +964,9 @@ function DashboardContent() {
                             </div>
                           )}
 
-                          {/* Enhanced Error message for failed tasks */}
+                          {/* Error message for failed tasks */}
                           {download.status === 'failed' && errorInfo && (
-                            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                               <div className="flex items-start space-x-2">
                                 <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                                 <div className="flex-1">
@@ -955,35 +974,13 @@ function DashboardContent() {
                                     {errorInfo.message}
                                   </div>
                                   
-                                  {/* Login reminder for cookie errors */}
-                                  {errorInfo.needsLogin && errorInfo.loginUrl !== '#' && (
-                                    <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded">
-                                      <div className="flex items-center space-x-1 text-blue-800 text-xs">
-                                        <Info className="h-3 w-3" />
-                                        <span className="font-medium">Login Required</span>
-                                      </div>
-                                      <p className="text-blue-700 text-xs mt-1">
-                                        Sign in to {errorInfo.platform} first, then try again.
-                                      </p>
-                                      <a
-                                        href={errorInfo.loginUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center space-x-1 mt-1 text-blue-600 hover:text-blue-800 text-xs font-medium transition-colors"
-                                      >
-                                        <ExternalLink className="h-2 w-2" />
-                                        <span>Sign in to {errorInfo.platform}</span>
-                                      </a>
-                                    </div>
-                                  )}
-                                  
                                   {/* Show full error details for long errors */}
                                   {errorInfo.isLong && !errorInfo.needsLogin && (
-                                    <details className="mt-1">
+                                    <details className="mt-2">
                                       <summary className="text-red-600 text-xs cursor-pointer hover:text-red-800">
                                         Show full error details
                                       </summary>
-                                      <div className="mt-1 p-1 bg-red-100 rounded text-xs text-red-800 font-mono whitespace-pre-wrap max-h-20 overflow-y-auto">
+                                      <div className="mt-1 p-2 bg-red-100 rounded text-xs text-red-800 font-mono whitespace-pre-wrap max-h-20 overflow-y-auto">
                                         {download.error}
                                       </div>
                                     </details>
@@ -995,7 +992,7 @@ function DashboardContent() {
 
                           {/* Invalid status message */}
                           {download.status === 'invalid' && (
-                            <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                            <div className="mb-3 p-3 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-700">
                               <div className="flex items-center space-x-1">
                                 <AlertTriangle className="h-3 w-3" />
                                 <span>{t('dashboard.status.invalidMessage')}</span>
@@ -1011,7 +1008,7 @@ function DashboardContent() {
                         {canPlay(download) && (
                           <button 
                             onClick={() => setSelectedDownload(download)}
-                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors rounded-lg hover:bg-blue-50"
                             title={t('dashboard.actions.play')}
                           >
                             <Play className="h-4 w-4" />
@@ -1022,7 +1019,7 @@ function DashboardContent() {
                         {download.status === 'completed' && (download.downloadPath || (download.files && download.files.length > 0)) && (
                           <button 
                             onClick={() => handleDownloadFile(download)}
-                            className="p-2 text-gray-400 hover:text-green-600 transition-colors"
+                            className="p-2 text-gray-400 hover:text-green-600 transition-colors rounded-lg hover:bg-green-50"
                             title={download.files && download.files.length > 1 ? `Download all ${download.files.length} files` : t('dashboard.actions.download')}
                           >
                             {download.files && download.files.length > 1 ? <Files className="h-4 w-4" /> : <Download className="h-4 w-4" />}
@@ -1032,7 +1029,7 @@ function DashboardContent() {
                         {/* Delete Button */}
                         <button 
                           onClick={() => deleteDownload(download.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-red-50"
                           title={t('dashboard.actions.delete')}
                         >
                           <Trash2 className="h-4 w-4" />
