@@ -22,7 +22,11 @@ import {
   Calendar,
   MapPin,
   Info,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle,
+  List,
+  FolderOpen,
+  Files
 } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
@@ -47,12 +51,23 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
   const mediaRef = React.useRef<HTMLVideoElement | HTMLAudioElement>(null);
 
-  const mediaUrl = `http://localhost:3001${download.downloadPath}`;
-  const isVideo = download.type === 'video';
-  const isAudio = download.type === 'audio';
-  const isImage = download.type === 'image';
+  // Get current file or use primary download
+  const currentFile = download.files && download.files.length > 0 
+    ? download.files[currentFileIndex] 
+    : {
+        filename: download.filename || 'download',
+        downloadPath: download.downloadPath || '',
+        type: download.type,
+        format: download.format
+      };
+
+  const mediaUrl = `http://localhost:3001${currentFile.downloadPath}`;
+  const isVideo = currentFile.type === 'video';
+  const isAudio = currentFile.type === 'audio';
+  const isImage = currentFile.type === 'image';
 
   useEffect(() => {
     const media = mediaRef.current;
@@ -70,7 +85,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
       media.removeEventListener('loadedmetadata', updateDuration);
       media.removeEventListener('ended', () => setIsPlaying(false));
     };
-  }, []);
+  }, [currentFileIndex]);
 
   const togglePlay = () => {
     const media = mediaRef.current;
@@ -126,6 +141,32 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const downloadCurrentFile = () => {
+    const link = document.createElement('a');
+    link.href = mediaUrl;
+    link.download = currentFile.filename || 'download';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadAllFiles = () => {
+    if (download.files && download.files.length > 1) {
+      download.files.forEach((file, index) => {
+        setTimeout(() => {
+          const link = document.createElement('a');
+          link.href = `http://localhost:3001${file.downloadPath}`;
+          link.download = file.filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, index * 500); // Stagger downloads by 500ms
+      });
+    } else {
+      downloadCurrentFile();
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
@@ -137,7 +178,18 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             {download.type === 'image' && <Image className="h-5 w-5 text-purple-600" />}
             <div>
               <h3 className="font-semibold text-gray-900 truncate">{download.title}</h3>
-              <p className="text-sm text-gray-500">{download.site} • {download.format.toUpperCase()}</p>
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <span>{download.site} • {currentFile.format.toUpperCase()}</span>
+                {download.files && download.files.length > 1 && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center space-x-1">
+                      <Files className="h-3 w-3" />
+                      <span>{download.files.length} files</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <button
@@ -147,6 +199,38 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {/* File Navigation for Multi-file Downloads */}
+        {download.files && download.files.length > 1 && (
+          <div className="p-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center space-x-2 mb-2">
+              <List className="h-4 w-4 text-gray-600" />
+              <span className="text-sm font-medium text-gray-700">
+                File {currentFileIndex + 1} of {download.files.length}
+              </span>
+            </div>
+            <div className="flex space-x-2 overflow-x-auto">
+              {download.files.map((file, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentFileIndex(index)}
+                  className={`flex-shrink-0 px-3 py-2 text-xs rounded-lg border transition-colors ${
+                    index === currentFileIndex
+                      ? 'bg-blue-100 border-blue-300 text-blue-800'
+                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center space-x-1">
+                    {file.type === 'video' && <Play className="h-3 w-3" />}
+                    {file.type === 'audio' && <Music className="h-3 w-3" />}
+                    {file.type === 'image' && <Image className="h-3 w-3" />}
+                    <span className="truncate max-w-20">{file.filename}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Media Content */}
         <div className="p-6">
@@ -256,22 +340,32 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             </div>
           )}
 
-          {/* Download Button */}
-          <div className="mt-6 pt-4 border-t border-gray-200">
+          {/* Download Buttons */}
+          <div className="mt-6 pt-4 border-t border-gray-200 space-y-3">
+            {/* Download Current File */}
             <button
-              onClick={() => {
-                const link = document.createElement('a');
-                link.href = mediaUrl;
-                link.download = download.filename || 'download';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}
+              onClick={downloadCurrentFile}
               className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
             >
               <Download className="h-4 w-4" />
-              <span>{t('mediaPlayer.downloadFile')}</span>
+              <span>
+                {download.files && download.files.length > 1 
+                  ? `Download Current File (${currentFile.filename})`
+                  : t('mediaPlayer.downloadFile')
+                }
+              </span>
             </button>
+
+            {/* Download All Files (for multi-file downloads) */}
+            {download.files && download.files.length > 1 && (
+              <button
+                onClick={downloadAllFiles}
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
+              >
+                <Files className="h-4 w-4" />
+                <span>Download All Files ({download.files.length})</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -516,8 +610,32 @@ function DashboardContent() {
       }
     });
 
+  const getStatusMessage = (download: DownloadRecord) => {
+    switch (download.status) {
+      case 'invalid':
+        return t('dashboard.status.invalid');
+      case 'failed':
+        return download.error || t('dashboard.status.failed');
+      default:
+        return t(`dashboard.status.${download.status}`);
+    }
+  };
+
   const handleDownloadFile = (download: DownloadRecord) => {
-    if (download.downloadPath && download.filename) {
+    if (download.files && download.files.length > 1) {
+      // For multi-file downloads, download all files
+      download.files.forEach((file, index) => {
+        setTimeout(() => {
+          const link = document.createElement('a');
+          link.href = `http://localhost:3001${file.downloadPath}`;
+          link.download = file.filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, index * 500); // Stagger downloads by 500ms
+      });
+    } else if (download.downloadPath && download.filename) {
+      // Single file download
       const link = document.createElement('a');
       link.href = `http://localhost:3001${download.downloadPath}`;
       link.download = download.filename;
@@ -529,19 +647,8 @@ function DashboardContent() {
 
   const canPlay = (download: DownloadRecord) => {
     return download.status === 'completed' && 
-           download.downloadPath && 
+           (download.downloadPath || (download.files && download.files.length > 0)) && 
            ['video', 'audio', 'image'].includes(download.type);
-  };
-
-  const getStatusMessage = (download: DownloadRecord) => {
-    switch (download.status) {
-      case 'invalid':
-        return t('dashboard.status.invalid');
-      case 'failed':
-        return download.error || t('dashboard.status.failed');
-      default:
-        return t(`dashboard.status.${download.status}`);
-    }
   };
 
   if (loading) {
@@ -767,6 +874,13 @@ function DashboardContent() {
                               {getStatusIcon(download.status)}
                               <span className="ml-1 capitalize">{getStatusMessage(download)}</span>
                             </span>
+                            {/* Multi-file indicator */}
+                            {download.files && download.files.length > 1 && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <Files className="h-3 w-3 mr-1" />
+                                <span>{download.files.length} files</span>
+                              </span>
+                            )}
                           </div>
                           
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
@@ -801,6 +915,32 @@ function DashboardContent() {
                                   className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                                   style={{ width: `${download.progress}%` }}
                                 ></div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Multi-file details */}
+                          {download.files && download.files.length > 1 && download.status === 'completed' && (
+                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                              <div className="flex items-center space-x-1 text-blue-800 mb-1">
+                                <FolderOpen className="h-3 w-3" />
+                                <span className="font-medium">Multiple Files Downloaded</span>
+                              </div>
+                              <div className="space-y-1">
+                                {download.files.slice(0, 3).map((file, index) => (
+                                  <div key={index} className="flex items-center space-x-2 text-blue-700">
+                                    {file.type === 'video' && <Play className="h-2 w-2" />}
+                                    {file.type === 'audio' && <Music className="h-2 w-2" />}
+                                    {file.type === 'image' && <Image className="h-2 w-2" />}
+                                    <span className="truncate">{file.filename}</span>
+                                    <span className="text-blue-600">({file.size})</span>
+                                  </div>
+                                ))}
+                                {download.files.length > 3 && (
+                                  <div className="text-blue-600">
+                                    +{download.files.length - 3} more files...
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )}
@@ -879,13 +1019,13 @@ function DashboardContent() {
                         )}
                         
                         {/* Download Button */}
-                        {download.status === 'completed' && download.downloadPath && (
+                        {download.status === 'completed' && (download.downloadPath || (download.files && download.files.length > 0)) && (
                           <button 
                             onClick={() => handleDownloadFile(download)}
                             className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                            title={t('dashboard.actions.download')}
+                            title={download.files && download.files.length > 1 ? `Download all ${download.files.length} files` : t('dashboard.actions.download')}
                           >
-                            <Download className="h-4 w-4" />
+                            {download.files && download.files.length > 1 ? <Files className="h-4 w-4" /> : <Download className="h-4 w-4" />}
                           </button>
                         )}
                         

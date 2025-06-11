@@ -62,6 +62,11 @@
     "analyzing": "Analyzing...",
     "downloadNow": "Download Now",
     "downloading": "Downloading...",
+    "downloadingPlaylist": "Downloading Playlist...",
+    "downloadPlaylist": "Download as playlist",
+    "downloadPlaylistNow": "Download Playlist Now",
+    "playlistEnabled": "Will download all videos/items in the playlist",
+    "playlistDisabled": "Will download only the single video/item",
     "selectFormat": "Choose Format & Quality",
     "authRequired": {
       "title": "Sign in to Download",
@@ -237,7 +242,9 @@
   },
   "success": {
     "downloadCompleted": "Download completed! File: {{filename}}",
+    "downloadCompletedMultiple": "Download completed! {{count}} files downloaded",
     "downloadStarted": "Download started successfully",
+    "playlistDownloadStarted": "Playlist download started successfully",
     "analysisCompleted": "Analysis completed successfully",
     "fileDeleted": "File deleted successfully",
     "settingsSaved": "Settings saved successfully"

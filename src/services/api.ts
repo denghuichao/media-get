@@ -10,6 +10,7 @@ export interface MediaInfo {
     size: string;
     type: 'video' | 'audio' | 'image';
   }>;
+  isPlaylist?: boolean;
 }
 
 export interface DownloadResponse {
@@ -23,6 +24,7 @@ export interface DownloadResponse {
     title: string;
     site: string;
     url: string;
+    isPlaylist?: boolean;
   };
 }
 
@@ -34,6 +36,7 @@ export interface TaskStatus {
   site: string;
   url: string;
   mediaType: string;
+  isPlaylist?: boolean;
   createdAt: string;
   updatedAt: string;
   error?: string;
@@ -47,6 +50,7 @@ export interface TaskStatus {
     }>;
     downloadDir: string;
     message: string;
+    isPlaylist?: boolean;
   };
   downloadUrl?: string;
   filename?: string;
@@ -68,6 +72,15 @@ export interface DownloadRecord {
   downloadDir?: string;
   progress?: number;
   error?: string;
+  isPlaylist?: boolean;
+  fileCount?: number;
+  files?: Array<{
+    filename: string;
+    downloadPath: string;
+    size: string;
+    type: string;
+    format: string;
+  }>;
 }
 
 export interface SupportedSite {
@@ -109,13 +122,27 @@ class ApiService {
     return response.json();
   }
 
-  async downloadMedia(url: string, userId: string, itag?: string, outputName?: string, cookies?: string): Promise<DownloadResponse> {
+  async downloadMedia(
+    url: string, 
+    userId: string, 
+    itag?: string, 
+    outputName?: string, 
+    cookies?: string,
+    downloadPlaylist?: boolean
+  ): Promise<DownloadResponse> {
     const response = await fetch(`${API_BASE_URL}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ url, userId, itag, outputName, cookies }),
+      body: JSON.stringify({ 
+        url, 
+        userId, 
+        itag, 
+        outputName, 
+        cookies,
+        downloadPlaylist: downloadPlaylist || false
+      }),
     });
 
     if (!response.ok) {

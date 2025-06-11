@@ -127,7 +127,7 @@ export class DownloadDispatcher {
       return;
     }
 
-    console.log(`Dispatching task ${taskId} to worker thread`);
+    console.log(`Dispatching task ${taskId} to worker thread (playlist: ${task.is_playlist})`);
 
     // Create worker for this task
     const worker = new DownloadWorker(task, this);
@@ -210,7 +210,7 @@ export class DownloadWorker {
 
   // Process the download task
   async process() {
-    console.log(`Worker processing download task: ${this.taskId}`);
+    console.log(`Worker processing download task: ${this.taskId} (playlist: ${this.task.is_playlist})`);
 
     try {
       // Update task status to processing
@@ -230,6 +230,12 @@ export class DownloadWorker {
       // Add format selection if specified
       if (this.task.media_info && this.task.media_info.itag) {
         args.push(`--format=${this.task.media_info.itag}`);
+      }
+      
+      // Add playlist option if this is a playlist download
+      if (this.task.is_playlist) {
+        args.push('--playlist');
+        console.log(`Worker ${this.taskId} downloading playlist`);
       }
       
       // Add cookies if available
@@ -258,7 +264,7 @@ export class DownloadWorker {
       
       // Complete the task
       await DownloadTaskDB.completeTask(this.taskId, result);
-      console.log(`Worker completed task: ${this.taskId}`);
+      console.log(`Worker completed task: ${this.taskId} with ${result.files.length} files`);
       
       // Clean up cookies file if it was created
       if (cookiesFile) {
@@ -478,11 +484,13 @@ export class DownloadWorker {
     const renamedMediaFiles = this.renameDownloadedFiles(mediaFiles, downloadDir, title, itag);
     
     let finalFiles = [];
-    let message = 'Download completed successfully';
+    let message = this.task.is_playlist 
+      ? `Playlist download completed. ${renamedMediaFiles.length} files downloaded.`
+      : 'Download completed successfully';
     
-    if (renamedMediaFiles.length === 1) {
+    if (renamedMediaFiles.length === 1 && !this.task.is_playlist) {
       finalFiles = renamedMediaFiles;
-    } else if (renamedMediaFiles.length === 2 && ffmpegAvailable) {
+    } else if (renamedMediaFiles.length === 2 && ffmpegAvailable && !this.task.is_playlist) {
       console.log(`Worker ${this.taskId} attempting to merge DASH video and audio files...`);
       
       try {
@@ -514,7 +522,11 @@ export class DownloadWorker {
       }
     } else if (renamedMediaFiles.length > 0) {
       finalFiles = renamedMediaFiles;
-      message = `Download completed. ${renamedMediaFiles.length} files downloaded${!ffmpegAvailable ? ' (install FFmpeg for automatic merging)' : ''}`;
+      if (this.task.is_playlist) {
+        message = `Playlist download completed. ${renamedMediaFiles.length} files downloaded.`;
+      } else {
+        message = `Download completed. ${renamedMediaFiles.length} files downloaded${!ffmpegAvailable ? ' (install FFmpeg for automatic merging)' : ''}`;
+      }
       console.log(`Worker ${this.taskId} multiple files downloaded (${renamedMediaFiles.length}), returning all files`);
     }
     
@@ -548,7 +560,8 @@ export class DownloadWorker {
         };
       }),
       downloadDir: dirName,
-      message
+      message,
+      isPlaylist: this.task.is_playlist
     };
   }
 
@@ -607,10 +620,20 @@ export class DownloadWorker {
   renameDownloadedFiles(mediaFiles, downloadDir, title, itag) {
     const renamedFiles = [];
     
-    for (const originalFile of mediaFiles) {
+    for (let i = 0; i < mediaFiles.length; i++) {
+      const originalFile = mediaFiles[i];
       const originalPath = path.join(downloadDir, originalFile);
       const ext = path.extname(originalFile).slice(1); // Remove the dot
-      const newFilename = this.generateCleanFilename(title, itag, ext);
+      
+      // For playlists, add index to filename
+      let newFilename;
+      if (this.task.is_playlist && mediaFiles.length > 1) {
+        const paddedIndex = String(i + 1).padStart(3, '0');
+        newFilename = this.generateCleanFilename(`${title}_${paddedIndex}`, itag, ext);
+      } else {
+        newFilename = this.generateCleanFilename(title, itag, ext);
+      }
+      
       const newPath = path.join(downloadDir, newFilename);
       
       try {

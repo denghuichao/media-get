@@ -178,6 +178,40 @@ function parseYouGetJson(output) {
   }
 }
 
+// Helper function to detect if URL might be a playlist
+function isPlaylistUrl(url) {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    const pathname = urlObj.pathname.toLowerCase();
+    const searchParams = urlObj.searchParams;
+    
+    // YouTube playlist indicators
+    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+      return searchParams.has('list') || 
+             pathname.includes('/playlist') ||
+             pathname.includes('/channel') ||
+             pathname.includes('/user');
+    }
+    
+    // Bilibili playlist indicators
+    if (hostname.includes('bilibili.com')) {
+      return pathname.includes('/favlist') ||
+             pathname.includes('/medialist') ||
+             pathname.includes('/collection');
+    }
+    
+    // Other common playlist patterns
+    return pathname.includes('playlist') ||
+           pathname.includes('album') ||
+           pathname.includes('collection') ||
+           searchParams.has('playlist') ||
+           searchParams.has('album');
+  } catch {
+    return false;
+  }
+}
+
 // API Routes
 
 // Analyze URL endpoint
@@ -204,6 +238,9 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(404).json({ error: 'No media found at this URL' });
     }
 
+    // Add playlist detection info
+    mediaInfo.isPlaylist = isPlaylistUrl(url);
+
     res.json(mediaInfo);
   } catch (error) {
     console.error('Analysis error:', error.message);
@@ -217,7 +254,7 @@ app.post('/api/analyze', async (req, res) => {
 // Create download task endpoint
 app.post('/api/download', async (req, res) => {
   try {
-    const { url, itag, outputName, userId, cookies } = req.body;
+    const { url, itag, outputName, userId, cookies, downloadPlaylist = false } = req.body;
     
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
@@ -227,7 +264,7 @@ app.post('/api/download', async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    console.log(`Creating download task for user ${userId}: ${url} with format: ${itag}`);
+    console.log(`Creating download task for user ${userId}: ${url} with format: ${itag}, playlist: ${downloadPlaylist}`);
     
     // Get media info for the task
     let mediaInfo;
@@ -266,25 +303,30 @@ app.post('/api/download', async (req, res) => {
         site: mediaInfo.site,
         itag: itag,
         selectedFormat: selectedFormat,
-        outputName: outputName
+        outputName: outputName,
+        downloadPlaylist: downloadPlaylist
       },
-      cookies: cookies || null
+      cookies: cookies || null,
+      is_playlist: downloadPlaylist
     };
 
     const task = await DownloadTaskDB.createTask(taskData);
     
-    console.log(`Created download task: ${taskId}`);
+    console.log(`Created download task: ${taskId} (playlist: ${downloadPlaylist})`);
     
     res.json({ 
       success: true, 
       taskId: taskId,
-      message: 'Download task created successfully. Processing will begin shortly.',
+      message: downloadPlaylist 
+        ? 'Playlist download task created successfully. Processing will begin shortly.'
+        : 'Download task created successfully. Processing will begin shortly.',
       task: {
         id: taskId,
         status: 'pending',
         title: mediaInfo.title,
         site: mediaInfo.site,
-        url: url
+        url: url,
+        isPlaylist: downloadPlaylist
       }
     });
     
@@ -317,6 +359,7 @@ app.get('/api/task/:taskId', async (req, res) => {
       site: task.platform_name,
       url: task.url,
       mediaType: task.media_type,
+      isPlaylist: task.is_playlist,
       createdAt: task.created_at,
       updatedAt: task.updated_at,
       error: task.error
@@ -379,7 +422,10 @@ app.get('/api/downloads/:userId', async (req, res) => {
       filename: task.result?.files?.[0]?.filename,
       downloadDir: task.result?.downloadDir,
       progress: task.progress,
-      error: task.error
+      error: task.error,
+      isPlaylist: task.is_playlist,
+      files: task.result?.files || null,
+      fileCount: task.result?.files?.length || (task.result?.files ? 1 : 0)
     }));
     
     res.json(downloads);

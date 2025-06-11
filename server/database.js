@@ -48,6 +48,7 @@ export function initializeDatabase() {
           result TEXT,
           error TEXT,
           cookies TEXT,
+          is_playlist BOOLEAN DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
@@ -76,6 +77,16 @@ export function initializeDatabase() {
         }
       });
 
+      // Add is_playlist column to existing tables if it doesn't exist
+      db.run(`
+        ALTER TABLE download_tasks ADD COLUMN is_playlist BOOLEAN DEFAULT 0
+      `, (err) => {
+        // Ignore error if column already exists
+        if (err && !err.message.includes('duplicate column name')) {
+          console.error('Error adding is_playlist column:', err);
+        }
+      });
+
       // Create indexes
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_user_id ON download_tasks(user_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_task_id ON download_tasks(task_id)`);
@@ -83,6 +94,7 @@ export function initializeDatabase() {
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_platform ON download_tasks(platform_name)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_media_type ON download_tasks(media_type)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_created_at ON download_tasks(created_at)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_download_tasks_is_playlist ON download_tasks(is_playlist)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_user_cookies_user_id ON user_cookies(user_id)`);
       db.run(`CREATE INDEX IF NOT EXISTS idx_user_cookies_platform ON user_cookies(platform_name)`);
 
@@ -126,13 +138,14 @@ export class DownloadTaskDB {
         platform_name,
         url,
         media_info,
-        cookies
+        cookies,
+        is_playlist = false
       } = taskData;
 
       const stmt = db.prepare(`
         INSERT INTO download_tasks (
-          user_id, task_id, media_type, platform_name, url, media_info, cookies
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          user_id, task_id, media_type, platform_name, url, media_info, cookies, is_playlist
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run([
@@ -142,7 +155,8 @@ export class DownloadTaskDB {
         platform_name,
         url,
         JSON.stringify(media_info),
-        cookies || null
+        cookies || null,
+        is_playlist ? 1 : 0
       ], function(err) {
         if (err) {
           reject(err);
@@ -251,6 +265,7 @@ export class DownloadTaskDB {
             if (row) {
               row.media_info = row.media_info ? JSON.parse(row.media_info) : null;
               row.result = row.result ? JSON.parse(row.result) : null;
+              row.is_playlist = Boolean(row.is_playlist);
             }
             resolve(row);
           }
@@ -300,7 +315,8 @@ export class DownloadTaskDB {
           const tasks = rows.map(row => ({
             ...row,
             media_info: row.media_info ? JSON.parse(row.media_info) : null,
-            result: row.result ? JSON.parse(row.result) : null
+            result: row.result ? JSON.parse(row.result) : null,
+            is_playlist: Boolean(row.is_playlist)
           }));
           resolve(tasks);
         }
@@ -324,7 +340,8 @@ export class DownloadTaskDB {
             const tasks = rows.map(row => ({
               ...row,
               media_info: row.media_info ? JSON.parse(row.media_info) : null,
-              result: row.result ? JSON.parse(row.result) : null
+              result: row.result ? JSON.parse(row.result) : null,
+              is_playlist: Boolean(row.is_playlist)
             }));
             resolve(tasks);
           }
@@ -348,7 +365,8 @@ export class DownloadTaskDB {
             const tasks = rows.map(row => ({
               ...row,
               media_info: row.media_info ? JSON.parse(row.media_info) : null,
-              result: row.result ? JSON.parse(row.result) : null
+              result: row.result ? JSON.parse(row.result) : null,
+              is_playlist: Boolean(row.is_playlist)
             }));
             resolve(tasks);
           }

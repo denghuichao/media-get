@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw, Calendar, ExternalLink } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw, Calendar, ExternalLink, List } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
@@ -13,6 +13,7 @@ export default function Hero() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [selectedFormat, setSelectedFormat] = useState('');
+  const [downloadPlaylist, setDownloadPlaylist] = useState(false);
   const [error, setError] = useState('');
   const [downloadSuccess, setDownloadSuccess] = useState('');
   const [currentTask, setCurrentTask] = useState<TaskStatus | null>(null);
@@ -21,6 +22,40 @@ export default function Hero() {
   // Auto-hide timers
   const [successTimer, setSuccessTimer] = useState<NodeJS.Timeout | null>(null);
   const [taskTimer, setTaskTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Helper function to detect if URL might be a playlist
+  const isPlaylistUrl = (url: string): boolean => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      const pathname = urlObj.pathname.toLowerCase();
+      const searchParams = urlObj.searchParams;
+      
+      // YouTube playlist indicators
+      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+        return searchParams.has('list') || 
+               pathname.includes('/playlist') ||
+               pathname.includes('/channel') ||
+               pathname.includes('/user');
+      }
+      
+      // Bilibili playlist indicators
+      if (hostname.includes('bilibili.com')) {
+        return pathname.includes('/favlist') ||
+               pathname.includes('/medialist') ||
+               pathname.includes('/collection');
+      }
+      
+      // Other common playlist patterns
+      return pathname.includes('playlist') ||
+             pathname.includes('album') ||
+             pathname.includes('collection') ||
+             searchParams.has('playlist') ||
+             searchParams.has('album');
+    } catch {
+      return false;
+    }
+  };
 
   // Helper function to detect if error is related to login cookies
   const isLoginCookieError = (errorMessage: string): boolean => {
@@ -165,7 +200,12 @@ export default function Hero() {
       setCurrentTask(taskStatus);
       
       if (taskStatus.status === 'completed') {
-        setDownloadSuccess(t('success.downloadCompleted', { filename: taskStatus.filename || 'file' }));
+        const fileCount = taskStatus.result?.files?.length || 1;
+        const message = fileCount > 1 
+          ? t('success.downloadCompletedMultiple', { count: fileCount })
+          : t('success.downloadCompleted', { filename: taskStatus.filename || 'file' });
+        
+        setDownloadSuccess(message);
         
         // Auto-hide success message after 5 seconds
         const timer = setTimeout(() => {
@@ -173,8 +213,8 @@ export default function Hero() {
         }, 5000);
         setSuccessTimer(timer);
         
-        // Trigger file download if available
-        if (taskStatus.downloadUrl) {
+        // Trigger file download for single files
+        if (taskStatus.downloadUrl && fileCount === 1) {
           const link = document.createElement('a');
           link.href = `http://localhost:3001${taskStatus.downloadUrl}`;
           link.download = taskStatus.filename || 'download';
@@ -237,11 +277,11 @@ export default function Hero() {
     }
     
     try {
-      const result = await apiService.downloadMedia(url, user.id, selectedFormat);
+      const result = await apiService.downloadMedia(url, user.id, selectedFormat, undefined, undefined, downloadPlaylist);
       
       if (result.success && result.taskId) {
         // Show success message immediately
-        setDownloadSuccess(t('success.downloadStarted'));
+        setDownloadSuccess(downloadPlaylist ? t('success.playlistDownloadStarted') : t('success.downloadStarted'));
         
         // Auto-hide success message after 4 seconds
         const timer = setTimeout(() => {
@@ -253,6 +293,7 @@ export default function Hero() {
         setUrl('');
         setSelectedFormat('');
         setMediaInfo(null);
+        setDownloadPlaylist(false);
         
         setCurrentTask({
           id: result.taskId,
@@ -263,7 +304,8 @@ export default function Hero() {
           url: result.task?.url || url,
           mediaType: 'video',
           createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          isPlaylist: downloadPlaylist
         });
         
         // Start polling for task status
@@ -303,6 +345,13 @@ export default function Hero() {
       }
     };
   }, [taskPolling, successTimer, taskTimer]);
+
+  // Auto-detect playlist and update checkbox
+  React.useEffect(() => {
+    if (url) {
+      setDownloadPlaylist(isPlaylistUrl(url));
+    }
+  }, [url]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -369,6 +418,32 @@ export default function Hero() {
             </button>
           </div>
 
+          {/* Playlist Download Option */}
+          {url && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={downloadPlaylist}
+                  onChange={(e) => setDownloadPlaylist(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                />
+                <div className="flex items-center space-x-2">
+                  <List className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">
+                    {t('hero.downloadPlaylist')}
+                  </span>
+                </div>
+              </label>
+              <p className="text-xs text-blue-600 mt-1 ml-7">
+                {downloadPlaylist 
+                  ? t('hero.playlistEnabled') 
+                  : t('hero.playlistDisabled')
+                }
+              </p>
+            </div>
+          )}
+
           {/* Enhanced Error Message */}
           {errorInfo && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -434,6 +509,15 @@ export default function Hero() {
                   <h4 className="font-medium text-gray-900">{currentTask.title}</h4>
                   <div className="flex items-center space-x-2 text-sm text-gray-600">
                     <span>{currentTask.site} • {currentTask.status}</span>
+                    {currentTask.isPlaylist && (
+                      <>
+                        <span>•</span>
+                        <div className="flex items-center space-x-1">
+                          <List className="h-3 w-3" />
+                          <span>Playlist</span>
+                        </div>
+                      </>
+                    )}
                     <span>•</span>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-3 w-3" />
@@ -454,6 +538,17 @@ export default function Hero() {
                       style={{ width: `${currentTask.progress}%` }}
                     ></div>
                   </div>
+                </div>
+              )}
+              {currentTask.status === 'completed' && currentTask.result?.files && currentTask.result.files.length > 1 && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                  <div className="flex items-center space-x-2 text-green-800 text-sm">
+                    <List className="h-4 w-4" />
+                    <span className="font-medium">{currentTask.result.files.length} files downloaded</span>
+                  </div>
+                  <p className="text-green-700 text-xs mt-1">
+                    Check your dashboard to access all downloaded files.
+                  </p>
                 </div>
               )}
             </div>
@@ -521,12 +616,12 @@ export default function Hero() {
                     {isSubmitting ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                        <span>{t('hero.downloading')}</span>
+                        <span>{downloadPlaylist ? t('hero.downloadingPlaylist') : t('hero.downloading')}</span>
                       </>
                     ) : (
                       <>
                         <Download className="h-5 w-5" />
-                        <span>{t('hero.downloadNow')}</span>
+                        <span>{downloadPlaylist ? t('hero.downloadPlaylistNow') : t('hero.downloadNow')}</span>
                       </>
                     )}
                   </button>
