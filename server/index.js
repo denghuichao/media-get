@@ -33,11 +33,48 @@ if (!fs.existsSync(DOWNLOADS_DIR)) {
   console.log(`Created downloads directory: ${DOWNLOADS_DIR}`);
 }
 
-// Initialize database on startup
-initializeDatabase().catch(error => {
-  console.error('Failed to initialize database:', error);
-  process.exit(1);
-});
+// Worker system import and initialization
+let workerSystem = null;
+
+async function startWorkerSystem() {
+  console.log('Starting MediaGet Download Worker System...');
+  console.log(`Data directory: ${DATA_DIR}`);
+  console.log(`Downloads directory: ${DOWNLOADS_DIR}`);
+  
+  try {
+    // Import worker system dynamically
+    const { DownloadDispatcher } = await import('./workerSystem.js');
+    
+    // Create and start dispatcher
+    const dispatcher = new DownloadDispatcher();
+    await dispatcher.start();
+    
+    workerSystem = dispatcher;
+    console.log('MediaGet Download Worker System is running...');
+    
+    return dispatcher;
+    
+  } catch (error) {
+    console.error('Failed to start worker system:', error);
+    // Don't exit the server if worker fails to start
+    console.warn('Server will continue without worker system');
+  }
+}
+
+// Initialize database and worker system on startup
+async function initializeServer() {
+  try {
+    await initializeDatabase();
+    console.log('Database initialized successfully');
+    
+    // Start worker system
+    await startWorkerSystem();
+    
+  } catch (error) {
+    console.error('Failed to initialize server:', error);
+    process.exit(1);
+  }
+}
 
 // Helper function to execute you-get commands
 function executeYouGet(args) {
@@ -408,6 +445,21 @@ app.get('/api/admin/stats', async (req, res) => {
   }
 });
 
+// Get worker system status
+app.get('/api/worker/status', (req, res) => {
+  if (workerSystem) {
+    res.json({
+      running: true,
+      status: workerSystem.getStatus()
+    });
+  } else {
+    res.json({
+      running: false,
+      error: 'Worker system not initialized'
+    });
+  }
+});
+
 // Get supported sites
 app.get('/api/supported-sites', (req, res) => {
   const sites = [
@@ -428,7 +480,11 @@ app.get('/api/supported-sites', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    workerSystem: workerSystem ? 'running' : 'not running'
+  });
 });
 
 // Check you-get installation
@@ -456,6 +512,7 @@ app.get('/api/check-youget', async (req, res) => {
       installed: true, 
       version: output.trim(),
       ffmpegAvailable: ffmpegAvailable,
+      workerSystem: workerSystem ? 'running' : 'not running',
       message: `you-get is properly installed${ffmpegAvailable ? ' with FFmpeg support for video/audio merging' : ' (install FFmpeg for automatic video/audio merging)'}`
     });
   } catch (error) {
@@ -467,8 +524,27 @@ app.get('/api/check-youget', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
+// Handle graceful shutdown
+const shutdown = () => {
+  console.log('Shutting down server...');
+  
+  if (workerSystem) {
+    console.log('Stopping worker system...');
+    workerSystem.stop();
+  }
+  
+  process.exit(0);
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
+// Start server
+app.listen(PORT, async () => {
   console.log(`MediaGet API Server running on port ${PORT}`);
   console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads will be served from: ${DOWNLOADS_DIR}`);
+  
+  // Initialize server components
+  await initializeServer();
 });
