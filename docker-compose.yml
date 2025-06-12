@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend service with you-get
   backend:
