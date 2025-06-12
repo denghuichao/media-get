@@ -52,6 +52,8 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   const [duration, setDuration] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const mediaRef = React.useRef<HTMLVideoElement | HTMLAudioElement>(null);
 
   // Get current file or use primary download
@@ -75,28 +77,51 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
 
     const updateTime = () => setCurrentTime(media.currentTime);
     const updateDuration = () => setDuration(media.duration);
+    const handleLoadStart = () => setIsLoading(true);
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      setHasError(false);
+    };
+    const handleError = () => {
+      setIsLoading(false);
+      setHasError(true);
+      console.error('Media load error for:', mediaUrl);
+    };
+    const handleEnded = () => setIsPlaying(false);
 
     media.addEventListener('timeupdate', updateTime);
     media.addEventListener('loadedmetadata', updateDuration);
-    media.addEventListener('ended', () => setIsPlaying(false));
+    media.addEventListener('loadstart', handleLoadStart);
+    media.addEventListener('canplay', handleCanPlay);
+    media.addEventListener('error', handleError);
+    media.addEventListener('ended', handleEnded);
 
     return () => {
       media.removeEventListener('timeupdate', updateTime);
       media.removeEventListener('loadedmetadata', updateDuration);
-      media.removeEventListener('ended', () => setIsPlaying(false));
+      media.removeEventListener('loadstart', handleLoadStart);
+      media.removeEventListener('canplay', handleCanPlay);
+      media.removeEventListener('error', handleError);
+      media.removeEventListener('ended', handleEnded);
     };
-  }, [currentFileIndex]);
+  }, [currentFileIndex, mediaUrl]);
 
-  const togglePlay = () => {
+  const togglePlay = async () => {
     const media = mediaRef.current;
-    if (!media) return;
+    if (!media || hasError) return;
 
-    if (isPlaying) {
-      media.pause();
-    } else {
-      media.play();
+    try {
+      if (isPlaying) {
+        media.pause();
+        setIsPlaying(false);
+      } else {
+        await media.play();
+        setIsPlaying(true);
+      }
+    } catch (error) {
+      console.error('Play error:', error);
+      setHasError(true);
     }
-    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = () => {
@@ -242,38 +267,91 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                 className="max-w-full max-h-96 mx-auto rounded-lg shadow-lg"
                 onError={(e) => {
                   console.error('Image load error:', e);
+                  setHasError(true);
+                }}
+                onLoad={() => {
+                  setIsLoading(false);
+                  setHasError(false);
                 }}
               />
+              {isLoading && (
+                <div className="flex items-center justify-center h-48">
+                  <RefreshCw className="h-8 w-8 text-blue-600 animate-spin" />
+                </div>
+              )}
+              {hasError && (
+                <div className="flex items-center justify-center h-48 text-red-600">
+                  <AlertCircle className="h-8 w-8 mr-2" />
+                  <span>Failed to load image</span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
               {/* Video/Audio Element */}
-              {isVideo ? (
-                <video
-                  ref={mediaRef as React.RefObject<HTMLVideoElement>}
-                  src={mediaUrl}
-                  className="w-full max-h-96 rounded-lg bg-black"
-                  onError={(e) => {
-                    console.error('Video load error:', e);
-                  }}
-                />
-              ) : (
-                <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center">
-                  <Music className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                  <h4 className="text-lg font-medium text-gray-900 mb-2">{download.title}</h4>
-                  <p className="text-gray-600">{download.site}</p>
-                  <audio
-                    ref={mediaRef as React.RefObject<HTMLAudioElement>}
+              <div className="relative">
+                {isVideo ? (
+                  <video
+                    ref={mediaRef as React.RefObject<HTMLVideoElement>}
                     src={mediaUrl}
+                    className="w-full max-h-96 rounded-lg bg-black"
+                    controls={false} // We'll use custom controls
+                    preload="metadata"
                     onError={(e) => {
-                      console.error('Audio load error:', e);
+                      console.error('Video load error:', e);
+                      setHasError(true);
                     }}
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center relative">
+                    <Music className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">{download.title}</h4>
+                    <p className="text-gray-600">{download.site}</p>
+                    <audio
+                      ref={mediaRef as React.RefObject<HTMLAudioElement>}
+                      src={mediaUrl}
+                      preload="metadata"
+                      onError={(e) => {
+                        console.error('Audio load error:', e);
+                        setHasError(true);
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Loading Overlay */}
+                {isLoading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                    <RefreshCw className="h-8 w-8 text-white animate-spin" />
+                  </div>
+                )}
+
+                {/* Error Overlay */}
+                {hasError && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-red-50 rounded-lg">
+                    <div className="text-center text-red-600">
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                      <p>Failed to load media</p>
+                      <p className="text-sm">URL: {mediaUrl}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Custom Play Button Overlay for Video */}
+                {isVideo && !isPlaying && !isLoading && !hasError && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <button
+                      onClick={togglePlay}
+                      className="bg-black bg-opacity-70 hover:bg-opacity-80 text-white rounded-full p-4 transition-all transform hover:scale-110"
+                    >
+                      <Play className="h-12 w-12 ml-1" fill="currentColor" />
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Media Controls */}
-              {(isVideo || isAudio) && (
+              {(isVideo || isAudio) && !hasError && (
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                   {/* Progress Bar */}
                   <div className="space-y-2">
@@ -283,7 +361,10 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                       max={duration || 0}
                       value={currentTime}
                       onChange={handleSeek}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentTime / duration) * 100}%, #e5e7eb ${(currentTime / duration) * 100}%, #e5e7eb 100%)`
+                      }}
                     />
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>{formatTime(currentTime)}</span>
@@ -296,10 +377,17 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={togglePlay}
-                        className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                        disabled={isLoading || hasError}
+                        className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title={isPlaying ? t('mediaPlayer.controls.pause') : t('mediaPlayer.controls.play')}
                       >
-                        {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+                        {isLoading ? (
+                          <RefreshCw className="h-5 w-5 animate-spin" />
+                        ) : isPlaying ? (
+                          <Pause className="h-5 w-5" />
+                        ) : (
+                          <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
+                        )}
                       </button>
 
                       <div className="flex items-center space-x-2">
