@@ -18,7 +18,12 @@
     "react-dom": "^18.3.1",
     "react-i18next": "^13.5.0",
     "i18next": "^23.7.16",
-    "i18next-browser-languagedetector": "^7.2.0"
+    "i18next-browser-languagedetector": "^7.2.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "multer": "^1.4.5-lts.1",
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
@@ -34,11 +39,6 @@
     "tailwindcss": "^3.4.1",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
-    "vite": "^5.4.2",
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "multer": "^1.4.5-lts.1",
-    "sqlite3": "^5.1.6",
-    "uuid": "^9.0.1"
+    "vite": "^5.4.2"
   }
 }
