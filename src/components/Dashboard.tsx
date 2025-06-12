@@ -672,64 +672,76 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <Download className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.total')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        {/* Stats Cards - Fixed Grid Layout */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Download className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('dashboard.stats.total')}</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.total}</p>
+                </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.completed')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('dashboard.stats.completed')}</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.completed}</p>
+                </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <RefreshCw className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.downloading')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.processing}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <RefreshCw className="h-5 w-5 text-blue-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('dashboard.stats.downloading')}</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.processing}</p>
+                </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <Clock className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.pending')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pending}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-5 w-5 text-yellow-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('dashboard.stats.pending')}</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.pending}</p>
+                </div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <XCircle className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.failed')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.failed}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <XCircle className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('dashboard.stats.failed')}</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.failed}</p>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">{t('dashboard.stats.invalid')}</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.invalid}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+                <div>
+                  <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">{t('dashboard.stats.invalid')}</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.invalid}</p>
+                </div>
               </div>
             </div>
           </div>
