@@ -918,11 +918,11 @@ function DashboardContent() {
                       </div>
                     </div>
 
-                    {/* Multi-file details - Aligned Right */}
+                    {/* Multi-file details - Full Width, Left Aligned */}
                     {download.files && download.files.length > 1 && download.status === 'completed' && (
-                      <div className="mt-2 flex justify-end">
-                        <div className="max-w-md p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-                          <div className="flex items-center space-x-1 text-blue-800 mb-1">
+                      <div className="mt-3 w-full">
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs">
+                          <div className="flex items-center space-x-1 text-blue-800 mb-2">
                             <FolderOpen className="h-3 w-3" />
                             <span className="font-medium">Multiple Files Downloaded</span>
                           </div>
@@ -946,10 +946,10 @@ function DashboardContent() {
                       </div>
                     )}
 
-                    {/* Brief error message for failed tasks - Aligned Right */}
+                    {/* Brief error message for failed tasks - Full Width, Left Aligned */}
                     {download.status === 'failed' && download.error && (
-                      <div className="mt-2 flex justify-end">
-                        <div className="max-w-md p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="mt-3 w-full">
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                           <div className="flex items-start space-x-2">
                             <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                             <div className="flex-1">
@@ -962,10 +962,10 @@ function DashboardContent() {
                       </div>
                     )}
 
-                    {/* Invalid status message - Aligned Right */}
+                    {/* Invalid status message - Full Width, Left Aligned */}
                     {download.status === 'invalid' && (
-                      <div className="mt-2 flex justify-end">
-                        <div className="max-w-md p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
+                      <div className="mt-3 w-full">
+                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-700">
                           <div className="flex items-center space-x-1">
                             <AlertTriangle className="h-3 w-3" />
                             <span>{t('dashboard.status.invalidMessage')}</span>
