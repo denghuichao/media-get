@@ -8,7 +8,6 @@ services:
       - "3001:3001"
     volumes:
       - ./downloads:/app/downloads
-      - ./server:/app/server
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -25,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     ports:
-      - "5173:5173"
+      - "5173:80"
     environment:
       - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
       - VITE_CONTACT_EMAIL=${VITE_CONTACT_EMAIL}
