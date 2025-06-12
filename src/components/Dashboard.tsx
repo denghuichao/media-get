@@ -611,10 +611,23 @@ function DashboardContent() {
     }
   };
 
+  // Fixed canPlay function to properly detect playable downloads
   const canPlay = (download: DownloadRecord) => {
-    return download.status === 'completed' && 
-           (download.downloadPath || (download.files && download.files.length > 0)) && 
-           ['video', 'audio', 'image'].includes(download.type);
+    // Must be completed status
+    if (download.status !== 'completed') {
+      return false;
+    }
+    
+    // Must be video, audio, or image type
+    if (!['video', 'audio', 'image'].includes(download.type)) {
+      return false;
+    }
+    
+    // Must have either downloadPath OR files array with at least one file
+    const hasDownloadPath = download.downloadPath && download.filename;
+    const hasFiles = download.files && download.files.length > 0;
+    
+    return hasDownloadPath || hasFiles;
   };
 
   if (loading) {
@@ -885,7 +898,7 @@ function DashboardContent() {
                       
                       {/* Actions - Aligned Right */}
                       <div className="flex items-start space-x-2 ml-4 flex-shrink-0">
-                        {/* Play Button */}
+                        {/* Play Button - Fixed visibility logic */}
                         {canPlay(download) && (
                           <button 
                             onClick={() => setSelectedDownload(download)}
