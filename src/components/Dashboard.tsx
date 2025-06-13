@@ -66,7 +66,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
         format: download.format
       };
 
-  const mediaUrl = `http://localhost:3001${currentFile.downloadPath}`;
+  const mediaUrl = apiService.getFileDownloadUrl(currentFile.downloadPath);
   const isVideo = currentFile.type === 'video';
   const isAudio = currentFile.type === 'audio';
   const isImage = currentFile.type === 'image';
@@ -180,7 +180,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
       download.files.forEach((file, index) => {
         setTimeout(() => {
           const link = document.createElement('a');
-          link.href = `http://localhost:3001${file.downloadPath}`;
+          link.href = apiService.getFileDownloadUrl(file.downloadPath);
           link.download = file.filename;
           document.body.appendChild(link);
           link.click();
@@ -681,7 +681,7 @@ function DashboardContent() {
       download.files.forEach((file, index) => {
         setTimeout(() => {
           const link = document.createElement('a');
-          link.href = `http://localhost:3001${file.downloadPath}`;
+          link.href = apiService.getFileDownloadUrl(file.downloadPath);
           link.download = file.filename;
           document.body.appendChild(link);
           link.click();
@@ -691,7 +691,7 @@ function DashboardContent() {
     } else if (download.downloadPath && download.filename) {
       // Single file download
       const link = document.createElement('a');
-      link.href = `http://localhost:3001${download.downloadPath}`;
+      link.href = apiService.getFileDownloadUrl(download.downloadPath);
       link.download = download.filename;
       document.body.appendChild(link);
       link.click();
