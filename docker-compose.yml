@@ -7,10 +7,13 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./downloads:/app/downloads
+      - ${DOWNLOADS_DIR:-/opt/data/downloads}:/app/downloads
+      - ${DATA_DIR:-/opt/data/sqlite}:/root/data/media-get
     environment:
       - NODE_ENV=production
       - PORT=3001
+      - DATA_DIR=/root/data/media-get
+      - DOWNLOADS_DIR=/app/downloads
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/health"]
@@ -44,7 +47,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./downloads:/var/www/downloads:ro
+      - ${DOWNLOADS_DIR:-/opt/data/downloads}:/var/www/downloads:ro
     depends_on:
       - frontend
       - backend
