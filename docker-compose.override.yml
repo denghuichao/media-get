@@ -10,6 +10,7 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
+      - VITE_API_BASE_URL=http://localhost:3001/api
     command: npm run server
 
   frontend:
@@ -26,6 +27,7 @@ services:
       - VITE_CONTACT_EMAIL=${VITE_CONTACT_EMAIL}
       - VITE_GITHUB_URL=${VITE_GITHUB_URL}
       - VITE_TWITTER_URL=${VITE_TWITTER_URL}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
     command: npm run dev -- --host 0.0.0.0
     ports:
       - "5173:5173"

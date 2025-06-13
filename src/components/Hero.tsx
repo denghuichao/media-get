@@ -216,7 +216,7 @@ export default function Hero() {
         // Trigger file download for single files
         if (taskStatus.downloadUrl && fileCount === 1) {
           const link = document.createElement('a');
-          link.href = `http://localhost:3001${taskStatus.downloadUrl}`;
+          link.href = apiService.getFileDownloadUrl(taskStatus.downloadUrl);
           link.download = taskStatus.filename || 'download';
           document.body.appendChild(link);
           link.click();
