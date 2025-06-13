@@ -17,7 +17,7 @@ COPY . .
 EXPOSE 5173
 
 # Development command (will be overridden by docker-compose)
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
 
 # Build stage
 FROM node:18-alpine as builder
