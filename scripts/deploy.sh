@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Production Deployment Script for media-get.site
-# This script deploys the application with HTTPS support
+# This script deploys the application with proper service startup
 
 set -e
 
@@ -34,71 +34,139 @@ fi
 echo "📦 Building and starting services..."
 
 # Stop any existing services
-docker-compose down
+docker-compose down --remove-orphans
+
+# Clean up any orphaned containers
+docker system prune -f
 
 # Start with HTTP-only configuration first
 echo "🌐 Starting with HTTP-only configuration..."
 cp nginx-http-only.conf nginx.conf
 
-# Build and start services
+# Build services with no cache to ensure fresh builds
+echo "🔨 Building services..."
 docker-compose build --no-cache
-docker-compose up -d
 
-echo "⏳ Waiting for services to be ready..."
-sleep 30
+# Start services in order
+echo "🚀 Starting backend service..."
+docker-compose up -d backend
 
-# Check if services are healthy
-echo "🔍 Checking service health..."
+echo "⏳ Waiting for backend to be ready..."
+timeout=60
+counter=0
+while ! docker-compose exec -T backend curl -f http://localhost:3001/api/health > /dev/null 2>&1; do
+    if [ $counter -ge $timeout ]; then
+        echo "❌ Backend service failed to start within $timeout seconds"
+        echo "📋 Backend logs:"
+        docker-compose logs backend
+        exit 1
+    fi
+    echo "Waiting for backend... ($counter/$timeout)"
+    sleep 2
+    counter=$((counter + 2))
+done
+echo "✅ Backend service is ready"
 
-# Check backend health
-if curl -f http://localhost:3001/api/health > /dev/null 2>&1; then
-    echo "✅ Backend service is healthy"
+echo "🚀 Starting frontend service..."
+docker-compose up -d frontend
+
+echo "⏳ Waiting for frontend to be ready..."
+timeout=60
+counter=0
+while ! docker-compose exec -T frontend curl -f http://localhost:80/ > /dev/null 2>&1; do
+    if [ $counter -ge $timeout ]; then
+        echo "❌ Frontend service failed to start within $timeout seconds"
+        echo "📋 Frontend logs:"
+        docker-compose logs frontend
+        exit 1
+    fi
+    echo "Waiting for frontend... ($counter/$timeout)"
+    sleep 2
+    counter=$((counter + 2))
+done
+echo "✅ Frontend service is ready"
+
+echo "🚀 Starting nginx service..."
+docker-compose up -d nginx
+
+echo "⏳ Waiting for nginx to be ready..."
+timeout=30
+counter=0
+while ! curl -f http://localhost:80/health > /dev/null 2>&1; do
+    if [ $counter -ge $timeout ]; then
+        echo "❌ Nginx service failed to start within $timeout seconds"
+        echo "📋 Nginx logs:"
+        docker-compose logs nginx
+        exit 1
+    fi
+    echo "Waiting for nginx... ($counter/$timeout)"
+    sleep 2
+    counter=$((counter + 2))
+done
+echo "✅ Nginx service is ready"
+
+# Test the application
+echo "🧪 Testing application..."
+if curl -f http://media-get.site/health > /dev/null 2>&1; then
+    echo "✅ Application is accessible via domain"
+elif curl -f http://localhost:80/health > /dev/null 2>&1; then
+    echo "✅ Application is accessible via localhost"
+    echo "⚠️  Note: Domain access may require DNS propagation"
 else
-    echo "❌ Backend service is not responding"
+    echo "❌ Application is not accessible"
+    echo "📋 All service logs:"
+    docker-compose logs
+    exit 1
+fi
+
+# Test API specifically
+echo "🧪 Testing API..."
+if curl -f http://media-get.site/api/health > /dev/null 2>&1; then
+    echo "✅ API is accessible via domain"
+elif curl -f http://localhost:80/api/health > /dev/null 2>&1; then
+    echo "✅ API is accessible via localhost"
+else
+    echo "❌ API is not accessible"
+    echo "📋 Backend logs:"
     docker-compose logs backend
     exit 1
 fi
 
-# Check frontend
-if curl -f http://localhost:5173 > /dev/null 2>&1; then
-    echo "✅ Frontend service is healthy"
+# Test you-get installation
+echo "🧪 Testing you-get installation..."
+if curl -s http://media-get.site/api/check-youget | grep -q '"installed":true' 2>/dev/null; then
+    echo "✅ you-get is properly installed"
+elif curl -s http://localhost:80/api/check-youget | grep -q '"installed":true' 2>/dev/null; then
+    echo "✅ you-get is properly installed"
 else
-    echo "❌ Frontend service is not responding"
-    docker-compose logs frontend
-    exit 1
+    echo "⚠️  you-get installation check failed - this may be normal during startup"
+    echo "📋 Backend logs:"
+    docker-compose logs backend | tail -20
 fi
 
-# Check nginx
-if curl -f http://media-get.site/health > /dev/null 2>&1; then
-    echo "✅ Nginx service is healthy"
-else
-    echo "❌ Nginx service is not responding"
-    docker-compose logs nginx
-    exit 1
-fi
-
-# Set up SSL certificates
-echo "🔒 Setting up SSL certificates..."
-chmod +x scripts/ssl-setup.sh
-./scripts/ssl-setup.sh
-
-echo "🎉 Deployment complete!"
+echo "🎉 Basic deployment complete!"
 echo ""
 echo "🌐 Your MediaGet application is now running at:"
-echo "   https://media-get.site"
-echo "   https://www.media-get.site"
+echo "   http://media-get.site (if DNS is configured)"
+echo "   http://localhost (local access)"
 echo ""
 echo "📊 Service URLs:"
-echo "   Frontend: https://media-get.site"
-echo "   API: https://media-get.site/api"
-echo "   Health Check: https://media-get.site/api/health"
+echo "   Frontend: http://media-get.site"
+echo "   API: http://media-get.site/api"
+echo "   Health Check: http://media-get.site/api/health"
 echo ""
 echo "🔧 Management commands:"
 echo "   View logs: docker-compose logs -f"
 echo "   Restart: docker-compose restart"
 echo "   Stop: docker-compose down"
-echo "   Update: git pull && docker-compose build && docker-compose up -d"
 echo ""
-echo "🔒 SSL Certificate Management:"
-echo "   Renew certificates: ./certbot-renew.sh"
-echo "   Check certificate status: docker-compose run --rm certbot certificates"
+echo "🔒 To set up HTTPS (after confirming HTTP works):"
+echo "   ./scripts/ssl-setup.sh"
+echo ""
+echo "🐛 If you encounter issues:"
+echo "   1. Check service logs: docker-compose logs [service-name]"
+echo "   2. Check service status: docker-compose ps"
+echo "   3. Test individual services:"
+echo "      - Backend: curl http://localhost:3001/api/health"
+echo "      - Frontend: curl http://localhost:5173/"
+echo "      - Nginx: curl http://localhost:80/health"
