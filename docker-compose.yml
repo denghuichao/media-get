@@ -20,7 +20,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
 
   # Frontend service
   frontend:
@@ -35,19 +34,12 @@ services:
       - VITE_CONTACT_EMAIL=${VITE_CONTACT_EMAIL}
       - VITE_GITHUB_URL=${VITE_GITHUB_URL}
       - VITE_TWITTER_URL=${VITE_TWITTER_URL}
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://media-get.site/api}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://media-get.site/api}
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
 
-  # Nginx reverse proxy
+  # Nginx reverse proxy with SSL
   nginx:
     image: nginx:alpine
     ports:
@@ -59,16 +51,9 @@ services:
       - ./certbot/conf:/etc/letsencrypt:ro
       - ./certbot/www:/var/www/certbot:ro
     depends_on:
-      frontend:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
+      - frontend
+      - backend
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   # Certbot for SSL certificates
   certbot:

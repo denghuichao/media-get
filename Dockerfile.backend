@@ -1,17 +1,15 @@
 FROM node:18-alpine
 
-# Install Python, pip, and you-get with better error handling
-RUN apk add --no-cache python3 py3-pip ffmpeg curl bash
+# Install Python, pip, and you-get
+RUN apk add --no-cache python3 py3-pip ffmpeg curl
 
 # Create virtual environment and install you-get
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-
-# Install you-get with specific version for stability
-RUN pip install --no-cache-dir you-get==0.4.1650
+RUN pip install you-get
 
 # Verify you-get installation
-RUN you-get --version || (echo "you-get installation failed" && exit 1)
+RUN you-get --version
 
 # Set working directory
 WORKDIR /app
@@ -20,23 +18,20 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install Node.js dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy server code
 COPY server/ ./server/
 
-# Create downloads directory with proper permissions
-RUN mkdir -p downloads && chmod 755 downloads
-
-# Create data directory
-RUN mkdir -p /root/data/media-get && chmod 755 /root/data/media-get
+# Create downloads directory
+RUN mkdir -p downloads
 
 # Expose port
 EXPOSE 3001
 
-# Health check with better error reporting
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3001/api/health || exit 1
 
-# Start the backend server
+# Start the backend server (NOT vite dev server)
 CMD ["npm", "run", "server"]
