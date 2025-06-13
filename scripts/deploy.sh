@@ -33,8 +33,14 @@ fi
 
 echo "📦 Building and starting services..."
 
-# Build and start all services
+# Stop any existing services
 docker-compose down
+
+# Start with HTTP-only configuration first
+echo "🌐 Starting with HTTP-only configuration..."
+cp nginx-http-only.conf nginx.conf
+
+# Build and start services
 docker-compose build --no-cache
 docker-compose up -d
 
@@ -62,6 +68,15 @@ else
     exit 1
 fi
 
+# Check nginx
+if curl -f http://media-get.site/health > /dev/null 2>&1; then
+    echo "✅ Nginx service is healthy"
+else
+    echo "❌ Nginx service is not responding"
+    docker-compose logs nginx
+    exit 1
+fi
+
 # Set up SSL certificates
 echo "🔒 Setting up SSL certificates..."
 chmod +x scripts/ssl-setup.sh
@@ -83,3 +98,7 @@ echo "   View logs: docker-compose logs -f"
 echo "   Restart: docker-compose restart"
 echo "   Stop: docker-compose down"
 echo "   Update: git pull && docker-compose build && docker-compose up -d"
+echo ""
+echo "🔒 SSL Certificate Management:"
+echo "   Renew certificates: ./certbot-renew.sh"
+echo "   Check certificate status: docker-compose run --rm certbot certificates"

@@ -61,9 +61,9 @@ services:
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
-    command: certonly --webroot --webroot-path=/var/www/certbot --email ${SSL_EMAIL:-admin@media-get.site} --agree-tos --no-eff-email -d media-get.site -d www.media-get.site
-    depends_on:
-      - nginx
+    profiles:
+      - ssl
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   downloads:
