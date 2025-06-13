@@ -28,18 +28,18 @@ services:
       dockerfile: Dockerfile.frontend
       target: production
     ports:
-      - "8080:80"
+      - "5173:80"
     environment:
       - VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
       - VITE_CONTACT_EMAIL=${VITE_CONTACT_EMAIL}
       - VITE_GITHUB_URL=${VITE_GITHUB_URL}
       - VITE_TWITTER_URL=${VITE_TWITTER_URL}
-      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:3001/api}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-https://media-get.site/api}
     depends_on:
       - backend
     restart: unless-stopped
 
-  # Nginx reverse proxy
+  # Nginx reverse proxy with SSL
   nginx:
     image: nginx:alpine
     ports:
@@ -48,11 +48,27 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ${DOWNLOADS_DIR:-/opt/data/downloads}:/var/www/downloads:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
     depends_on:
       - frontend
       - backend
     restart: unless-stopped
 
+  # Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email ${SSL_EMAIL:-admin@media-get.site} --agree-tos --no-eff-email -d media-get.site -d www.media-get.site
+    depends_on:
+      - nginx
+
 volumes:
   downloads:
+    driver: local
+  certbot_conf:
+    driver: local
+  certbot_www:
     driver: local
