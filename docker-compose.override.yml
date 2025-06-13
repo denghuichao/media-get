@@ -28,4 +28,4 @@ services:
       - VITE_TWITTER_URL=${VITE_TWITTER_URL}
     command: npm run dev
     ports:
-      - "5174:5173"
+      - "5173:5173"
