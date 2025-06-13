@@ -7,6 +7,11 @@ import LanguageSwitcher from './LanguageSwitcher';
 export default function Header() {
   const { t } = useTranslation();
 
+  // Check if Clerk is properly configured
+  const isClerkConfigured = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY && 
+    import.meta.env.VITE_CLERK_PUBLISHABLE_KEY !== 'pk_test_placeholder_key_replace_with_real_key' &&
+    import.meta.env.VITE_CLERK_PUBLISHABLE_KEY.startsWith('pk_');
+
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,25 +59,33 @@ export default function Header() {
             {/* Language Switcher */}
             <LanguageSwitcher />
 
-            {/* Authentication */}
-            <div className="flex items-center space-x-4">
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
-                    {t('header.auth.signIn')}
-                  </button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <UserButton 
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-8 h-8"
-                    }
-                  }}
-                />
-              </SignedIn>
-            </div>
+            {/* Authentication - only show if Clerk is configured */}
+            {isClerkConfigured ? (
+              <div className="flex items-center space-x-4">
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
+                      {t('header.auth.signIn')}
+                    </button>
+                  </SignInButton>
+                </SignedOut>
+                <SignedIn>
+                  <UserButton 
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-8 h-8"
+                      }
+                    }}
+                  />
+                </SignedIn>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-500 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-1">
+                  Demo Mode
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Mobile menu button */}
