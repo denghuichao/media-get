@@ -1,11 +1,12 @@
 import React from 'react';
 import { Download, Home, LayoutDashboard, Heart } from 'lucide-react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Header() {
   const { t } = useTranslation();
+  const { isLoaded } = useAuth();
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
@@ -54,25 +55,34 @@ export default function Header() {
             {/* Language Switcher */}
             <LanguageSwitcher />
 
-            {/* Authentication */}
-            <div className="flex items-center space-x-4">
-              <SignedOut>
-                <SignInButton mode="modal">
-                  <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
-                    {t('header.auth.signIn')}
-                  </button>
-                </SignInButton>
-              </SignedOut>
-              <SignedIn>
-                <UserButton 
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-8 h-8"
-                    }
-                  }}
-                />
-              </SignedIn>
-            </div>
+            {/* Authentication - Only show when Clerk is loaded */}
+            {isLoaded && (
+              <div className="flex items-center space-x-4">
+                <SignedOut>
+                  <SignInButton mode="modal">
+                    <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium">
+                      {t('header.auth.signIn')}
+                    </button>
+                  </SignInButton>
+                </SignedOut>
+                <SignedIn>
+                  <UserButton 
+                    appearance={{
+                      elements: {
+                        avatarBox: "w-8 h-8"
+                      }
+                    }}
+                  />
+                </SignedIn>
+              </div>
+            )}
+
+            {/* Loading state for auth */}
+            {!isLoaded && (
+              <div className="flex items-center space-x-4">
+                <div className="w-20 h-8 bg-gray-200 rounded-lg animate-pulse"></div>
+              </div>
+            )}
           </div>
           
           {/* Mobile menu button */}

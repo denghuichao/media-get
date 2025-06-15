@@ -6,6 +6,7 @@ import SupportedSites from './components/SupportedSites';
 import Footer from './components/Footer';
 import SystemStatus from './components/SystemStatus';
 import Dashboard from './components/Dashboard';
+import ClerkDebugInfo from './components/ClerkDebugInfo';
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'home' | 'dashboard'>('home');
@@ -43,6 +44,7 @@ function App() {
         <Dashboard />
       )}
       <Footer />
+      <ClerkDebugInfo />
     </div>
   );
 }
