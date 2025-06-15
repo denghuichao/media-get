@@ -551,7 +551,7 @@ This project is open source. The you-get utility is licensed under the MIT Licen
 
 ## 📞 Support
 
-- **Email**: denghuichao0@gmail.com
+- **Email**: denghuichao90@gmail.com
 - **GitHub Issues**: [Create an issue](https://github.com/denghuichao/media-get/issues)
 - **Documentation**: This README and inline code comments
 
