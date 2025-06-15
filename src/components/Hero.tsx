@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Lock, Heart, Clock, RefreshCw, Calendar, ExternalLink, List } from 'lucide-react';
-import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, useUser, useAuth } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
 import { formatTimestampWithUTC, formatSmartTimestampWithUTC } from '../utils/dateUtils';
@@ -8,6 +8,7 @@ import { formatTimestampWithUTC, formatSmartTimestampWithUTC } from '../utils/da
 export default function Hero() {
   const { t } = useTranslation();
   const { user } = useUser();
+  const { isLoaded } = useAuth();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -606,66 +607,89 @@ export default function Hero() {
 
               {/* Download Section - Always visible but behavior changes based on auth */}
               <div className="space-y-4">
-                <SignedIn>
-                  {/* Authenticated users can download directly */}
-                  <button
-                    onClick={handleDownload}
-                    disabled={isSubmitting || !selectedFormat}
-                    className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                        <span>{downloadPlaylist ? t('hero.downloadingPlaylist') : t('hero.downloading')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-5 w-5" />
-                        <span>{downloadPlaylist ? t('hero.downloadPlaylistNow') : t('hero.downloadNow')}</span>
-                      </>
-                    )}
-                  </button>
-                </SignedIn>
+                {isLoaded ? (
+                  <>
+                    <SignedIn>
+                      {/* Authenticated users can download directly */}
+                      <button
+                        onClick={handleDownload}
+                        disabled={isSubmitting || !selectedFormat}
+                        className="w-full md:w-auto px-8 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                            <span>{downloadPlaylist ? t('hero.downloadingPlaylist') : t('hero.downloading')}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Download className="h-5 w-5" />
+                            <span>{downloadPlaylist ? t('hero.downloadPlaylistNow') : t('hero.downloadNow')}</span>
+                          </>
+                        )}
+                      </button>
+                    </SignedIn>
 
-                <SignedOut>
-                  {/* Non-authenticated users see login prompt */}
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
-                    <Lock className="h-8 w-8 text-blue-600 mx-auto mb-3" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('hero.authRequired.title')}</h3>
-                    <p className="text-gray-600 mb-4">
-                      {t('hero.authRequired.description')}
-                    </p>
-                    <div className="space-y-3">
-                      <SignInButton mode="modal">
-                        <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium flex items-center justify-center space-x-2">
-                          <Download className="h-5 w-5" />
-                          <span>{t('hero.authRequired.button')}</span>
-                        </button>
-                      </SignInButton>
-                      <p className="text-xs text-gray-500">
-                        {t('hero.authRequired.benefits')}
-                      </p>
+                    <SignedOut>
+                      {/* Non-authenticated users see login prompt */}
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6 text-center">
+                        <Lock className="h-8 w-8 text-blue-600 mx-auto mb-3" />
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('hero.authRequired.title')}</h3>
+                        <p className="text-gray-600 mb-4">
+                          {t('hero.authRequired.description')}
+                        </p>
+                        <div className="space-y-3">
+                          <SignInButton mode="modal">
+                            <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all font-medium flex items-center justify-center space-x-2">
+                              <Download className="h-5 w-5" />
+                              <span>{t('hero.authRequired.button')}</span>
+                            </button>
+                          </SignInButton>
+                          <p className="text-xs text-gray-500">
+                            {t('hero.authRequired.benefits')}
+                          </p>
+                        </div>
+                      </div>
+                    </SignedOut>
+                  </>
+                ) : (
+                  /* Loading state */
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+                    <div className="animate-pulse">
+                      <div className="h-8 w-8 bg-gray-300 rounded-full mx-auto mb-3"></div>
+                      <div className="h-4 bg-gray-300 rounded w-3/4 mx-auto mb-2"></div>
+                      <div className="h-3 bg-gray-300 rounded w-1/2 mx-auto mb-4"></div>
+                      <div className="h-10 bg-gray-300 rounded w-full"></div>
                     </div>
                   </div>
-                </SignedOut>
+                )}
               </div>
             </div>
           )}
 
           {/* Authentication Status Indicator */}
           <div className="mt-6 pt-4 border-t border-gray-100">
-            <SignedIn>
-              <div className="flex items-center space-x-2 text-sm text-green-600">
-                <CheckCircle className="h-4 w-4" />
-                <span>{t('hero.authStatus.signedIn', { name: user?.firstName || user?.emailAddresses?.[0]?.emailAddress })}</span>
+            {isLoaded ? (
+              <>
+                <SignedIn>
+                  <div className="flex items-center space-x-2 text-sm text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>{t('hero.authStatus.signedIn', { name: user?.firstName || user?.emailAddresses?.[0]?.emailAddress })}</span>
+                  </div>
+                </SignedIn>
+                <SignedOut>
+                  <div className="flex items-center space-x-2 text-sm text-gray-500">
+                    <Lock className="h-4 w-4" />
+                    <span>{t('hero.authStatus.signedOut')}</span>
+                  </div>
+                </SignedOut>
+              </>
+            ) : (
+              <div className="flex items-center space-x-2 text-sm text-gray-400">
+                <div className="w-4 h-4 bg-gray-300 rounded animate-pulse"></div>
+                <div className="h-3 bg-gray-300 rounded w-32 animate-pulse"></div>
               </div>
-            </SignedIn>
-            <SignedOut>
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
-                <Lock className="h-4 w-4" />
-                <span>{t('hero.authStatus.signedOut')}</span>
-              </div>
-            </SignedOut>
+            )}
           </div>
         </div>
 
