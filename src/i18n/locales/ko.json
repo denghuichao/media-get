@@ -44,7 +44,8 @@
     },
     "nav": {
       "home": "홈",
-      "dashboard": "대시보드"
+      "dashboard": "대시보드",
+      "subscription": "구독"
     },
     "auth": {
       "signIn": "로그인",

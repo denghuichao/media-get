@@ -44,7 +44,8 @@
     },
     "nav": {
       "home": "Início",
-      "dashboard": "Painel"
+      "dashboard": "Painel",
+      "subscription": "Assinatura"
     },
     "auth": {
       "signIn": "Entrar",

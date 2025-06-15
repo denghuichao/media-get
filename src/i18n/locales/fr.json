@@ -40,7 +40,8 @@
     "title": "MediaGet",
     "subtitle": {
       "prefix": "Alimenté par",
-      "suffix": "et"
+      "suffix": "et",
+      "subscription": "Abonnement"
     },
     "nav": {
       "home": "Accueil",

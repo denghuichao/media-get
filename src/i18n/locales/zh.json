@@ -44,7 +44,8 @@
     },
     "nav": {
       "home": "首页",
-      "dashboard": "仪表板"
+      "dashboard": "仪表板",
+      "subscription": "订阅"
     },
     "auth": {
       "signIn": "登录",

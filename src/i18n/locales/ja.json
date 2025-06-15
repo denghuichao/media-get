@@ -44,7 +44,8 @@
     },
     "nav": {
       "home": "ホーム",
-      "dashboard": "ダッシュボード"
+      "dashboard": "ダッシュボード",
+      "subscription": "サブスクリプション"
     },
     "auth": {
       "signIn": "サインイン",

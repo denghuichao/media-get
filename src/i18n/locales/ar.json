@@ -44,7 +44,8 @@
     },
     "nav": {
       "home": "الرئيسية",
-      "dashboard": "لوحة التحكم"
+      "dashboard": "لوحة التحكم",
+      "subscription": "اشتراك"
     },
     "auth": {
       "signIn": "تسجيل الدخول",

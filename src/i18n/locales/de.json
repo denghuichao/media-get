@@ -44,7 +44,8 @@
     },
     "nav": {
       "home": "Startseite",
-      "dashboard": "Dashboard"
+      "dashboard": "Dashboard",
+      "subscription": "Abonnement"
     },
     "auth": {
       "signIn": "Anmelden",

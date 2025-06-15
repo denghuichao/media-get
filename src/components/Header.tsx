@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Home, LayoutDashboard, Heart } from 'lucide-react';
+import { Download, Home, LayoutDashboard, Heart, ClipboardCheck } from 'lucide-react';
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -20,9 +20,9 @@ export default function Header() {
               <h1 className="text-xl font-bold text-gray-900">{t('header.title')}</h1>
               <p className="text-xs text-gray-500 flex items-center space-x-1">
                 <span>{t('header.subtitle.prefix')}</span>
-                <a 
-                  href="https://github.com/soimort/you-get" 
-                  target="_blank" 
+                <a
+                  href="https://github.com/soimort/you-get"
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-800 transition-colors underline"
                 >
@@ -33,18 +33,25 @@ export default function Header() {
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-8">
             <nav className="hidden md:flex items-center space-x-8">
-              <a 
-                href="#home" 
+              <a
+                href="#home"
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
               >
                 <Home className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 <span>{t('header.nav.home')}</span>
               </a>
-              <a 
-                href="#dashboard" 
+              <a
+                href="#pricing"
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
+              >
+                <ClipboardCheck className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                <span>{t('header.nav.subscription')}</span>
+              </a>
+              <a
+                href="#dashboard"
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
               >
                 <LayoutDashboard className="h-4 w-4 group-hover:scale-110 transition-transform" />
@@ -66,7 +73,7 @@ export default function Header() {
                   </SignInButton>
                 </SignedOut>
                 <SignedIn>
-                  <UserButton 
+                  <UserButton
                     appearance={{
                       elements: {
                         avatarBox: "w-8 h-8"
@@ -84,7 +91,7 @@ export default function Header() {
               </div>
             )}
           </div>
-          
+
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button className="text-gray-700 hover:text-blue-600 transition-colors">

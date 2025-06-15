@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Download, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
-  Trash2, 
+import {
+  Download,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Trash2,
   Filter,
   Search,
   FileText,
@@ -31,11 +31,11 @@ import {
 import { SignedIn, SignedOut, SignInButton, useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, DownloadRecord } from '../services/api';
-import { 
-  formatTimestampWithUTC, 
-  formatSmartTimestampWithUTC, 
-  getUserTimezone, 
-  getTimezoneOffset 
+import {
+  formatTimestampWithUTC,
+  formatSmartTimestampWithUTC,
+  getUserTimezone,
+  getTimezoneOffset
 } from '../utils/dateUtils';
 
 interface MediaPlayerProps {
@@ -57,14 +57,14 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   const mediaRef = React.useRef<HTMLVideoElement | HTMLAudioElement>(null);
 
   // Get current file or use primary download
-  const currentFile = download.files && download.files.length > 0 
-    ? download.files[currentFileIndex] 
+  const currentFile = download.files && download.files.length > 0
+    ? download.files[currentFileIndex]
     : {
-        filename: download.filename || 'download',
-        downloadPath: download.downloadPath || '',
-        type: download.type,
-        format: download.format
-      };
+      filename: download.filename || 'download',
+      downloadPath: download.downloadPath || '',
+      type: download.type,
+      format: download.format
+    };
 
   const mediaUrl = apiService.getFileDownloadUrl(currentFile.downloadPath);
   const isVideo = currentFile.type === 'video';
@@ -239,11 +239,10 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                 <button
                   key={index}
                   onClick={() => setCurrentFileIndex(index)}
-                  className={`flex-shrink-0 px-3 py-2 text-xs rounded-lg border transition-colors ${
-                    index === currentFileIndex
-                      ? 'bg-blue-100 border-blue-300 text-blue-800'
-                      : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
+                  className={`flex-shrink-0 px-3 py-2 text-xs rounded-lg border transition-colors ${index === currentFileIndex
+                    ? 'bg-blue-100 border-blue-300 text-blue-800'
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
                 >
                   <div className="flex items-center space-x-1">
                     {file.type === 'video' && <Play className="h-3 w-3" />}
@@ -437,7 +436,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             >
               <Download className="h-4 w-4" />
               <span>
-                {download.files && download.files.length > 1 
+                {download.files && download.files.length > 1
                   ? `Download Current File (${currentFile.filename})`
                   : t('mediaPlayer.downloadFile')
                 }
@@ -507,7 +506,7 @@ function DashboardContent() {
     try {
       const urlObj = new URL(url);
       const hostname = urlObj.hostname.toLowerCase();
-      
+
       if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YouTube';
       if (hostname.includes('bilibili.com')) return 'Bilibili';
       if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'Twitter/X';
@@ -515,7 +514,7 @@ function DashboardContent() {
       if (hostname.includes('tiktok.com')) return 'TikTok';
       if (hostname.includes('facebook.com')) return 'Facebook';
       if (hostname.includes('vimeo.com')) return 'Vimeo';
-      
+
       return hostname.replace('www.', '');
     } catch {
       return 'the website';
@@ -535,27 +534,27 @@ function DashboardContent() {
     if (message.includes('login cookies') || message.includes('need login') || message.includes('authentication required')) {
       return `Login required - Please sign in to ${platform} first and then retry later`;
     }
-    
+
     if (message.includes('network') || message.includes('connection') || message.includes('timeout')) {
       return 'Network connection error - Please check your internet connection';
     }
-    
+
     if (message.includes('not found') || message.includes('404')) {
       return 'Content not found - The video may have been removed or is private';
     }
-    
+
     if (message.includes('permission denied') || message.includes('403') || message.includes('unauthorized')) {
       return `Access denied - You may need to sign in to ${platform} to view this content`;
     }
-    
+
     if (message.includes('unsupported') || message.includes('not supported')) {
       return 'This website is not supported';
     }
-    
+
     if (message.includes('invalid url') || message.includes('malformed url')) {
       return 'Invalid URL format';
     }
-    
+
     if (message.includes('oops') || message.includes('something went wrong')) {
       return 'Download failed - Please try again';
     }
@@ -577,7 +576,7 @@ function DashboardContent() {
     if (!user?.id) return;
 
     const hasActiveTasks = downloads.some(d => d.status === 'pending' || d.status === 'processing');
-    
+
     if (hasActiveTasks) {
       // Reduced frequency: refresh every 10 seconds instead of 3 seconds
       const interval = setInterval(() => {
@@ -591,7 +590,7 @@ function DashboardContent() {
 
   const loadDownloads = async () => {
     if (!user?.id) return;
-    
+
     try {
       setLoading(true);
       setError('');
@@ -606,7 +605,7 @@ function DashboardContent() {
 
   const loadStats = async () => {
     if (!user?.id) return;
-    
+
     try {
       const userStats = await apiService.getUserStats(user.id);
       setStats(userStats);
@@ -617,7 +616,7 @@ function DashboardContent() {
 
   const deleteDownload = async (downloadId: string) => {
     if (!user?.id) return;
-    
+
     try {
       await apiService.deleteDownload(user.id, downloadId);
       setDownloads(downloads.filter(d => d.id !== downloadId));
@@ -661,8 +660,8 @@ function DashboardContent() {
   const filteredDownloads = downloads
     .filter(download => {
       if (filter !== 'all' && download.status !== filter) return false;
-      if (searchTerm && !download.title.toLowerCase().includes(searchTerm.toLowerCase()) && 
-          !download.site.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+      if (searchTerm && !download.title.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !download.site.toLowerCase().includes(searchTerm.toLowerCase())) return false;
       return true;
     })
     .sort((a, b) => {
@@ -705,16 +704,16 @@ function DashboardContent() {
     if (download.status !== 'completed') {
       return false;
     }
-    
+
     // Must be video, audio, or image type
     if (!['video', 'audio', 'image'].includes(download.type)) {
       return false;
     }
-    
+
     // Must have either downloadPath OR files array with at least one file
     const hasDownloadPath = download.downloadPath && download.filename;
     const hasFiles = download.files && download.files.length > 0;
-    
+
     return hasDownloadPath || hasFiles;
   };
 
@@ -751,7 +750,7 @@ function DashboardContent() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
             <AlertCircle className="h-5 w-5 text-red-500" />
             <span className="text-red-700">{error}</span>
-            <button 
+            <button
               onClick={() => setError('')}
               className="ml-auto text-red-500 hover:text-red-700"
             >
@@ -773,7 +772,7 @@ function DashboardContent() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -785,7 +784,7 @@ function DashboardContent() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -797,7 +796,7 @@ function DashboardContent() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -809,7 +808,7 @@ function DashboardContent() {
               </div>
             </div>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -900,7 +899,7 @@ function DashboardContent() {
                   <option value="size">{t('dashboard.filters.size')}</option>
                 </select>
               </div>
-              
+
               <button
                 onClick={() => {
                   loadDownloads();
@@ -920,14 +919,14 @@ function DashboardContent() {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">{t('dashboard.history.title')}</h2>
           </div>
-          
+
           <div className="divide-y divide-gray-200">
             {filteredDownloads.length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <Download className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">{t('dashboard.history.empty.title')}</h3>
                 <p className="text-gray-600">
-                  {searchTerm || filter !== 'all' 
+                  {searchTerm || filter !== 'all'
                     ? t('dashboard.history.empty.description')
                     : t('dashboard.history.empty.noDownloads')
                   }
@@ -957,7 +956,7 @@ function DashboardContent() {
                               </span>
                             )}
                           </div>
-                          
+
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span className="flex items-center space-x-1">
                               {getTypeIcon(download.type)}
@@ -986,7 +985,7 @@ function DashboardContent() {
                                 <span>{download.progress}%</span>
                               </div>
                               <div className="w-full bg-gray-200 rounded-full h-1.5">
-                                <div 
+                                <div
                                   className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
                                   style={{ width: `${download.progress}%` }}
                                 ></div>
@@ -995,12 +994,12 @@ function DashboardContent() {
                           )}
                         </div>
                       </div>
-                      
+
                       {/* Actions - Aligned Right */}
                       <div className="flex items-start space-x-2 ml-4 flex-shrink-0">
                         {/* Play Button - Fixed visibility logic */}
                         {canPlay(download) && (
-                          <button 
+                          <button
                             onClick={() => setSelectedDownload(download)}
                             className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
                             title={t('dashboard.actions.play')}
@@ -1008,10 +1007,10 @@ function DashboardContent() {
                             <Play className="h-4 w-4" />
                           </button>
                         )}
-                        
+
                         {/* Download Button */}
                         {download.status === 'completed' && (download.downloadPath || (download.files && download.files.length > 0)) && (
-                          <button 
+                          <button
                             onClick={() => handleDownloadFile(download)}
                             className="p-2 text-gray-400 hover:text-green-600 transition-colors"
                             title={download.files && download.files.length > 1 ? `Download all ${download.files.length} files` : t('dashboard.actions.download')}
@@ -1019,9 +1018,9 @@ function DashboardContent() {
                             <Download className="h-4 w-4" />
                           </button>
                         )}
-                        
+
                         {/* Delete Button */}
-                        <button 
+                        <button
                           onClick={() => deleteDownload(download.id)}
                           className="p-2 text-gray-400 hover:text-red-600 transition-colors"
                           title={t('dashboard.actions.delete')}

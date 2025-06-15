@@ -46,7 +46,8 @@
     },
     "nav": {
       "home": "Home",
-      "dashboard": "Dashboard"
+      "dashboard": "Dashboard",
+      "subscription": "Subscription"
     },
     "auth": {
       "signIn": "Sign In",

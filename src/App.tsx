@@ -7,9 +7,10 @@ import Footer from './components/Footer';
 import SystemStatus from './components/SystemStatus';
 import Dashboard from './components/Dashboard';
 import ClerkDebugInfo from './components/ClerkDebugInfo';
+import PricingPage from './components/PricingPage';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'pricing' | 'dashboard'>('home');
 
   // Listen for hash changes to handle navigation
   React.useEffect(() => {
@@ -17,6 +18,8 @@ function App() {
       const hash = window.location.hash.slice(1);
       if (hash === 'dashboard') {
         setCurrentPage('dashboard');
+      } else if (hash === 'pricing') {  // Fixed condition
+        setCurrentPage('pricing');
       } else {
         setCurrentPage('home');
       }
@@ -31,7 +34,7 @@ function App() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      {currentPage === 'home' ? (
+      {currentPage === 'home' && (
         <main>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
             <SystemStatus />
@@ -40,9 +43,9 @@ function App() {
           <Features />
           <SupportedSites />
         </main>
-      ) : (
-        <Dashboard />
       )}
+      {currentPage === 'pricing' && <PricingPage />}
+      {currentPage === 'dashboard' && <Dashboard />}
       <Footer />
       <ClerkDebugInfo />
     </div>
