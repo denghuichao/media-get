@@ -1,41 +1,40 @@
-# MediaGet - You-Get Web Interface
+# MediaGet - Universal Media Downloader
 
-A beautiful web interface for the powerful you-get media downloader utility with user authentication and asynchronous download processing.
+A beautiful, production-ready web interface for the powerful you-get media downloader utility with user authentication, asynchronous download processing, and HTTPS support.
 
-## Features
+## 🌟 Features
 
-- **User Authentication**: Secure sign-in/sign-up with Clerk
-- **URL Analysis**: Analyze any media URL to see available formats and quality options
-- **Asynchronous Downloads**: Download tasks are queued and processed in the background
-- **Real-time Progress**: See download progress and status updates
-- **Download Dashboard**: View download history and manage downloads (authenticated users only)
-- **100+ Supported Sites**: Works with YouTube, Twitter, Instagram, TikTok, and many more
-- **Database Persistence**: All user data and download tasks are stored in SQLite database
-- **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
+- **🔐 User Authentication**: Secure sign-in/sign-up with Clerk
+- **🔍 URL Analysis**: Analyze any media URL to see available formats and quality options
+- **⚡ Asynchronous Downloads**: Download tasks are queued and processed in the background
+- **📊 Real-time Progress**: See download progress and status updates
+- **📱 Download Dashboard**: View download history and manage downloads (authenticated users only)
+- **🌐 100+ Supported Sites**: Works with YouTube, Twitter, Instagram, TikTok, Bilibili, and many more
+- **💾 Database Persistence**: All user data and download tasks are stored in SQLite database
+- **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
+- **🔒 HTTPS Support**: Production-ready with SSL certificates and security headers
+- **🌍 Multi-language Support**: Available in 10+ languages
+- **🎵 Playlist Support**: Download entire playlists from supported platforms
 
-## Architecture
+## 🏗️ Architecture
 
-The application now uses an asynchronous architecture:
+The application uses an asynchronous architecture:
 
 1. **Frontend**: React application with real-time task status polling
 2. **API Server**: Express.js server that handles requests and manages tasks
 3. **Database**: SQLite database for persistent storage
 4. **Worker Process**: Background worker that processes download tasks
+5. **Nginx**: Reverse proxy with SSL termination and rate limiting
 
-## Data Storage
+## 📋 Prerequisites
 
-By default, all data is stored in `~/data/media-get/`:
-- **Database**: `~/data/media-get/mediaget.db`
-- **Downloads**: `~/data/media-get/downloads/`
+### System Requirements
 
-You can customize the data directory by setting the `DATA_DIR` environment variable:
-```bash
-export DATA_DIR=/custom/path/to/data
-```
-
-## Prerequisites
-
-Before running this application, you need to have you-get installed on your system:
+- **Node.js** 18+ 
+- **Python** 3.6+
+- **you-get** installed (`pip install you-get`)
+- **FFmpeg** (recommended for video processing)
+- **Docker & Docker Compose** (for production deployment)
 
 ### Install you-get
 
@@ -64,49 +63,237 @@ sudo apt install ffmpeg
 # On Windows: Download from https://ffmpeg.org/download.html
 ```
 
-## Installation & Setup
+## 🚀 Quick Start
 
-1. **Clone or download this project**
+### Development Setup
 
-2. **Install Node.js dependencies**:
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd mediaget
+   ```
+
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Set up Clerk Authentication**:
+3. **Set up authentication**
    - Create a free account at [Clerk.com](https://clerk.com)
    - Create a new application in your Clerk dashboard
    - Copy your publishable key
-   - Create a `.env.local` file in the project root:
-     ```
+   - Create a `.env.local` file:
+     ```env
      VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
      ```
 
-4. **Start the API server**:
+4. **Start the services**
    ```bash
+   # Terminal 1: API Server
    npm run server
-   ```
-   This starts the Express server on port 3001 that interfaces with you-get.
 
-5. **Start the download worker** (in a new terminal):
-   ```bash
+   # Terminal 2: Download Worker
    npm run worker
-   ```
-   This starts the background worker that processes download tasks.
 
-6. **Start the frontend development server** (in a new terminal):
-   ```bash
+   # Terminal 3: Frontend
    npm run dev
    ```
-   This starts the Vite development server on port 5173.
 
-7. **Open your browser** and navigate to `http://localhost:5173`
+5. **Open your browser** and navigate to `http://localhost:5173`
 
-## Database Schema
+### Production Deployment with HTTPS
 
-The application uses SQLite with the following main table:
+For production deployment on your domain `media-get.site`:
 
-### download_tasks
+1. **Configure environment**
+   ```bash
+   cp .env.example .env.local
+   # Edit .env.local with your actual values
+   ```
+
+2. **Deploy with HTTPS**
+   ```bash
+   chmod +x scripts/deploy.sh
+   ./scripts/deploy.sh
+   ```
+
+3. **Access your site**
+   - https://media-get.site
+   - https://www.media-get.site
+
+## 🐳 Docker Deployment
+
+### Quick Docker Setup
+
+```bash
+# Development mode
+docker-compose up -d
+
+# Production mode with SSL
+docker-compose --profile production up -d
+```
+
+### Services
+
+- **Backend Service**: Node.js with you-get installed (Port 3001)
+- **Frontend Service**: React application with Vite (Port 5173/80)
+- **Nginx Service**: Reverse proxy with SSL (Port 80/443)
+- **Certbot Service**: Automatic SSL certificate management
+
+## 💾 Data Storage
+
+By default, all data is stored in `~/data/media-get/`:
+- **Database**: `~/data/media-get/mediaget.db`
+- **Downloads**: `~/data/media-get/downloads/`
+
+Customize the data directory:
+```bash
+export DATA_DIR=/custom/path/to/data
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+Create a `.env.local` file with:
+
+```env
+# Required
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
+
+# API Configuration
+VITE_API_BASE_URL=https://media-get.site/api
+
+# Contact Information
+VITE_CONTACT_EMAIL=support@media-get.site
+VITE_GITHUB_URL=https://github.com/yourusername/mediaget
+VITE_TWITTER_URL=https://twitter.com/yourusername
+
+# SSL Configuration (Production)
+SSL_EMAIL=admin@media-get.site
+
+# Data Directory Configuration
+DATA_DIR=/custom/path/to/data              # Default: ~/data/media-get
+DOWNLOADS_DIR=/custom/path/to/downloads    # Default: ~/data/media-get/downloads
+
+# Worker Configuration
+WORKER_INTERVAL=5000                       # Worker polling interval (ms)
+MAX_CONCURRENT_DOWNLOADS=3                 # Max simultaneous downloads
+CLEANUP_INTERVAL_HOURS=24                  # How often to cleanup old files
+MAX_DOWNLOAD_AGE_HOURS=24                  # Max age before files are deleted
+```
+
+## 🔒 HTTPS and SSL Setup
+
+### Prerequisites for HTTPS
+
+- Domain `media-get.site` pointing to your server's IP address
+- Ports 80 and 443 open on your server
+- Docker and Docker Compose installed
+
+### Automatic SSL Setup
+
+The deployment script automatically:
+- Obtains SSL certificates from Let's Encrypt
+- Configures HTTPS redirects
+- Sets up security headers
+- Enables automatic certificate renewal
+
+### Manual SSL Setup
+
+```bash
+# Set up SSL certificates
+chmod +x scripts/ssl-setup.sh
+./scripts/ssl-setup.sh
+
+# Set up automatic renewal (add to crontab)
+0 12 * * * /path/to/your/project/certbot-renew.sh
+```
+
+### Security Features
+
+- **HTTPS Enforcement**: All HTTP traffic redirects to HTTPS
+- **HSTS Headers**: HTTP Strict Transport Security
+- **Security Headers**: XSS protection, content type sniffing protection
+- **Rate Limiting**: API (10 req/s) and Download (2 req/s) endpoints
+- **Modern TLS**: TLS 1.2+ with secure cipher suites
+
+## 📊 API Documentation
+
+### Core Endpoints
+
+#### Analyze Media URL
+```http
+POST /api/analyze
+Content-Type: application/json
+
+{
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+}
+```
+
+#### Create Download Task
+```http
+POST /api/download
+Content-Type: application/json
+
+{
+  "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+  "userId": "user_123",
+  "itag": "22",
+  "downloadPlaylist": false
+}
+```
+
+#### Get Task Status
+```http
+GET /api/task/{taskId}
+```
+
+#### User Downloads
+```http
+GET /api/downloads/{userId}
+DELETE /api/downloads/{userId}/{taskId}
+```
+
+#### System Health
+```http
+GET /api/health
+GET /api/check-youget
+GET /api/supported-sites
+```
+
+### Response Examples
+
+**Analysis Response**:
+```json
+{
+  "site": "YouTube",
+  "title": "Rick Astley - Never Gonna Give You Up",
+  "formats": [
+    {
+      "itag": "22",
+      "container": "mp4",
+      "quality": "hd720",
+      "size": "45.2 MiB",
+      "type": "video"
+    }
+  ]
+}
+```
+
+**Download Response**:
+```json
+{
+  "success": true,
+  "taskId": "abc123-def456",
+  "message": "Download started successfully"
+}
+```
+
+## 🗄️ Database Schema
+
+### download_tasks Table
 
 ```sql
 CREATE TABLE download_tasks (
@@ -121,6 +308,8 @@ CREATE TABLE download_tasks (
   progress INTEGER DEFAULT 0,
   result TEXT,
   error TEXT,
+  cookies TEXT,
+  is_playlist BOOLEAN DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -132,97 +321,101 @@ CREATE TABLE download_tasks (
 2. **processing**: Worker is downloading the media
 3. **completed**: Download finished successfully
 4. **failed**: Download failed with error
+5. **invalid**: Files cleaned up due to age
 
-## File Organization
+## 🌐 Supported Platforms
 
-- **Task Directories**: Each download task gets its own directory named with the task_id
-- **File Naming**: Downloaded files are renamed with `{title}_{itag}` prefix
-- **Example**: `~/data/media-get/downloads/abc123-def456/Rick-Astley-Never-Gonna-Give-You-Up_22.mp4`
+### Popular International Sites
+- YouTube, Twitter/X, Instagram, TikTok
+- Vimeo, Facebook, Tumblr, SoundCloud
+- Dailymotion, Pinterest, Flickr, VK
 
-## Usage
+### Chinese Platforms
+- Bilibili 哔哩哔哩, iQIYI 爱奇艺, Youku 优酷
+- QQ 腾讯视频, Weibo 微博, Douyin 抖音
+- NetEase 网易, Baidu 百度, Kuaishou 快手
 
-1. **Sign up or sign in** to create your account
-2. **Paste a URL** from any supported site (YouTube, Twitter, Instagram, etc.)
-3. **Click "Analyze"** to see available formats and quality options
-4. **Select your preferred format** from the available options
-5. **Click "Download Now"** to create a download task
-6. **Monitor progress** in real-time as the task is processed
-7. **View your downloads** in the Dashboard page
-8. **The file will be downloaded** to your browser when ready
+### Japanese Platforms
+- Niconico ニコニコ動画, 755 ナナゴーゴー
 
-## API Endpoints
+### Korean Platforms
+- Naver 네이버
 
-The backend provides several REST API endpoints:
+**Total: 100+ supported platforms**
 
-- `POST /api/analyze` - Analyze a URL and get media information
-- `POST /api/download` - Create a download task
-- `GET /api/task/:taskId` - Get task status and progress
-- `GET /api/downloads/:userId` - Get user's download history
-- `DELETE /api/downloads/:userId/:taskId` - Delete a download task
-- `GET /api/stats/:userId` - Get user download statistics
-- `GET /api/supported-sites` - Get list of supported sites
-- `GET /api/check-youget` - Check you-get installation status
-- `GET /api/health` - Health check endpoint
+## 🛠️ you-get Integration
 
-## Configuration
+### How It Works
 
-### Environment Variables
+The backend integrates with you-get as a command-line utility:
 
-Create a `.env.local` file with:
+1. **Analysis**: `you-get -i <url>` to extract media information
+2. **Download**: `you-get -o /downloads --itag=<format> <url>` to download files
+3. **File Serving**: Express serves downloaded files via static middleware
 
-```
-VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
-
-# Optional data directory configuration
-DATA_DIR=/custom/path/to/data              # Default: ~/data/media-get
-DOWNLOADS_DIR=/custom/path/to/downloads    # Default: ~/data/media-get/downloads
-
-# Optional worker configuration
-WORKER_INTERVAL=5000                       # Worker polling interval (ms)
-MAX_CONCURRENT_DOWNLOADS=3                 # Max simultaneous downloads
-CLEANUP_INTERVAL_HOURS=24                  # How often to cleanup old files
-MAX_DOWNLOAD_AGE_HOURS=24                  # Max age before files are deleted
-```
-
-## Development
-
-To contribute or modify the application:
-
-1. **Frontend**: Built with React, TypeScript, Tailwind CSS, and Clerk
-2. **Backend**: Node.js with Express, SQLite database
-3. **Worker**: Background process for handling downloads
-4. **Authentication**: Clerk for secure user management
-5. **API**: RESTful API design with proper error handling
-
-## Production Deployment
-
-### Running All Services
+### Command Examples
 
 ```bash
-# Terminal 1: API Server
-npm run server
+# Get video info
+you-get -i https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
-# Terminal 2: Download Worker
-npm run worker
+# Download specific format
+you-get --itag=22 -o /downloads https://www.youtube.com/watch?v=dQw4w9WgXcQ
 
-# Terminal 3: Frontend (development)
-npm run dev
-
-# Or build for production
-npm run build
-npm run preview
+# Download playlist
+you-get -l -o /downloads https://www.youtube.com/playlist?list=...
 ```
 
-### Docker Deployment
+## 🔧 Development
 
-The project includes Docker configuration for production deployment. See `README-Docker.md` for details.
+### Project Structure
 
-## Troubleshooting
+```
+mediaget/
+├── src/                    # Frontend React application
+│   ├── components/         # React components
+│   ├── services/          # API service layer
+│   ├── i18n/              # Internationalization
+│   └── utils/             # Utility functions
+├── server/                # Backend Node.js application
+│   ├── index.js           # Main API server
+│   ├── worker.js          # Download worker process
+│   ├── database.js        # Database operations
+│   └── workerSystem.js    # Worker system management
+├── scripts/               # Deployment scripts
+├── docker-compose.yml     # Docker configuration
+└── nginx.conf            # Nginx configuration
+```
 
-### "you-get is not installed" Error
+### Available Scripts
 
-Make sure you-get is properly installed and accessible from the command line:
+```bash
+# Development
+npm run dev          # Start frontend development server
+npm run server       # Start backend API server
+npm run worker       # Start download worker
 
+# Production
+npm run build        # Build frontend for production
+npm run preview      # Preview production build
+
+# Deployment
+./scripts/deploy.sh  # Full production deployment
+./scripts/ssl-setup.sh # SSL certificate setup
+```
+
+### Adding New Features
+
+1. **Frontend**: Built with React, TypeScript, Tailwind CSS
+2. **Backend**: Node.js with Express, SQLite database
+3. **Authentication**: Clerk for secure user management
+4. **Internationalization**: React-i18next with 10+ languages
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### "you-get is not installed" Error
 ```bash
 # Test you-get installation
 you-get --version
@@ -231,47 +424,139 @@ you-get --version
 pip install you-get
 ```
 
-### Database Issues
-
-The SQLite database is automatically created in `~/data/media-get/mediaget.db`. If you encounter issues:
-
+#### Database Issues
 ```bash
-# Delete the database to reset
+# Reset database
 rm ~/data/media-get/mediaget.db
-
-# Restart the server to recreate
-npm run server
+npm run server  # Recreates database
 ```
 
-### Worker Not Processing Tasks
+#### Worker Not Processing Tasks
+```bash
+# Check worker status
+npm run worker
 
-1. **Check worker status**: Make sure the worker process is running
-2. **Check logs**: Look for error messages in the worker terminal
-3. **Check database**: Verify tasks are being created with `pending` status
-4. **Restart worker**: Stop and restart the worker process
+# Check database for pending tasks
+sqlite3 ~/data/media-get/mediaget.db "SELECT * FROM download_tasks WHERE status='pending';"
+```
 
-### Authentication Issues
+#### SSL Certificate Issues
+```bash
+# Check certificate status
+docker-compose run --rm certbot certificates
 
-1. **Check Clerk setup**: Ensure your publishable key is correctly set in `.env.local`
-2. **Domain configuration**: Make sure your development domain is configured in Clerk dashboard
-3. **Browser issues**: Clear browser cache and cookies if experiencing login issues
+# Force renewal
+docker-compose run --rm certbot renew --force-renewal
+```
 
-### Data Directory Permissions
+#### Authentication Issues
+1. Verify Clerk publishable key in `.env.local`
+2. Check domain configuration in Clerk dashboard
+3. Clear browser cache and cookies
 
-If you encounter permission errors:
+### Health Checks
 
 ```bash
-# Make sure the data directory is writable
-chmod 755 ~/data/media-get
-chmod 755 ~/data/media-get/downloads
+# Backend health
+curl https://media-get.site/api/health
+
+# you-get status
+curl https://media-get.site/api/check-youget
+
+# Frontend accessibility
+curl -I https://media-get.site
 ```
 
-## License
+### Log Monitoring
+
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f backend
+docker-compose logs -f worker
+docker-compose logs -f nginx
+```
+
+## 📈 Performance & Monitoring
+
+### Performance Features
+- Asynchronous download processing
+- Real-time progress updates
+- Automatic file cleanup
+- Rate limiting protection
+- Gzip compression
+- HTTP/2 support
+
+### Monitoring
+- Health check endpoints
+- Download statistics
+- User activity tracking
+- Error logging and reporting
+
+## 🔐 Security
+
+### Authentication & Authorization
+- Clerk-based user authentication
+- User-specific download isolation
+- Secure session management
+
+### Data Protection
+- HTTPS enforcement
+- Security headers (HSTS, CSP, XSS protection)
+- Rate limiting
+- Input validation and sanitization
+
+### File Security
+- Sandboxed download directories
+- Automatic file cleanup
+- Path traversal protection
+
+## 🌍 Internationalization
+
+Supported languages:
+- English, 中文 (Chinese), Español (Spanish)
+- Français (French), Deutsch (German), 日本語 (Japanese)
+- 한국어 (Korean), Português (Portuguese)
+- Русский (Russian), العربية (Arabic)
+
+## 📄 License
 
 This project is open source. The you-get utility is licensed under the MIT License.
 
-## Credits
+## 🙏 Credits
 
 - **you-get**: The powerful command-line media downloader by [@soimort](https://github.com/soimort)
 - **Clerk**: Modern authentication and user management
-- **UI Design**: Modern, responsive interface built with React and Tailwind CSS
+- **React**: Frontend framework
+- **Tailwind CSS**: Utility-first CSS framework
+- **Express.js**: Backend web framework
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+### Development Guidelines
+
+- Follow existing code style
+- Add comprehensive error handling
+- Update documentation
+- Test with various media sources
+- Maintain backward compatibility
+
+## 📞 Support
+
+- **Email**: denghuichao0@gmail.com
+- **GitHub Issues**: [Create an issue](https://github.com/denghuichao/media-get/issues)
+- **Documentation**: This README and inline code comments
+
+---
+
+**MediaGet** - Download media from anywhere, beautifully and securely.
+
+*Built with ❤️ using you-get, React, and modern web technologies.*
