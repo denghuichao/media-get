@@ -59,6 +59,9 @@ createRoot(document.getElementById('root')!).render(
       <ClerkProvider 
         publishableKey={PUBLISHABLE_KEY} 
         afterSignOutUrl="/"
+        // Add domain configuration for production
+        domain={window.location.hostname}
+        isSatellite={false}
         appearance={{
           baseTheme: undefined,
           variables: {
