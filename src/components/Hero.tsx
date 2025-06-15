@@ -384,7 +384,7 @@ export default function Hero() {
             {t('hero.title')}
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> {t('hero.titleHighlight')}</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             {t('hero.subtitle')}
           </p>
         </div>
@@ -708,9 +708,9 @@ export default function Hero() {
             <span>{t('hero.poweredBy.suffix')}</span>
             <Heart className="h-4 w-4 text-red-500 fill-red-500" />
           </p>
-          <div className="flex justify-center space-x-8 text-sm text-gray-500">
+          <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-gray-500">
             {t('hero.features', { returnObjects: true }).map((feature: string, index: number) => (
-              <span key={index}>✓ {feature}</span>
+              <span key={index} className="whitespace-nowrap">✓ {feature}</span>
             ))}
           </div>
         </div>
