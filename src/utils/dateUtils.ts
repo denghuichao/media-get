@@ -20,7 +20,7 @@ export function formatTimestamp(
   } = options;
 
   const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
-  
+
   if (isNaN(date.getTime())) {
     return 'Invalid date';
   }
@@ -30,12 +30,12 @@ export function formatTimestamp(
 
   if (format === 'relative' || format === 'both') {
     const relativeTime = formatRelativeTime(diff, locale);
-    
+
     if (format === 'both') {
       const absoluteTime = formatAbsoluteTime(date, timezone, locale);
       return `${relativeTime} (${absoluteTime})`;
     }
-    
+
     return relativeTime;
   }
 
@@ -102,7 +102,7 @@ export function formatDateOnly(
   locale: string = navigator.language
 ): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
+
   return new Intl.DateTimeFormat(locale, {
     timeZone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
     year: 'numeric',
@@ -120,7 +120,7 @@ export function formatTimeOnly(
   locale: string = navigator.language
 ): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
+
   return new Intl.DateTimeFormat(locale, {
     timeZone: timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
     hour: 'numeric',
@@ -141,12 +141,12 @@ export function getUserTimezone(): string {
 export function getTimezoneOffset(timezone?: string): string {
   const tz = timezone || getUserTimezone();
   const date = new Date();
-  
+
   // Get the offset in minutes
   const offsetMinutes = date.getTimezoneOffset();
   const offsetHours = Math.abs(offsetMinutes) / 60;
   const sign = offsetMinutes <= 0 ? '+' : '-';
-  
+
   // Format as UTC±X
   if (offsetHours === Math.floor(offsetHours)) {
     return `UTC${sign}${Math.floor(offsetHours)}`;
@@ -164,21 +164,21 @@ export function isToday(date: Date | string, timezone?: string): boolean {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const now = new Date();
   const tz = timezone || getUserTimezone();
-  
+
   const dateStr = new Intl.DateTimeFormat('en-CA', {
     timeZone: tz,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   }).format(dateObj);
-  
+
   const todayStr = new Intl.DateTimeFormat('en-CA', {
     timeZone: tz,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   }).format(now);
-  
+
   return dateStr === todayStr;
 }
 
@@ -190,21 +190,21 @@ export function isYesterday(date: Date | string, timezone?: string): boolean {
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const tz = timezone || getUserTimezone();
-  
+
   const dateStr = new Intl.DateTimeFormat('en-CA', {
     timeZone: tz,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   }).format(dateObj);
-  
+
   const yesterdayStr = new Intl.DateTimeFormat('en-CA', {
     timeZone: tz,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   }).format(yesterday);
-  
+
   return dateStr === yesterdayStr;
 }
 
@@ -219,7 +219,7 @@ export function formatSmartTimestamp(
   const date = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
   const tz = timezone || getUserTimezone();
   const loc = locale || navigator.language;
-  
+
   if (isToday(date, tz)) {
     return `Today at ${formatTimeOnly(date, tz, loc)}`;
   } else if (isYesterday(date, tz)) {
@@ -227,7 +227,7 @@ export function formatSmartTimestamp(
   } else {
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 7) {
       // Show day of week for recent dates
       const dayName = new Intl.DateTimeFormat(loc, {
@@ -250,12 +250,12 @@ export function convertUTCToLocal(utcTimestamp: string): Date {
   // The database stores timestamps as UTC strings like "2025-01-27 10:30:00"
   // But JavaScript Date constructor treats them as local time
   // We need to explicitly parse them as UTC
-  
+
   // If the timestamp already has timezone info, use it directly
   if (utcTimestamp.includes('T') || utcTimestamp.includes('Z') || utcTimestamp.includes('+')) {
     return new Date(utcTimestamp);
   }
-  
+
   // If it's a simple format like "2025-01-27 10:30:00", treat it as UTC
   const utcDate = new Date(utcTimestamp + ' UTC');
   return utcDate;
@@ -269,13 +269,13 @@ export function formatTimestampWithUTC(
   options: TimezoneOptions = {}
 ): string {
   let date: Date;
-  
+
   if (typeof timestamp === 'string') {
     date = convertUTCToLocal(timestamp);
   } else {
     date = timestamp;
   }
-  
+
   return formatTimestamp(date, options);
 }
 
@@ -288,12 +288,12 @@ export function formatSmartTimestampWithUTC(
   locale?: string
 ): string {
   let date: Date;
-  
+
   if (typeof timestamp === 'string') {
     date = convertUTCToLocal(timestamp);
   } else {
     date = timestamp;
   }
-  
+
   return formatSmartTimestamp(date, timezone, locale);
 }

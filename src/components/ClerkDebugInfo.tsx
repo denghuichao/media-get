@@ -18,6 +18,7 @@ export default function ClerkDebugInfo() {
       <div>Loaded: {isLoaded ? '✅' : '❌'}</div>
       <div>Signed In: {isSignedIn ? '✅' : '❌'}</div>
       <div>User: {user?.firstName || 'None'}</div>
+      <div>UserId: {user?.id || 'None'}</div>
       <div>Key: {import.meta.env.VITE_CLERK_PUBLISHABLE_KEY?.substring(0, 12)}...</div>
       <div>Env: {import.meta.env.MODE}</div>
     </div>

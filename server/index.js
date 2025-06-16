@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { initializeDatabase, DownloadTaskDB, UserCookiesDB } from './database.js';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,20 +41,20 @@ async function startWorkerSystem() {
   console.log('Starting MediaGet Download Worker System...');
   console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads directory: ${DOWNLOADS_DIR}`);
-  
+
   try {
     // Import worker system dynamically
     const { DownloadDispatcher } = await import('./workerSystem.js');
-    
+
     // Create and start dispatcher
     const dispatcher = new DownloadDispatcher();
     await dispatcher.start();
-    
+
     workerSystem = dispatcher;
     console.log('MediaGet Download Worker System is running...');
-    
+
     return dispatcher;
-    
+
   } catch (error) {
     console.error('Failed to start worker system:', error);
     // Don't exit the server if worker fails to start
@@ -66,10 +67,10 @@ async function initializeServer() {
   try {
     await initializeDatabase();
     console.log('Database initialized successfully');
-    
+
     // Start worker system
     await startWorkerSystem();
-    
+
   } catch (error) {
     console.error('Failed to initialize server:', error);
     process.exit(1);
@@ -110,33 +111,33 @@ function parseYouGetJson(output) {
   try {
     const lines = output.split('\n');
     let jsonStart = -1;
-    
+
     for (let i = 0; i < lines.length; i++) {
       if (lines[i].trim().startsWith('{')) {
         jsonStart = i;
         break;
       }
     }
-    
+
     if (jsonStart === -1) {
       throw new Error('No JSON found in you-get output');
     }
-    
+
     const jsonString = lines.slice(jsonStart).join('\n');
     const data = JSON.parse(jsonString);
-    
+
     const info = {
       site: data.site || '',
       title: data.title || '',
       formats: []
     };
-    
+
     if (data.streams && typeof data.streams === 'object') {
       for (const [formatId, streamData] of Object.entries(data.streams)) {
         let type = 'video';
         const container = streamData.container || 'mp4';
         const quality = streamData.quality || '';
-        
+
         if (['mp3', 'm4a', 'aac', 'flac', 'ogg', 'wav'].includes(container.toLowerCase())) {
           type = 'audio';
         } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(container.toLowerCase())) {
@@ -144,7 +145,7 @@ function parseYouGetJson(output) {
         } else if (quality.toLowerCase().includes('audio') || quality.toLowerCase().includes('kbps')) {
           type = 'audio';
         }
-        
+
         let size = 'Unknown';
         if (streamData.size && typeof streamData.size === 'number') {
           const sizeInMB = streamData.size / (1024 * 1024);
@@ -155,12 +156,12 @@ function parseYouGetJson(output) {
             size = `${sizeInKB.toFixed(1)} KiB`;
           }
         }
-        
+
         let qualityNote = quality;
         if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
           qualityNote += ' (Video+Audio will be merged)';
         }
-        
+
         info.formats.push({
           itag: formatId,
           container: container,
@@ -170,7 +171,7 @@ function parseYouGetJson(output) {
         });
       }
     }
-    
+
     return info;
   } catch (error) {
     console.error('Error parsing you-get JSON:', error);
@@ -185,28 +186,28 @@ function isPlaylistUrl(url) {
     const hostname = urlObj.hostname.toLowerCase();
     const pathname = urlObj.pathname.toLowerCase();
     const searchParams = urlObj.searchParams;
-    
+
     // YouTube playlist indicators
     if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
-      return searchParams.has('list') || 
-             pathname.includes('/playlist') ||
-             pathname.includes('/channel') ||
-             pathname.includes('/user');
+      return searchParams.has('list') ||
+        pathname.includes('/playlist') ||
+        pathname.includes('/channel') ||
+        pathname.includes('/user');
     }
-    
+
     // Bilibili playlist indicators
     if (hostname.includes('bilibili.com')) {
       return pathname.includes('/favlist') ||
-             pathname.includes('/medialist') ||
-             pathname.includes('/collection');
+        pathname.includes('/medialist') ||
+        pathname.includes('/collection');
     }
-    
+
     // Other common playlist patterns
     return pathname.includes('playlist') ||
-           pathname.includes('album') ||
-           pathname.includes('collection') ||
-           searchParams.has('playlist') ||
-           searchParams.has('album');
+      pathname.includes('album') ||
+      pathname.includes('collection') ||
+      searchParams.has('playlist') ||
+      searchParams.has('album');
   } catch {
     return false;
   }
@@ -218,7 +219,7 @@ function isPlaylistUrl(url) {
 app.post('/api/analyze', async (req, res) => {
   try {
     const { url } = req.body;
-    
+
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
     }
@@ -230,10 +231,10 @@ app.post('/api/analyze', async (req, res) => {
     }
 
     console.log(`Analyzing URL: ${url}`);
-    
+
     const output = await executeYouGet(['--json', url]);
     const mediaInfo = parseYouGetJson(output);
-    
+
     if (!mediaInfo.title) {
       return res.status(404).json({ error: 'No media found at this URL' });
     }
@@ -244,9 +245,9 @@ app.post('/api/analyze', async (req, res) => {
     res.json(mediaInfo);
   } catch (error) {
     console.error('Analysis error:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to analyze URL. Please check if the URL is valid and supported.',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -255,7 +256,7 @@ app.post('/api/analyze', async (req, res) => {
 app.post('/api/download', async (req, res) => {
   try {
     const { url, itag, outputName, userId, cookies, downloadPlaylist = false } = req.body;
-    
+
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
     }
@@ -265,7 +266,7 @@ app.post('/api/download', async (req, res) => {
     }
 
     console.log(`Creating download task for user ${userId}: ${url} with format: ${itag}, playlist: ${downloadPlaylist}`);
-    
+
     // Get media info for the task
     let mediaInfo;
     try {
@@ -311,13 +312,13 @@ app.post('/api/download', async (req, res) => {
     };
 
     const task = await DownloadTaskDB.createTask(taskData);
-    
+
     console.log(`Created download task: ${taskId} (playlist: ${downloadPlaylist})`);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       taskId: taskId,
-      message: downloadPlaylist 
+      message: downloadPlaylist
         ? 'Playlist download task created successfully. Processing will begin shortly.'
         : 'Download task created successfully. Processing will begin shortly.',
       task: {
@@ -329,12 +330,12 @@ app.post('/api/download', async (req, res) => {
         isPlaylist: downloadPlaylist
       }
     });
-    
+
   } catch (error) {
     console.error('Download task creation error:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create download task. Please try again.',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -343,13 +344,13 @@ app.post('/api/download', async (req, res) => {
 app.get('/api/task/:taskId', async (req, res) => {
   try {
     const { taskId } = req.params;
-    
+
     const task = await DownloadTaskDB.getTask(taskId);
-    
+
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    
+
     // Transform task data for frontend
     const response = {
       id: task.task_id,
@@ -371,7 +372,7 @@ app.get('/api/task/:taskId', async (req, res) => {
       response.downloadUrl = task.result.files?.[0]?.downloadPath;
       response.filename = task.result.files?.[0]?.filename;
     }
-    
+
     res.json(response);
   } catch (error) {
     console.error('Error fetching task:', error);
@@ -383,19 +384,19 @@ app.get('/api/task/:taskId', async (req, res) => {
 app.get('/api/downloads/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { 
-      limit = 100, 
-      offset = 0, 
-      platform, 
-      media_type, 
-      status 
+    const {
+      limit = 100,
+      offset = 0,
+      platform,
+      media_type,
+      status
     } = req.query;
-    
+
     const params = {
       uid: userId,
-      page_info: { 
-        limit: parseInt(limit), 
-        offset: parseInt(offset) 
+      page_info: {
+        limit: parseInt(limit),
+        offset: parseInt(offset)
       }
     };
 
@@ -403,9 +404,9 @@ app.get('/api/downloads/:userId', async (req, res) => {
     if (platform) params.platform = platform;
     if (media_type) params.media_type = media_type;
     if (status) params.status = status;
-    
+
     const tasks = await DownloadTaskDB.getTasksByUid(params);
-    
+
     // Transform tasks to match frontend expectations
     const downloads = tasks.map(task => ({
       id: task.task_id,
@@ -427,7 +428,7 @@ app.get('/api/downloads/:userId', async (req, res) => {
       files: task.result?.files || null,
       fileCount: task.result?.files?.length || (task.result?.files ? 1 : 0)
     }));
-    
+
     res.json(downloads);
   } catch (error) {
     console.error('Error fetching user downloads:', error);
@@ -439,18 +440,18 @@ app.get('/api/downloads/:userId', async (req, res) => {
 app.delete('/api/downloads/:userId/:taskId', async (req, res) => {
   try {
     const { userId, taskId } = req.params;
-    
+
     // Get task to find download directory
     const task = await DownloadTaskDB.getTask(taskId);
-    
+
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    
+
     if (task.user_id !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    
+
     // Remove files if they exist
     if (task.result && task.result.downloadDir) {
       const downloadDirPath = path.join(DOWNLOADS_DIR, task.result.downloadDir);
@@ -458,10 +459,10 @@ app.delete('/api/downloads/:userId/:taskId', async (req, res) => {
         fs.rmSync(downloadDirPath, { recursive: true, force: true });
       }
     }
-    
+
     // Delete task from database
     await DownloadTaskDB.deleteTask(taskId, userId);
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting download:', error);
@@ -486,16 +487,16 @@ app.post('/api/cookies/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const { platform, cookies } = req.body;
-    
+
     if (!platform || !cookies) {
       return res.status(400).json({ error: 'Platform and cookies are required' });
     }
-    
+
     await UserCookiesDB.saveCookies(userId, platform, cookies);
-    
-    res.json({ 
-      success: true, 
-      message: 'Cookies saved successfully' 
+
+    res.json({
+      success: true,
+      message: 'Cookies saved successfully'
     });
   } catch (error) {
     console.error('Error saving cookies:', error);
@@ -507,13 +508,13 @@ app.post('/api/cookies/:userId', async (req, res) => {
 app.get('/api/cookies/:userId/:platform', async (req, res) => {
   try {
     const { userId, platform } = req.params;
-    
+
     const cookies = await UserCookiesDB.getCookies(userId, platform);
-    
+
     if (!cookies) {
       return res.status(404).json({ error: 'No cookies found for this platform' });
     }
-    
+
     res.json({
       platform: cookies.platform_name,
       cookies: cookies.cookies_data,
@@ -529,9 +530,9 @@ app.get('/api/cookies/:userId/:platform', async (req, res) => {
 app.get('/api/cookies/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const cookies = await UserCookiesDB.getUserCookies(userId);
-    
+
     res.json(cookies.map(cookie => ({
       platform: cookie.platform_name,
       updatedAt: cookie.updated_at
@@ -546,12 +547,12 @@ app.get('/api/cookies/:userId', async (req, res) => {
 app.delete('/api/cookies/:userId/:platform', async (req, res) => {
   try {
     const { userId, platform } = req.params;
-    
+
     await UserCookiesDB.deleteCookies(userId, platform);
-    
-    res.json({ 
-      success: true, 
-      message: 'Cookies deleted successfully' 
+
+    res.json({
+      success: true,
+      message: 'Cookies deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting cookies:', error);
@@ -599,14 +600,14 @@ app.get('/api/supported-sites', (req, res) => {
     { name: 'Dailymotion', url: 'dailymotion.com', types: ['video'] },
     { name: 'Bilibili', url: 'bilibili.com', types: ['video'] },
   ];
-  
+
   res.json(sites);
 });
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     workerSystem: workerSystem ? 'running' : 'not running'
   });
@@ -616,7 +617,7 @@ app.get('/api/health', (req, res) => {
 app.get('/api/check-youget', async (req, res) => {
   try {
     const output = await executeYouGet(['--version']);
-    
+
     // Check FFmpeg availability
     let ffmpegAvailable = false;
     try {
@@ -632,32 +633,167 @@ app.get('/api/check-youget', async (req, res) => {
     } catch {
       ffmpegAvailable = false;
     }
-    
-    res.json({ 
-      installed: true, 
+
+    res.json({
+      installed: true,
       version: output.trim(),
       ffmpegAvailable: ffmpegAvailable,
       workerSystem: workerSystem ? 'running' : 'not running',
       message: `you-get is properly installed${ffmpegAvailable ? ' with FFmpeg support for video/audio merging' : ' (install FFmpeg for automatic video/audio merging)'}`
     });
   } catch (error) {
-    res.status(500).json({ 
-      installed: false, 
+    res.status(500).json({
+      installed: false,
       error: 'you-get is not installed or not accessible',
-      details: error.message 
+      details: error.message
     });
   }
 });
 
+
+// 只保留必要字段，icon/gradient/buttonText 可省略或用字符串
+const pricingPlans = [
+  {
+    id: 'free',
+    name: 'Free Plan',
+    price: 0,
+    period: 'forever',
+    description: 'Perfect for casual users who need basic downloading',
+    features: [
+      '5 downloads per day',
+      '500Mb total downloads per day',
+      '8 hours file storage',
+      'Standard quality (720p and below)',
+      'MP4 and MP3 formats',
+      '100+ supported platforms',
+      'No ads'
+    ],
+    creemProductId: '',
+    creemUrl: '',
+  },
+  {
+    id: 'lite',
+    name: 'Lite Plan',
+    price: 9.99,
+    period: 'month',
+    description: 'For power users who need unlimited high-quality downloads',
+    features: [
+      '50 downloads per day',
+      '5GB total downloads per day',
+      '24 hours file storage',
+      'All quality levels (up to 4K)',
+      'MP4 and MP3 formats',
+      '100+ supported platforms',
+      'Custom storage support (AWS S3, Google Drive, Baidu Cloud etc.)',
+      'No ads'
+    ],
+    creemProductId: 'prod_7CFjjDQcN2Z45gxDy6tSqZ',
+    creemUrl: 'https://test-api.creem.io/v1/checkouts',
+  },
+  {
+    id: 'pro',
+    name: 'Pro Plan',
+    price: 29.99,
+    period: 'month',
+    description: 'For teams and businesses with advanced requirements',
+    features: [
+      '500 downloads per day',
+      '50GB total downloads per day',
+      '24 hours file storage',
+      'All quality levels (up to 4K)',
+      'MP4 and MP3 formats',
+      '100+ supported platforms',
+      'Custom storage support (AWS S3, Google Drive, Baidu Cloud etc.)',
+      'No ads'
+    ],
+    creemProductId: 'prod_7CFjjDQcN2Z45gxDy6tSqZ',
+    creemUrl: 'https://test-api.creem.io/v1/checkouts',
+  }
+];
+
+// 获取所有套餐
+app.get('/api/pricing-plans', (req, res) => {
+  res.json(pricingPlans);
+});
+
+const CREEM_API_KEY = process.env.VITE_CREEM_API_KEY;
+const CREEM_SUCCESS_URL = process.env.VITE_API_BASE_URL + '/checkout/success' || 'http://localhost:3001/api/checkout/success';
+
+app.post('/api/checkout', async (req, res) => {
+  try {
+    const { user_id, plan_id } = req.body;
+    if (!user_id || !plan_id) {
+      return res.status(400).json({ error: 'user_id and plan_id are required' });
+    }
+
+    const plan = pricingPlans.find(p => p.id === plan_id);
+    if (!plan) {
+      return res.status(404).json({ error: 'Plan not found' });
+    }
+    if (!plan.creemProductId || !plan.creemUrl) {
+      return res.status(400).json({ error: 'This plan does not support payment' });
+    }
+
+    const request_id = `${plan_id}_${user_id}_${Date.now()}`;
+    const payload = {
+      product_id: plan.creemProductId,
+      request_id,
+      success_url: `${CREEM_SUCCESS_URL}?request_id=${encodeURIComponent(request_id)}`,
+    };
+
+    const response = await axios.post(
+      plan.creemUrl,
+      payload,
+      { headers: { 'x-api-key': CREEM_API_KEY } }
+    );
+
+    res.json({ checkout_url: response.data.checkout_url });
+  } catch (error) {
+    console.error('Creem checkout error:', error?.response?.data || error.message);
+    res.status(500).json({ error: 'Failed to create creem checkout session', details: error?.response?.data || error.message });
+  }
+});
+
+// Creem支付成功回调接口，校验签名并返回支付信息
+app.get('/api/checkout/success', (req, res) => {
+  const {
+    checkout_id, order_id, customer_id, subscription_id, product_id, request_id, signature
+  } = req.query;
+
+  // 构造参数对象
+  const params = {
+    request_id: request_id || null,
+    checkout_id: checkout_id || null,
+    order_id: order_id || null,
+    customer_id: customer_id || null,
+    subscription_id: subscription_id || null,
+    product_id: product_id || null,
+  };
+
+  // 生成签名
+  const data = Object.entries(params)
+    .map(([key, value]) => `${key}=${value}`)
+    .concat(`salt=${CREEM_API_KEY}`)
+    .join('|');
+  const localSignature = crypto.createHash('sha256').update(data).digest('hex');
+
+  if (localSignature === signature) {
+    res.json({ success: true, verified: true, params });
+  } else {
+    res.status(400).json({ success: false, verified: false, error: 'Invalid signature', params });
+  }
+});
+
+
 // Handle graceful shutdown
 const shutdown = () => {
   console.log('Shutting down server...');
-  
+
   if (workerSystem) {
     console.log('Stopping worker system...');
     workerSystem.stop();
   }
-  
+
   process.exit(0);
 };
 
@@ -669,7 +805,7 @@ app.listen(PORT, async () => {
   console.log(`MediaGet API Server running on port ${PORT}`);
   console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads will be served from: ${DOWNLOADS_DIR}`);
-  
+
   // Initialize server components
   await initializeServer();
 });

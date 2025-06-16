@@ -1,131 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, Download, Zap, Crown, ArrowRight, Globe, Shield } from 'lucide-react';
-
-interface PricingPlan {
-    id: string;
-    name: string;
-    price: number;
-    period: string;
-    description: string;
-    features: string[];
-    popular?: boolean;
-    icon: React.ComponentType<any>;
-    gradient: string;
-    buttonText: string;
-    creemProductId?: string;
-    downloads: string;
-    quality: string;
+import { apiService, PricingPlan } from '../services/api';
+import { useAuth, useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
+// 简单的消息组件
+function Message({ type, text, onClose }: { type: 'error' | 'success', text: string, onClose: () => void }) {
+    return (
+        <div className={`fixed top-6 left-1/2 z-50 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2
+            ${type === 'error'
+                ? 'bg-red-500 text-white'
+                : 'bg-green-500 text-white'
+            }`}>
+            <span>{text}</span>
+            <button className="ml-4 text-white/80 hover:text-white" onClick={onClose}>✕</button>
+        </div>
+    );
 }
-
-const pricingPlans: PricingPlan[] = [
-    {
-        id: 'free',
-        name: 'Free Plan',
-        price: 0,
-        period: 'forever',
-        description: 'Perfect for casual users who need basic downloading',
-        downloads: '5 downloads/day',
-        quality: 'Standard quality',
-        features: [
-            '5 downloads per day',
-            'Standard quality (720p)',
-            'Basic format options',
-            'Community support',
-            '50+ supported platforms',
-            'No watermarks'
-        ],
-        icon: Download,
-        gradient: 'from-gray-500 to-gray-700',
-        buttonText: 'Start Free',
-        creemProductId: 'free-plan'
-    },
-    {
-        id: 'lite',
-        name: 'Lite Plan',
-        price: 9.99,
-        period: 'month',
-        description: 'For power users who need unlimited high-quality downloads',
-        downloads: 'Unlimited downloads',
-        quality: 'Up to 4K quality',
-        features: [
-            'Unlimited downloads',
-            'Up to 4K quality (2160p)',
-            'All format options (MP4, MP3, WEBM, etc.)',
-            'Priority support',
-            '100+ supported platforms',
-            'Batch downloads',
-            'Download history',
-            'No ads',
-            'Faster download speeds'
-        ],
-        popular: true,
-        icon: Zap,
-        gradient: 'from-blue-500 to-purple-600',
-        buttonText: 'Subscribe Lite',
-        creemProductId: 'pro-plan'
-    },
-    {
-        id: 'pro',
-        name: 'Pro Plan',
-        price: 29.99,
-        period: 'month',
-        description: 'For teams and businesses with advanced requirements',
-        downloads: 'Unlimited downloads',
-        quality: 'Up to 8K quality',
-        features: [
-            'Everything in Pro',
-            'Up to 8K quality',
-            'API access',
-            'Team management (up to 10 users)',
-            'Advanced analytics',
-            'Custom integrations',
-            'Dedicated support',
-            'SLA guarantee',
-            'White-label options',
-            'Bulk processing'
-        ],
-        icon: Crown,
-        gradient: 'from-purple-600 to-pink-600',
-        buttonText: 'Subscribe Pro',
-        creemProductId: 'enterprise-plan'
-    }
-];
 
 function PricingPage() {
     const [isLoading, setIsLoading] = useState<string | null>(null);
+    const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
+    const [loadingPlans, setLoadingPlans] = useState<boolean>(true);
+    const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
+    const { isLoaded, isSignedIn } = useAuth();
+    const { user } = useUser();
+    // 拉取所有套餐
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const plans = await apiService.getPricingPlans();
+                setPricingPlans(plans);
+            } catch (err) {
+                setMessage({ type: 'error', text: 'Failed to load pricing plans' });
+            } finally {
+                setLoadingPlans(false);
+            }
+        };
+        fetchPlans();
+    }, []);
 
+    // 发起支付请求
     const handleSubscribe = async (plan: PricingPlan) => {
-        if (plan.id === 'free') {
-            alert('Free plan activated! Start downloading media from 100+ platforms.');
+        if (!isLoaded) return;
+
+
+        if (plan.price === 0) {
+            window.location.href = '/home';
             return;
         }
 
         setIsLoading(plan.id);
 
         try {
-            // Creem.io integration
-            const creemCheckoutUrl = `https://creem.io/checkout`;
-            const params = new URLSearchParams({
-                product_id: plan.creemProductId || plan.id,
-                plan_id: plan.id,
-                price: plan.price.toString(),
-                currency: 'USD',
-                success_url: window.location.origin + '/success',
-                cancel_url: window.location.origin,
-            });
-
-            window.location.href = `${creemCheckoutUrl}?${params.toString()}`;
-
+            const userId = user?.id || '';
+            if (!userId) {
+                setMessage({ type: 'error', text: 'User info not found, please login.' });
+                setIsLoading(null);
+                return;
+            }
+            const res = await apiService.createCheckoutSession(userId, plan.id);
+            if (res && res.checkout_url) {
+                window.location.href = res.checkout_url;
+            } else {
+                throw new Error('No checkout_url returned');
+            }
         } catch (error) {
-            console.error('Error initiating checkout:', error);
-            alert('There was an error processing your request. Please try again.');
+            setMessage({ type: 'error', text: 'There was an error processing your request. Please try again.' });
         } finally {
             setIsLoading(null);
         }
     };
 
+    if (loadingPlans) {
+        return (
+            <div className="flex justify-center items-center h-96">
+                <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
+            </div>
+        );
+    }
+
     return (
         <div className="container mx-auto px-6 py-16">
+            {message && (
+                <Message
+                    type={message.type}
+                    text={message.text}
+                    onClose={() => setMessage(null)}
+                />
+            )}
             {/* Hero Section */}
             <div className="text-center mb-16">
                 <h1 className="text-5xl md:text-6xl font-bold mb-6">
@@ -134,7 +95,6 @@ function PricingPage() {
                         Perfect Plan
                     </span>
                 </h1>
-
                 <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
                     Download media from 100+ platforms with the plan that fits your needs.
                     Start free and upgrade anytime.
@@ -144,7 +104,20 @@ function PricingPage() {
             {/* Pricing Cards */}
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
                 {pricingPlans.map((plan) => {
-                    const IconComponent = plan.icon;
+                    // 你可以根据 plan.id 映射到本地 icon/gradient/buttonText
+                    let IconComponent = Download;
+                    let gradient = 'from-gray-500 to-gray-700';
+                    let buttonText = 'Start Free';
+                    if (plan.id === 'lite') {
+                        IconComponent = Zap;
+                        gradient = 'from-blue-500 to-purple-600';
+                        buttonText = 'Subscribe Lite';
+                    }
+                    if (plan.id === 'pro') {
+                        IconComponent = Crown;
+                        gradient = 'from-purple-600 to-pink-600';
+                        buttonText = 'Subscribe Pro';
+                    }
 
                     return (
                         <div
@@ -163,7 +136,7 @@ function PricingPage() {
                             )}
 
                             <div className="text-center mb-8">
-                                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${plan.gradient} mb-4 shadow-lg`}>
+                                <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-r ${gradient} mb-4 shadow-lg`}>
                                     <IconComponent className="h-8 w-8 text-white" />
                                 </div>
 
@@ -173,11 +146,6 @@ function PricingPage() {
                                 <div className="mb-4">
                                     <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
                                     <span className="text-gray-500 ml-2">/{plan.period}</span>
-                                </div>
-
-                                <div className="bg-gray-50 rounded-lg p-3 mb-6">
-                                    <div className="text-sm font-medium text-gray-900 mb-1">{plan.downloads}</div>
-                                    <div className="text-sm text-gray-600">{plan.quality}</div>
                                 </div>
                             </div>
 
@@ -192,23 +160,33 @@ function PricingPage() {
                                 ))}
                             </ul>
 
-                            <button
-                                onClick={() => handleSubscribe(plan)}
-                                disabled={isLoading === plan.id}
-                                className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${plan.popular
-                                    ? `bg-gradient-to-r ${plan.gradient} text-white hover:opacity-90 shadow-lg hover:shadow-xl`
-                                    : 'bg-gray-900 text-white hover:bg-gray-800 shadow-md hover:shadow-lg'
-                                    }`}
-                            >
-                                {isLoading === plan.id ? (
-                                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                                ) : (
-                                    <>
-                                        {plan.buttonText}
-                                        <ArrowRight className="h-4 w-4" />
-                                    </>
-                                )}
-                            </button>
+
+                            <>
+                                <SignedIn>
+                                    <button
+                                        onClick={() => handleSubscribe(plan)}
+                                        disabled={isLoading === plan.id}
+                                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
+                                    >
+                                        {isLoading === plan.id ? (
+                                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                                        ) : (
+                                            <>
+                                                {buttonText}
+                                                <ArrowRight className="h-4 w-4" />
+                                            </>
+                                        )}
+                                    </button>
+                                </SignedIn>
+                                <SignedOut>
+                                    <SignInButton mode="modal">
+                                        <button className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
+                                            Sign in to Subscribe
+                                        </button>
+                                    </SignInButton>
+                                </SignedOut>
+                            </>
+
                         </div>
                     );
                 })}
@@ -244,8 +222,6 @@ function PricingPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Trust Section */}
         </div>
     );
 }

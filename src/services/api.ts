@@ -105,6 +105,18 @@ export interface CookieData {
   updatedAt: string;
 }
 
+export interface PricingPlan {
+  id: string;
+  name: string;
+  price: number;
+  period: string;
+  description: string;
+  features: string[];
+  popular?: boolean;
+  creemProductId?: string;
+  creemUrl?: string;
+}
+
 class ApiService {
   // Helper method to get the full API URL
   private getApiUrl(endpoint: string): string {
@@ -136,10 +148,10 @@ class ApiService {
   }
 
   async downloadMedia(
-    url: string, 
-    userId: string, 
-    itag?: string, 
-    outputName?: string, 
+    url: string,
+    userId: string,
+    itag?: string,
+    outputName?: string,
     cookies?: string,
     downloadPlaylist?: boolean
   ): Promise<DownloadResponse> {
@@ -148,11 +160,11 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        url, 
-        userId, 
-        itag, 
-        outputName, 
+      body: JSON.stringify({
+        url,
+        userId,
+        itag,
+        outputName,
         cookies,
         downloadPlaylist: downloadPlaylist || false
       }),
@@ -168,7 +180,7 @@ class ApiService {
 
   async getTaskStatus(taskId: string): Promise<TaskStatus> {
     const response = await fetch(this.getApiUrl(`/task/${taskId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch task status');
     }
@@ -178,7 +190,7 @@ class ApiService {
 
   async getUserDownloads(userId: string): Promise<DownloadRecord[]> {
     const response = await fetch(this.getApiUrl(`/downloads/${userId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch user downloads');
     }
@@ -188,7 +200,7 @@ class ApiService {
 
   async getUserStats(userId: string): Promise<UserStats> {
     const response = await fetch(this.getApiUrl(`/stats/${userId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch user statistics');
     }
@@ -227,7 +239,7 @@ class ApiService {
 
   async getCookies(userId: string, platform: string): Promise<CookieData> {
     const response = await fetch(this.getApiUrl(`/cookies/${userId}/${platform}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch cookies');
     }
@@ -237,7 +249,7 @@ class ApiService {
 
   async getUserCookies(userId: string): Promise<Array<{ platform: string; updatedAt: string }>> {
     const response = await fetch(this.getApiUrl(`/cookies/${userId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch user cookies');
     }
@@ -259,7 +271,7 @@ class ApiService {
 
   async getSupportedSites(): Promise<SupportedSite[]> {
     const response = await fetch(this.getApiUrl('/supported-sites'));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch supported sites');
     }
@@ -272,9 +284,9 @@ class ApiService {
       const response = await fetch(this.getApiUrl('/check-youget'));
       return response.json();
     } catch (error) {
-      return { 
-        installed: false, 
-        error: 'Cannot connect to backend server' 
+      return {
+        installed: false,
+        error: 'Cannot connect to backend server'
       };
     }
   }
@@ -288,6 +300,40 @@ class ApiService {
   getFileDownloadUrl(downloadPath: string): string {
     // downloadPath already includes /downloads/... so we just need the base URL
     return `${this.getDownloadBaseUrl()}${downloadPath}`;
+  }
+
+  /**
+    * 拉取所有套餐列表
+    */
+  async getPricingPlans(): Promise<PricingPlan[]> {
+    const response = await fetch(this.getApiUrl('/pricing-plans'));
+    if (!response.ok) {
+      throw new Error('Failed to fetch pricing plans');
+    }
+    return response.json();
+  }
+
+
+  /**
+   * 创建 Creem 支付会话，返回 checkout_url
+   * @param userId 用户ID或邮箱
+   * @param planId 套餐ID
+   */
+  async createCheckoutSession(userId: string, planId: string): Promise<{ checkout_url: string }> {
+    const response = await fetch(this.getApiUrl('/checkout'), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ user_id: userId, plan_id: planId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create checkout session');
+    }
+
+    return response.json();
   }
 }
 

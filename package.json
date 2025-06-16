@@ -23,7 +23,8 @@
     "cors": "^2.8.5",
     "multer": "^1.4.5-lts.1",
     "sqlite3": "^5.1.6",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "axios": "^1.6.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
