@@ -16,9 +16,9 @@ function App() {
   React.useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1);
-      if (hash === 'dashboard') {
+      if (hash.startsWith('dashboard')) {
         setCurrentPage('dashboard');
-      } else if (hash === 'pricing') {  // Fixed condition
+      } else if (hash.startsWith('pricing')) {
         setCurrentPage('pricing');
       } else {
         setCurrentPage('home');

@@ -716,8 +716,8 @@ app.get('/api/pricing-plans', (req, res) => {
   res.json(pricingPlans);
 });
 
-const CREEM_API_KEY = process.env.VITE_CREEM_API_KEY;
-const CREEM_SUCCESS_URL = process.env.VITE_API_BASE_URL + '/checkout/success' || 'http://localhost:3001/api/checkout/success';
+const CREEM_API_KEY = 'creem_test_4QWWqDWRdSMde12WUd4IK2';
+const CREEM_SUCCESS_URL = 'http://localhost:3001/api/checkout/success';
 
 app.post('/api/checkout', async (req, res) => {
   try {
@@ -738,14 +738,26 @@ app.post('/api/checkout', async (req, res) => {
     const payload = {
       product_id: plan.creemProductId,
       request_id,
-      success_url: `${CREEM_SUCCESS_URL}?request_id=${encodeURIComponent(request_id)}`,
+      success_url: `${CREEM_SUCCESS_URL}?origin_id=${encodeURIComponent(request_id)}`,
     };
+
+    console.error('Creem checkout request payload:', {
+      url: plan.creemUrl,
+      headers: { 'x-api-key': CREEM_API_KEY },
+      payload
+    });
+
+    // 打印请求前日志
+    console.log('[Creem] Sending checkout request:', payload);
 
     const response = await axios.post(
       plan.creemUrl,
       payload,
       { headers: { 'x-api-key': CREEM_API_KEY } }
     );
+
+    // 打印响应日志
+    console.log('[Creem] Checkout response:', response.data);
 
     res.json({ checkout_url: response.data.checkout_url });
   } catch (error) {
@@ -759,6 +771,11 @@ app.get('/api/checkout/success', (req, res) => {
   const {
     checkout_id, order_id, customer_id, subscription_id, product_id, request_id, signature
   } = req.query;
+
+  // 打印回调参数日志
+  console.log('[Creem] Checkout success callback params:', {
+    checkout_id, order_id, customer_id, subscription_id, product_id, request_id, signature
+  });
 
   // 构造参数对象
   const params = {
@@ -777,13 +794,17 @@ app.get('/api/checkout/success', (req, res) => {
     .join('|');
   const localSignature = crypto.createHash('sha256').update(data).digest('hex');
 
+  // 打印签名校验日志
+  console.log('[Creem] Local signature:', localSignature, 'Remote signature:', signature);
+
   if (localSignature === signature) {
-    res.json({ success: true, verified: true, params });
+    console.log('[Creem] Signature valid, redirecting to /#pricing?subscribe=success');
+    return res.redirect(302, '/#pricing?subscribe=success');
   } else {
-    res.status(400).json({ success: false, verified: false, error: 'Invalid signature', params });
+    console.log('[Creem] Signature invalid, redirecting to /#pricing?subscribe=fail');
+    return res.redirect(302, '/#pricing?subscribe=fail');
   }
 });
-
 
 // Handle graceful shutdown
 const shutdown = () => {

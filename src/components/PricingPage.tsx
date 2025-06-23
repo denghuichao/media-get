@@ -1,17 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Check, Download, Zap, Crown, ArrowRight, Globe, Shield } from 'lucide-react';
+import { Check, Download, Zap, Crown, ArrowRight, Globe, Shield, CheckCircle, AlertTriangle } from 'lucide-react';
 import { apiService, PricingPlan } from '../services/api';
 import { useAuth, useUser, SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react';
-// 简单的消息组件
+
+// 你需要引入图标
 function Message({ type, text, onClose }: { type: 'error' | 'success', text: string, onClose: () => void }) {
     return (
-        <div className={`fixed top-6 left-1/2 z-50 transform -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2
-            ${type === 'error'
-                ? 'bg-red-500 text-white'
-                : 'bg-green-500 text-white'
-            }`}>
-            <span>{text}</span>
-            <button className="ml-4 text-white/80 hover:text-white" onClick={onClose}>✕</button>
+        <div
+            className={
+                `fixed top-6 left-1/2 z-50 transform -translate-x-1/2 min-w-[320px] max-w-[90vw] ` +
+                (type === 'success'
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-red-50 border border-red-200'
+                ) +
+                ' rounded-lg p-4 mb-6 shadow-lg'
+            }
+        >
+            <div className="flex items-center space-x-2">
+                {type === 'success' ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                ) : (
+                    <AlertTriangle className="h-5 w-5 text-red-500" />
+                )}
+                <span className={type === 'success' ? 'text-green-700' : 'text-red-700'}>
+                    {text}
+                </span>
+                <button
+                    className="ml-auto text-gray-400 hover:text-gray-700"
+                    onClick={onClose}
+                    aria-label="Close"
+                >
+                    ✕
+                </button>
+            </div>
         </div>
     );
 }
@@ -25,6 +46,14 @@ function PricingPage() {
     const { user } = useUser();
     // 拉取所有套餐
     useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const subscribe = params.get('subscribe');
+        console.log('subscribe param:', subscribe); // 调试用
+        if (subscribe === 'success') {
+            setMessage({ type: 'success', text: 'Subscription successful!' });
+        } else if (subscribe === 'fail') {
+            setMessage({ type: 'error', text: 'Subscription failed, please try again.' });
+        }
         const fetchPlans = async () => {
             try {
                 const plans = await apiService.getPricingPlans();
