@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Main pages
+Allow: /#dashboard
+Allow: /#privacy
+Allow: /#terms
+Allow: /#disclaimer
+
+# Block admin and private areas
+Disallow: /api/
+Disallow: /.env*
+Disallow: /node_modules/
+
+# Sitemaps
+Sitemap: https://media-get.com/sitemap.xml

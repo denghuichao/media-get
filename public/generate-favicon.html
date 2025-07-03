@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Favicon Generator</title>
+    <style>
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="32" height="32"></canvas>
+    <script>
+        // This creates a simple favicon programmatically
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Create gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 32, 32);
+        gradient.addColorStop(0, '#3B82F6');
+        gradient.addColorStop(1, '#8B5CF6');
+
+        // Draw rounded rectangle background
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 32, 32, 6);
+        ctx.fill();
+
+        // Draw play icon
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.moveTo(8, 10);
+        ctx.lineTo(16, 16);
+        ctx.lineTo(8, 22);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw second play icon
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.beginPath();
+        ctx.moveTo(14, 8);
+        ctx.lineTo(22, 14);
+        ctx.lineTo(14, 20);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw circle
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(24, 8, 2, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Convert to ICO and download
+        canvas.toBlob(function (blob) {
+            console.log('Favicon generated programmatically');
+        });
+    </script>
+</body>
+
+</html>

@@ -46,7 +46,8 @@
     },
     "nav": {
       "home": "Home",
-      "dashboard": "Dashboard"
+      "dashboard": "Dashboard",
+      "about": "About"
     },
     "auth": {
       "signIn": "Sign In",
@@ -68,15 +69,8 @@
     "playlistEnabled": "Will download all videos/items in the playlist",
     "playlistDisabled": "Will download only the single video/item",
     "selectFormat": "Choose Format & Quality",
-    "authRequired": {
-      "title": "Sign in to Download",
-      "description": "Create a free account to download media files and access your download history.",
-      "button": "Sign In to Download",
-      "benefits": "Free account • No credit card required • Download history included"
-    },
     "authStatus": {
-      "signedIn": "Signed in as {{name}} • Ready to download",
-      "signedOut": "Sign in required for downloads • Analysis available without account"
+      "signedIn": "Anonymous user {{name}} • Ready to download"
     },
     "poweredBy": {
       "prefix": "Powered by",
@@ -85,7 +79,8 @@
     "features": [
       "100+ supported platforms",
       "Multiple format options",
-      "Lightning fast downloads"
+      "Lightning fast downloads",
+      "No registration required"
     ]
   },
   "features": {
@@ -122,6 +117,9 @@
   "supportedSites": {
     "title": "100+ Supported Platforms",
     "subtitle": "Download from the most popular video, audio, and image sharing platforms worldwide",
+    "showMore": "Show All Sites",
+    "showLess": "Show Less",
+    "moreCount": "+{{count}} more sites supported",
     "types": {
       "video": "Video Downloads",
       "audio": "Audio Downloads",
@@ -224,7 +222,10 @@
     "builtWith": {
       "prefix": "Powered by",
       "suffix": "and"
-    }
+    },
+    "privacyPolicy": "Privacy Policy",
+    "termsOfService": "Terms of Service",
+    "disclaimer": "Disclaimer"
   },
   "errors": {
     "urlRequired": "URL is required",
@@ -253,15 +254,7 @@
     "current": "English",
     "switch": "Switch Language",
     "english": "English",
-    "chinese": "中文",
-    "spanish": "Español",
-    "french": "Français",
-    "german": "Deutsch",
-    "japanese": "日本語",
-    "korean": "한국어",
-    "portuguese": "Português",
-    "russian": "Русский",
-    "arabic": "العربية"
+    "chinese": "中文"
   },
   "time": {
     "formats": {
@@ -283,6 +276,29 @@
       "detected": "Detected timezone: {{timezone}}",
       "offset": "UTC{{offset}}",
       "local": "Local time"
+    }
+  },
+  "seo": {
+    "defaultTitle": "MediaGet - Universal Media Downloader | Download Videos, Audio & Images",
+    "defaultDescription": "Download videos, audio, and images from 100+ platforms including YouTube, Twitter/X, Instagram, TikTok, and more. Fast, secure, and easy to use media downloader.",
+    "defaultKeywords": "video downloader, audio downloader, image downloader, youtube downloader, twitter downloader, instagram downloader, tiktok downloader, media downloader, online downloader",
+    "pages": {
+      "home": {
+        "title": "Home",
+        "description": "Universal media downloader supporting 100+ platforms. Download videos, audio, and images from YouTube, Instagram, TikTok, and more."
+      },
+      "dashboard": {
+        "title": "Download Dashboard",
+        "description": "Manage your downloads and view download history. Track progress of your media downloads from various platforms."
+      },
+      "privacy": {
+        "title": "Privacy Policy",
+        "description": "Learn how MediaGet protects your privacy and handles your data when using our media download service."
+      },
+      "terms": {
+        "title": "Terms of Service",
+        "description": "Read our terms of service and understand the conditions for using MediaGet media downloader."
+      }
     }
   }
 }

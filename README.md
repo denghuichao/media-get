@@ -1,14 +1,14 @@
 # MediaGet - Universal Media Downloader
 
-A beautiful, production-ready web interface for the powerful you-get media downloader utility with user authentication, asynchronous download processing, and HTTPS support.
+A beautiful, production-ready web interface for the powerful you-get media downloader utility with anonymous user tracking, asynchronous download processing, and HTTPS support.
 
 ## 🌟 Features
 
-- **🔐 User Authentication**: Secure sign-in/sign-up with Clerk
-- **🔍 URL Analysis**: Analyze any media URL to see available formats and quality options
-- **⚡ Asynchronous Downloads**: Download tasks are queued and processed in the background
+- ** URL Analysis**: Analyze any media URL to see available formats and quality options
+- **⚡ Asynchronous Downloads**: Download tasks are queued and processed in the background  
 - **📊 Real-time Progress**: See download progress and status updates
-- **📱 Download Dashboard**: View download history and manage downloads (authenticated users only)
+- **📱 Download Dashboard**: View download history and manage downloads (no login required)
+- **👤 Anonymous User Tracking**: Uses client fingerprinting for user identification without registration
 - **🌐 100+ Supported Sites**: Works with YouTube, Twitter, Instagram, TikTok, Bilibili, and many more
 - **💾 Database Persistence**: All user data and download tasks are stored in SQLite database
 - **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
@@ -78,16 +78,7 @@ sudo apt install ffmpeg
    npm install
    ```
 
-3. **Set up authentication**
-   - Create a free account at [Clerk.com](https://clerk.com)
-   - Create a new application in your Clerk dashboard
-   - Copy your publishable key
-   - Create a `.env.local` file:
-     ```env
-     VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key_here
-     ```
-
-4. **Start the services**
+3. **Start the services**
    ```bash
    # Terminal 1: API Server
    npm run server
@@ -551,7 +542,7 @@ This project is open source. The you-get utility is licensed under the MIT Licen
 
 ## 📞 Support
 
-- **Email**: denghuichao90@gmail.com
+- **Email**: support@media-get.com
 - **GitHub Issues**: [Create an issue](https://github.com/denghuichao/media-get/issues)
 - **Documentation**: This README and inline code comments
 

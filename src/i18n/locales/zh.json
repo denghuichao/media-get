@@ -44,7 +44,8 @@
     },
     "nav": {
       "home": "首页",
-      "dashboard": "仪表板"
+      "dashboard": "仪表板",
+      "about": "关于"
     },
     "auth": {
       "signIn": "登录",
@@ -61,15 +62,8 @@
     "downloadNow": "立即下载",
     "downloading": "下载中...",
     "selectFormat": "选择格式和质量",
-    "authRequired": {
-      "title": "登录以下载",
-      "description": "创建免费账户以下载媒体文件并访问您的下载历史记录。",
-      "button": "登录以下载",
-      "benefits": "免费账户 • 无需信用卡 • 包含下载历史"
-    },
     "authStatus": {
-      "signedIn": "已登录为 {{name}} • 准备下载",
-      "signedOut": "下载需要登录 • 分析功能无需账户"
+      "signedIn": "匿名用户 {{name}} • 准备下载"
     },
     "poweredBy": {
       "prefix": "基于",
@@ -78,7 +72,8 @@
     "features": [
       "支持100多个平台",
       "多种格式选项",
-      "闪电般快速下载"
+      "闪电般快速下载",
+      "无需注册即可使用"
     ]
   },
   "features": {
@@ -115,6 +110,9 @@
   "supportedSites": {
     "title": "支持100多个平台",
     "subtitle": "从全球最受欢迎的视频、音频和图片分享平台下载",
+    "showMore": "显示所有网站",
+    "showLess": "收起",
+    "moreCount": "还支持{{count}}个网站",
     "types": {
       "video": "视频下载",
       "audio": "音频下载",
@@ -220,7 +218,10 @@
     "builtWith": {
       "prefix": "基于",
       "suffix": "和"
-    }
+    },
+    "privacyPolicy": "隐私政策",
+    "termsOfService": "服务条款",
+    "disclaimer": "免责声明"
   },
   "errors": {
     "urlRequired": "需要URL",
@@ -247,14 +248,29 @@
     "current": "中文",
     "switch": "切换语言",
     "english": "English",
-    "chinese": "中文",
-    "spanish": "Español",
-    "french": "Français",
-    "german": "Deutsch",
-    "japanese": "日本語",
-    "korean": "한국어",
-    "portuguese": "Português",
-    "russian": "Русский",
-    "arabic": "العربية"
+    "chinese": "中文"
+  },
+  "seo": {
+    "defaultTitle": "MediaGet - 万能媒体下载器 | 下载视频、音频和图片",
+    "defaultDescription": "支持100多个平台的媒体下载，包括YouTube、Twitter/X、Instagram、TikTok等。快速、安全、易用的媒体下载工具。",
+    "defaultKeywords": "视频下载器, 音频下载器, 图片下载器, youtube下载器, twitter下载器, instagram下载器, tiktok下载器, 媒体下载器, 在线下载器",
+    "pages": {
+      "home": {
+        "title": "首页",
+        "description": "支持100多个平台的万能媒体下载器。从YouTube、Instagram、TikTok等平台下载视频、音频和图片。"
+      },
+      "dashboard": {
+        "title": "下载仪表板",
+        "description": "管理您的下载任务并查看下载历史。跟踪来自各个平台的媒体下载进度。"
+      },
+      "privacy": {
+        "title": "隐私政策",
+        "description": "了解MediaGet如何保护您的隐私以及在使用我们的媒体下载服务时如何处理您的数据。"
+      },
+      "terms": {
+        "title": "服务条款",
+        "description": "阅读我们的服务条款，了解使用MediaGet媒体下载器的使用条件。"
+      }
+    }
   }
 }
