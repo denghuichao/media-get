@@ -4,15 +4,7 @@ import { Languages, ChevronDown } from 'lucide-react';
 
 const languages = [
   { code: 'en', name: 'English', flag: '🇺🇸' },
-  { code: 'zh', name: '中文', flag: '🇨🇳' },
-  { code: 'es', name: 'Español', flag: '🇪🇸' },
-  { code: 'fr', name: 'Français', flag: '🇫🇷' },
-  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
-  { code: 'ja', name: '日本語', flag: '🇯🇵' },
-  { code: 'ko', name: '한국어', flag: '🇰🇷' },
-  { code: 'pt', name: 'Português', flag: '🇧🇷' },
-  { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-  { code: 'ar', name: 'العربية', flag: '🇸🇦' }
+  { code: 'zh', name: '中文', flag: '🇨🇳' }
 ];
 
 export default function LanguageSwitcher() {
@@ -44,11 +36,11 @@ export default function LanguageSwitcher() {
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-10" 
+          <div
+            className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown */}
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
             <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b border-gray-100">
@@ -58,9 +50,8 @@ export default function LanguageSwitcher() {
               <button
                 key={language.code}
                 onClick={() => changeLanguage(language.code)}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center space-x-3 ${
-                  i18n.language === language.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                }`}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors flex items-center space-x-3 ${i18n.language === language.code ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                  }`}
               >
                 <span className="text-lg">{language.flag}</span>
                 <span>{language.name}</span>

@@ -1,0 +1,31 @@
+{
+    "name": "MediaGet - Universal Media Downloader",
+    "short_name": "MediaGet",
+    "description": "Download videos, audio, and images from 100+ platforms",
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#3B82F6",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "/favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "/favicon-32x32.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "/favicon-16x16.png",
+            "sizes": "16x16",
+            "type": "image/png"
+        },
+        {
+            "src": "/apple-touch-icon.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ]
+}
