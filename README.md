@@ -1,16 +1,17 @@
 # MediaGet - Universal Media Downloader
 
-A beautiful, production-ready web interface for the powerful you-get media downloader utility with anonymous user tracking, asynchronous download processing, and HTTPS support.
+A beautiful, production-ready web interface for powerful media downloader utilities (you-get and yt-dlp) with anonymous user tracking, asynchronous download processing, and HTTPS support.
 
 ## 🌟 Features
 
-- ** URL Analysis**: Analyze any media URL to see available formats and quality options
+- **🔍 URL Analysis**: Analyze any media URL to see available formats and quality options
 - **⚡ Asynchronous Downloads**: Download tasks are queued and processed in the background  
 - **📊 Real-time Progress**: See download progress and status updates
 - **📱 Download Dashboard**: View download history and manage downloads (no login required)
 - **👤 Anonymous User Tracking**: Uses client fingerprinting for user identification without registration
-- **🌐 100+ Supported Sites**: Works with YouTube, Twitter, Instagram, TikTok, Bilibili, and many more
-- **💾 Database Persistence**: All user data and download tasks are stored in SQLite database
+- **🌐 1000+ Supported Sites**: Works with YouTube, Twitter, Instagram, TikTok, Bilibili, and many more
+- **�️ Dual Download Engines**: Supports both you-get and yt-dlp download tools
+- **�💾 Database Persistence**: All user data and download tasks are stored in SQLite database
 - **📱 Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
 - **🔒 HTTPS Support**: Production-ready with SSL certificates and security headers
 - **🌍 Multi-language Support**: Available in 10+ languages
@@ -32,12 +33,13 @@ The application uses an asynchronous architecture:
 
 - **Node.js** 18+ 
 - **Python** 3.6+
-- **you-get** installed (`pip install you-get`)
+- **Download Tool**: Either you-get or yt-dlp (or both)
 - **FFmpeg** (recommended for video processing)
 - **Docker & Docker Compose** (for production deployment)
 
-### Install you-get
+### Install Download Tools
 
+#### Option 1: you-get (Default)
 ```bash
 # Using pip (recommended)
 pip install you-get
@@ -47,6 +49,22 @@ pip3 install you-get
 
 # Verify installation
 you-get --version
+```
+
+#### Option 2: yt-dlp (Recommended for YouTube and more sites)
+```bash
+# Using pip
+pip install yt-dlp
+
+# Or using pipx (isolated installation)
+pipx install yt-dlp
+
+# Or download standalone binary (Linux/macOS)
+curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp
+chmod a+rx /usr/local/bin/yt-dlp
+
+# Verify installation
+yt-dlp --version
 ```
 
 ### Additional Dependencies (Optional but Recommended)
@@ -65,12 +83,12 @@ sudo apt install ffmpeg
 
 ## 🚀 Quick Start
 
-### Development Setup
+### Option 1: Easy Start (Recommended)
 
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd mediaget
+   cd media-get
    ```
 
 2. **Install dependencies**
@@ -78,19 +96,56 @@ sudo apt install ffmpeg
    npm install
    ```
 
-3. **Start the services**
+3. **Test your setup** (optional but recommended)
    ```bash
-   # Terminal 1: API Server
-   npm run server
+   npm run test:tools
+   ```
 
-   # Terminal 2: Download Worker
-   npm run worker
+4. **Start with your preferred download tool**
+   ```bash
+   # Start with default yt-dlp (recommended)
+   npm start
 
-   # Terminal 3: Frontend
-   npm run dev
+   # OR start with explicit yt-dlp
+   npm run start:yt-dlp
+
+   # OR start with you-get
+   npm run start:you-get
+
+   # OR start with custom configuration
+   ./start.sh --tool=yt-dlp --env=development
    ```
 
 5. **Open your browser** and navigate to `http://localhost:5173`
+
+### Option 2: Manual Setup
+
+1. **Install dependencies and start manually**
+   ```bash
+   npm install
+   
+   # Terminal 1: API Server
+   npm run server
+
+   # Terminal 2: Frontend (development)
+   npm run dev
+   ```
+
+2. **Configure download tool** (optional)
+   ```bash
+   export DOWNLOAD_TOOL=yt-dlp    # or you-get
+   ```
+
+### Option 3: Docker Deployment
+
+1. **Using Docker Compose**
+   ```bash
+   # Start with default yt-dlp
+   docker-compose up -d
+   
+   # OR start with you-get
+   DOWNLOAD_TOOL=you-get docker-compose up -d
+   ```
 
 ### Production Deployment with HTTPS
 
@@ -98,8 +153,8 @@ For production deployment on your domain `media-get.site`:
 
 1. **Configure environment**
    ```bash
-   cp .env.example .env.local
-   # Edit .env.local with your actual values
+   cp .env.example .env
+   # Edit .env with your actual values
    ```
 
 2. **Deploy with HTTPS**
@@ -167,12 +222,28 @@ SSL_EMAIL=admin@media-get.site
 DATA_DIR=/custom/path/to/data              # Default: ~/data/media-get
 DOWNLOADS_DIR=/custom/path/to/downloads    # Default: ~/data/media-get/downloads
 
+# Download Tool Configuration
+DOWNLOAD_TOOL=yt-dlp                       # Options: 'yt-dlp' (default) or 'you-get'
+
 # Worker Configuration
 WORKER_INTERVAL=5000                       # Worker polling interval (ms)
 MAX_CONCURRENT_DOWNLOADS=3                 # Max simultaneous downloads
 CLEANUP_INTERVAL_HOURS=24                  # How often to cleanup old files
 MAX_DOWNLOAD_AGE_HOURS=24                  # Max age before files are deleted
 ```
+
+### Download Tool Selection
+
+You can choose between two powerful download tools:
+
+| Tool | Pros | Cons | Best For |
+|------|------|------|----------|
+| **you-get** | Fast, lightweight, good for Chinese sites | Fewer supported sites, less active development | Bilibili, Weibo, Chinese platforms |
+| **yt-dlp** | Extensive site support, very active development, more options | Slightly slower, larger dependency | YouTube, international platforms, maximum compatibility |
+
+**Setting the download tool:**
+- Set `DOWNLOAD_TOOL=yt-dlp` for the enhanced yt-dlp tool (default, recommended)
+- Set `DOWNLOAD_TOOL=you-get` for the original you-get tool
 
 ## 🔒 HTTPS and SSL Setup
 

@@ -12,6 +12,7 @@ import DisclaimerAndCompliance from './components/DisclaimerAndCompliance';
 import AboutAndQuality from './components/AboutAndQuality';
 import CookieConsent from './components/CookieConsent';
 import SEOHead from './components/SEOHead';
+import { ConfigProvider } from './contexts/ConfigContext';
 import { useTranslation } from 'react-i18next';
 
 function App() {
@@ -50,43 +51,43 @@ function App() {
         return {
           title: t('seo.pages.dashboard.title'),
           description: t('seo.pages.dashboard.description'),
-          canonicalUrl: 'https://media-get.com/#dashboard'
+          canonicalUrl: 'https://media-get.site/#dashboard'
         };
       case 'privacy':
         return {
           title: t('seo.pages.privacy.title'),
           description: t('seo.pages.privacy.description'),
-          canonicalUrl: 'https://media-get.com/#privacy'
+          canonicalUrl: 'https://media-get.site/#privacy'
         };
       case 'terms':
         return {
           title: t('seo.pages.terms.title'),
           description: t('seo.pages.terms.description'),
-          canonicalUrl: 'https://media-get.com/#terms'
+          canonicalUrl: 'https://media-get.site/#terms'
         };
       case 'disclaimer':
         return {
           title: 'Disclaimer & Legal Notice',
           description: 'Important legal information about content downloading and copyright compliance when using MediaGet.',
-          canonicalUrl: 'https://media-get.com/#disclaimer'
+          canonicalUrl: 'https://media-get.site/#disclaimer'
         };
       case 'about':
         return {
           title: 'About MediaGet - Ethical Media Downloading Solution',
           description: 'Learn about MediaGet\'s mission, technology, and commitment to ethical media downloading practices.',
-          canonicalUrl: 'https://media-get.com/#about'
+          canonicalUrl: 'https://media-get.site/#about'
         };
       default:
         return {
           title: t('seo.pages.home.title'),
           description: t('seo.pages.home.description'),
-          canonicalUrl: 'https://media-get.com'
+          canonicalUrl: 'https://media-get.site'
         };
     }
   };
 
   return (
-    <>
+    <ConfigProvider>
       <SEOHead {...getSEOProps()} />
       <div className="min-h-screen bg-white">
         <Header />
@@ -123,7 +124,7 @@ function App() {
         <Footer />
         <CookieConsent />
       </div>
-    </>
+    </ConfigProvider>
   );
 }
 

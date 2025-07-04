@@ -85,7 +85,7 @@
   },
   "features": {
     "title": "Powerful Features for Every Need",
-    "subtitle": "Built on the robust you-get engine with additional web interface enhancements",
+    "subtitle": "Built on the robust {{downloadTool}} engine with additional web interface enhancements",
     "items": {
       "multipleFormats": {
         "title": "Multiple Formats",
@@ -93,7 +93,7 @@
       },
       "lightningFast": {
         "title": "Lightning Fast",
-        "description": "Powered by you-get's optimized extraction engine for quick analysis and high-speed downloads."
+        "description": "Powered by {{downloadTool}}'s optimized extraction engine for quick analysis and high-speed downloads."
       },
       "privacyFirst": {
         "title": "Privacy First",
@@ -208,12 +208,12 @@
   },
   "systemStatus": {
     "checking": "Checking system status...",
-    "ready": "System ready - you-get {{version}} is installed and working",
+    "ready": "System ready - {{tool}} {{version}} is installed and working",
     "notMet": {
       "title": "System Requirements Not Met",
-      "description": "you-get is not installed or not accessible",
-      "install": "To use this service, please install you-get:",
-      "visitGithub": "Or visit github.com/soimort/you-get for installation instructions.",
+      "description": "{{tool}} is not installed or not accessible",
+      "install": "To use this service, please install {{tool}}:",
+      "visitGithub": "Or visit the official repository for installation instructions.",
       "recheck": "Recheck Status"
     }
   },

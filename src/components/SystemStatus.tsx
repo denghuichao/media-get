@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useConfig } from '../contexts/ConfigContext';
 import { apiService } from '../services/api';
 
 export default function SystemStatus() {
   const { t } = useTranslation();
+  const { config } = useConfig();
   const [status, setStatus] = useState<{
     yougetInstalled: boolean;
     version?: string;
@@ -15,9 +17,16 @@ export default function SystemStatus() {
     loading: true
   });
 
+  const downloadTool = config?.downloadTool || 'yt-dlp';
+  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
+  const toolUrl = downloadTool === 'yt-dlp'
+    ? 'https://github.com/yt-dlp/yt-dlp'
+    : 'https://github.com/soimort/you-get';
+  const installCommand = downloadTool === 'yt-dlp' ? 'pip install yt-dlp' : 'pip install you-get';
+
   const checkStatus = async () => {
     setStatus(prev => ({ ...prev, loading: true }));
-    
+
     try {
       const result = await apiService.checkYouGetInstallation();
       setStatus({
@@ -58,22 +67,22 @@ export default function SystemStatus() {
           <div className="flex-1">
             <h4 className="font-medium text-red-800">{t('systemStatus.notMet.title')}</h4>
             <p className="text-red-700 text-sm mt-1">
-              {status.error || t('systemStatus.notMet.description')}
+              {status.error || t('systemStatus.notMet.description', { tool: toolDisplayName })}
             </p>
             <div className="mt-3 text-sm text-red-600">
-              <p className="font-medium">{t('systemStatus.notMet.install')}</p>
+              <p className="font-medium">{t('systemStatus.notMet.install', { tool: toolDisplayName })}</p>
               <code className="block bg-red-100 p-2 rounded mt-2 text-xs">
-                pip install you-get
+                {installCommand}
               </code>
               <p className="mt-2">
                 {t('systemStatus.notMet.visitGithub')}{' '}
-                <a 
-                  href="https://github.com/soimort/you-get" 
-                  target="_blank" 
+                <a
+                  href={toolUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:no-underline"
                 >
-                  github.com/soimort/you-get
+                  {toolUrl.replace('https://', '')}
                 </a>
               </p>
             </div>
@@ -94,7 +103,7 @@ export default function SystemStatus() {
       <div className="flex items-center space-x-2">
         <CheckCircle className="h-5 w-5 text-green-500" />
         <span className="text-green-700">
-          {t('systemStatus.ready', { version: status.version })}
+          {t('systemStatus.ready', { tool: toolDisplayName, version: status.version })}
         </span>
       </div>
     </div>

@@ -78,7 +78,7 @@
   },
   "features": {
     "title": "满足各种需求的强大功能",
-    "subtitle": "基于强大的 you-get 引擎构建，并增加了额外的网页界面增强功能",
+    "subtitle": "基于强大的 {{downloadTool}} 引擎构建，并增加了额外的网页界面增强功能",
     "items": {
       "multipleFormats": {
         "title": "多种格式",
@@ -86,7 +86,7 @@
       },
       "lightningFast": {
         "title": "闪电般快速",
-        "description": "基于 you-get 优化的提取引擎，实现快速分析和高速下载。"
+        "description": "基于 {{downloadTool}} 优化的提取引擎，实现快速分析和高速下载。"
       },
       "privacyFirst": {
         "title": "隐私优先",
@@ -204,12 +204,12 @@
   },
   "systemStatus": {
     "checking": "检查系统状态...",
-    "ready": "系统就绪 - you-get {{version}} 已安装并正常工作",
+    "ready": "系统就绪 - {{tool}} {{version}} 已安装并正常工作",
     "notMet": {
       "title": "系统要求未满足",
-      "description": "you-get 未安装或无法访问",
-      "install": "要使用此服务，请安装 you-get：",
-      "visitGithub": "或访问 github.com/soimort/you-get 获取安装说明。",
+      "description": "{{tool}} 未安装或无法访问",
+      "install": "要使用此服务，请安装 {{tool}}：",
+      "visitGithub": "或访问官方仓库获取安装说明。",
       "recheck": "重新检查状态"
     }
   },

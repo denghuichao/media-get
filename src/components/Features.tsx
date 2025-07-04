@@ -1,9 +1,14 @@
 import React from 'react';
 import { Shield, Zap, Settings, Download, PlayCircle, Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useConfig } from '../contexts/ConfigContext';
 
 export default function Features() {
   const { t } = useTranslation();
+  const { config } = useConfig();
+
+  const downloadTool = config?.downloadTool || 'yt-dlp';
+  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
 
   const features = [
     {
@@ -14,7 +19,7 @@ export default function Features() {
     {
       icon: <Zap className="h-8 w-8" />,
       title: t('features.items.lightningFast.title'),
-      description: t('features.items.lightningFast.description')
+      description: t('features.items.lightningFast.description', { downloadTool: toolDisplayName })
     },
     {
       icon: <Shield className="h-8 w-8" />,
@@ -46,7 +51,7 @@ export default function Features() {
             {t('features.title')}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            {t('features.subtitle')}
+            {t('features.subtitle', { downloadTool: toolDisplayName })}
           </p>
         </div>
 

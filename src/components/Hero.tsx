@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Heart, Clock, RefreshCw, Calendar, ExternalLink, List } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useConfig } from '../contexts/ConfigContext';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
 import { formatSmartTimestampWithUTC } from '../utils/dateUtils';
@@ -8,6 +9,7 @@ import ComplianceBanner from './ComplianceBanner';
 
 export default function Hero() {
   const { t } = useTranslation();
+  const { config } = useConfig();
   const userInfo = getUserDisplayInfo();
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,6 +25,12 @@ export default function Hero() {
   // Auto-hide timers
   const [successTimer, setSuccessTimer] = useState<number | null>(null);
   const [taskTimer, setTaskTimer] = useState<number | null>(null);
+
+  const downloadTool = config?.downloadTool || 'yt-dlp';
+  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
+  const toolUrl = downloadTool === 'yt-dlp'
+    ? 'https://github.com/yt-dlp/yt-dlp'
+    : 'https://github.com/soimort/you-get';
 
   // Helper function to detect if URL might be a playlist
   const isPlaylistUrl = (url: string): boolean => {
@@ -650,12 +658,12 @@ export default function Hero() {
           <p className="text-gray-600 mb-4 flex items-center justify-center space-x-1">
             <span>{t('hero.poweredBy.prefix')}</span>
             <a
-              href="https://github.com/soimort/you-get"
+              href={toolUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-800 transition-colors underline"
             >
-              you-get
+              {toolDisplayName}
             </a>
             <span>-</span>
             <span>{t('hero.poweredBy.suffix')}</span>

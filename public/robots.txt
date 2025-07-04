@@ -13,4 +13,4 @@ Disallow: /.env*
 Disallow: /node_modules/
 
 # Sitemaps
-Sitemap: https://media-get.com/sitemap.xml
+Sitemap: https://media-get.site/sitemap.xml

@@ -1,6 +1,10 @@
 import { BookOpen, Users, Award, Shield, Clock, Zap } from 'lucide-react';
+import { useConfig } from '../contexts/ConfigContext';
 
 export default function AboutAndQuality() {
+    const { config } = useConfig();
+    const downloadTool = config?.downloadTool || 'yt-dlp';
+    const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
     return (
         <div className="min-h-screen bg-gray-50 py-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -125,7 +129,7 @@ export default function AboutAndQuality() {
                                 <div>
                                     <h3 className="font-semibold text-gray-900 mb-2">Backend Technology</h3>
                                     <ul className="text-gray-700 space-y-1 text-sm">
-                                        <li>• Powered by you-get - industry-leading extraction library</li>
+                                        <li>• Powered by {toolDisplayName} - industry-leading extraction library</li>
                                         <li>• Asynchronous processing for improved performance</li>
                                         <li>• Secure server infrastructure with HTTPS</li>
                                         <li>• Regular updates and security patches</li>

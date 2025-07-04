@@ -1,11 +1,19 @@
 import { Download, Github, Twitter, Mail, Heart } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useConfig } from '../contexts/ConfigContext';
 
 export default function Footer() {
   const { t } = useTranslation();
+  const { config } = useConfig();
   const contactEmail = 'support@media-get.com';
   const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com';
   const twitterUrl = import.meta.env.VITE_TWITTER_URL || 'https://twitter.com';
+
+  const downloadTool = config?.downloadTool || 'yt-dlp';
+  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
+  const toolUrl = downloadTool === 'yt-dlp'
+    ? 'https://github.com/yt-dlp/yt-dlp'
+    : 'https://github.com/soimort/you-get';
 
   return (
     <footer className="bg-gray-900 text-white" role="contentinfo">
@@ -20,13 +28,13 @@ export default function Footer() {
               <p className="text-xs text-gray-400 flex items-center space-x-1">
                 <span>{t('footer.builtWith.prefix')}</span>
                 <a
-                  href="https://github.com/soimort/you-get"
+                  href={toolUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:text-blue-300 transition-colors underline"
-                  aria-label="you-get GitHub repository"
+                  aria-label={`${toolDisplayName} GitHub repository`}
                 >
-                  you-get
+                  {toolDisplayName}
                 </a>
                 <span>{t('footer.builtWith.suffix')}</span>
                 <Heart className="h-3 w-3 text-red-500 fill-red-500" aria-hidden="true" />
