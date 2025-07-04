@@ -254,7 +254,8 @@ class DownloadWorker {
   prepareDownloadArgs(downloadDir) {
     if (DOWNLOAD_TOOL === 'yt-dlp') {
       const args = [
-        '-o', path.join(downloadDir, '%(title)s.%(ext)s'),
+        // Use a shorter output template with length limits
+        '-o', path.join(downloadDir, '%(title).60s.%(ext)s'),
         '--no-playlist', // Don't download playlists by default
         '--write-info-json', // Write metadata
         '--write-thumbnail', // Download thumbnail
@@ -277,6 +278,8 @@ class DownloadWorker {
 
       // Add output template restrictions for better file naming
       args.push('--restrict-filenames');
+      // Limit filename length to avoid filesystem issues
+      args.push('--trim-filenames', '200');
 
       args.push(this.task.url);
       return args;
@@ -298,12 +301,12 @@ class DownloadWorker {
   executeDownloadTool(args) {
     return new Promise((resolve, reject) => {
       console.log(`Worker ${this.taskId} executing: ${DOWNLOAD_TOOL} ${args.join(' ')}`);
-      
+
       const downloadProcess = spawn(DOWNLOAD_TOOL, args, {
         stdio: ['ignore', 'pipe', 'pipe'], // Explicitly set stdio
         env: { ...process.env, PYTHONUNBUFFERED: '1' } // For yt-dlp Python output
       });
-      
+
       let stdout = '';
       let stderr = '';
 
@@ -329,7 +332,7 @@ class DownloadWorker {
 
       downloadProcess.on('close', (code) => {
         console.log(`Worker ${this.taskId} process exited with code: ${code}`);
-        
+
         if (code === 0) {
           resolve(stdout);
         } else {
@@ -339,22 +342,22 @@ class DownloadWorker {
             // Filter out common warnings that aren't real errors
             const filteredStderr = stderr
               .split('\n')
-              .filter(line => 
+              .filter(line =>
                 !line.includes('WARNING') &&
                 !line.includes('[info]') &&
                 line.trim()
               )
               .join('\n');
-            
+
             if (filteredStderr) {
               errorMessage += `\nError output: ${filteredStderr}`;
             }
           }
-          
+
           if (stdout && stdout.includes('ERROR')) {
             errorMessage += `\nStdout errors: ${stdout}`;
           }
-          
+
           reject(new Error(errorMessage));
         }
       });
@@ -439,7 +442,7 @@ class DownloadWorker {
 
     // Extract metadata from yt-dlp info.json if available
     const extractedMetadata = this.extractMetadataFromInfoJson(downloadDir, metadataFiles);
-    
+
     // Use extracted metadata or fallback to task metadata
     const title = extractedMetadata?.title || this.task.media_info?.title || 'download';
     const itag = extractedMetadata?.format_id || this.task.media_info?.itag || 'default';
@@ -502,13 +505,38 @@ class DownloadWorker {
         const fileSizeBytes = stats.size;
         const fileSizeMB = (fileSizeBytes / (1024 * 1024)).toFixed(1);
 
-        // Determine file type
+        // Determine file type based on extension
         const ext = path.extname(filename).toLowerCase();
-        let type = 'video';
-        if (['.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav'].includes(ext)) {
+        let type = 'video'; // default
+
+        // Video formats
+        const videoExtensions = [
+          '.mp4', '.mkv', '.webm', '.flv', '.avi', '.mov', '.wmv', '.m4v',
+          '.mpg', '.mpeg', '.3gp', '.f4v', '.ts', '.mts', '.m2ts'
+        ];
+
+        // Audio formats
+        const audioExtensions = [
+          '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav', '.wma',
+          '.opus', '.vorbis', '.ac3', '.dts'
+        ];
+
+        // Image formats
+        const imageExtensions = [
+          '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg',
+          '.tiff', '.tif'
+        ];
+
+        if (audioExtensions.includes(ext)) {
           type = 'audio';
-        } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(ext)) {
+        } else if (imageExtensions.includes(ext)) {
           type = 'image';
+        } else if (videoExtensions.includes(ext)) {
+          type = 'video';
+        } else {
+          // For unknown extensions, try to guess based on context or keep as video
+          console.log(`Worker ${this.taskId} unknown extension ${ext} for file ${filename}, defaulting to video`);
+          type = 'video';
         }
 
         return {
@@ -635,13 +663,79 @@ class DownloadWorker {
 
   // Generate a clean filename from title and itag
   generateCleanFilename(title, itag, extension = 'mp4') {
-    const cleanTitle = title
-      .replace(/[<>:"/\\|?*]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-\u4e00-\u9fff]/g, '')
-      .substring(0, 80); // Shorter to accommodate itag prefix
+    // Clean the title first
+    let cleanTitle = title
+      .replace(/[<>:"/\\|?*]/g, '') // Remove invalid characters
+      .replace(/\s+/g, '-') // Replace spaces with dashes
+      .replace(/[^\w\-\u4e00-\u9fff\.]/g, '') // Keep only word chars, dashes, Chinese chars, and dots
+      .replace(/\.+/g, '.') // Replace multiple dots with single dot
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing dashes
 
-    return `${cleanTitle}_${itag}.${extension}`;
+    // Calculate available space for title
+    // Format: {title}_{itag}.{extension}
+    const itagPart = `_${itag}`;
+    const extensionPart = `.${extension}`;
+    const overhead = itagPart.length + extensionPart.length;
+
+    // Filesystem filename limit is usually 255 bytes
+    // Leave some margin and limit to 200 characters total
+    const maxFilenameLength = 200;
+    const maxTitleLength = maxFilenameLength - overhead;
+
+    // Truncate title if too long, but try to keep it meaningful
+    if (cleanTitle.length > maxTitleLength) {
+      // Try to truncate at word boundary
+      const truncated = cleanTitle.substring(0, maxTitleLength);
+      const lastDash = truncated.lastIndexOf('-');
+      const lastSpace = truncated.lastIndexOf(' ');
+      const cutPoint = Math.max(lastDash, lastSpace);
+
+      if (cutPoint > maxTitleLength * 0.7) {
+        // If we can cut at a reasonable point, do so
+        cleanTitle = truncated.substring(0, cutPoint);
+      } else {
+        // Otherwise just hard truncate and add ellipsis indicator
+        cleanTitle = truncated.substring(0, maxTitleLength - 3) + '...';
+      }
+    }
+
+    // Remove any trailing dashes or dots
+    cleanTitle = cleanTitle.replace(/[-\.]+$/, '');
+
+    // Ensure we have at least some title
+    if (!cleanTitle || cleanTitle.length < 3) {
+      cleanTitle = 'video';
+    }
+
+    const finalFilename = `${cleanTitle}_${itag}.${extension}`;
+
+    // Log if filename was truncated
+    if (title.length > maxTitleLength) {
+      console.log(`Worker ${this.taskId} truncated filename: "${title}" -> "${finalFilename}"`);
+    }
+
+    return finalFilename;
+  }
+
+  // Validate and fix filename length
+  validateFilenameLength(filename, maxLength = 200) {
+    if (filename.length <= maxLength) {
+      return filename;
+    }
+
+    const parts = filename.split('.');
+    const extension = parts.pop();
+    const nameWithoutExt = parts.join('.');
+
+    const maxNameLength = maxLength - extension.length - 1; // -1 for the dot
+
+    if (maxNameLength > 10) {
+      const truncatedName = nameWithoutExt.substring(0, maxNameLength - 3) + '...';
+      return `${truncatedName}.${extension}`;
+    } else {
+      // If even with truncation we can't fit, use a very short name
+      return `file_${Date.now()}.${extension}`;
+    }
   }
 
   // Rename downloaded files with title_itag prefix
@@ -651,7 +745,11 @@ class DownloadWorker {
     for (const originalFile of mediaFiles) {
       const originalPath = path.join(downloadDir, originalFile);
       const ext = path.extname(originalFile).slice(1); // Remove the dot
-      const newFilename = this.generateCleanFilename(title, itag, ext);
+      let newFilename = this.generateCleanFilename(title, itag, ext);
+
+      // Validate and fix filename length
+      newFilename = this.validateFilenameLength(newFilename);
+
       const newPath = path.join(downloadDir, newFilename);
 
       try {
@@ -661,7 +759,11 @@ class DownloadWorker {
           const randomSuffix = crypto.randomBytes(4).toString('hex');
           const baseName = path.parse(newFilename).name;
           const extension = path.parse(newFilename).ext;
-          const uniqueFilename = `${baseName}_${randomSuffix}${extension}`;
+          let uniqueFilename = `${baseName}_${randomSuffix}${extension}`;
+
+          // Validate the unique filename length too
+          uniqueFilename = this.validateFilenameLength(uniqueFilename);
+
           const uniquePath = path.join(downloadDir, uniqueFilename);
           fs.renameSync(originalPath, uniquePath);
           renamedFiles.push(uniqueFilename);
@@ -671,7 +773,16 @@ class DownloadWorker {
           renamedFiles.push(newFilename);
           console.log(`Worker ${this.taskId} renamed ${originalFile} to ${newFilename}`);
         } else {
-          renamedFiles.push(originalFile);
+          // Even if no rename needed, validate the original filename length
+          const validatedOriginal = this.validateFilenameLength(originalFile);
+          if (validatedOriginal !== originalFile) {
+            const validatedPath = path.join(downloadDir, validatedOriginal);
+            fs.renameSync(originalPath, validatedPath);
+            renamedFiles.push(validatedOriginal);
+            console.log(`Worker ${this.taskId} shortened long filename ${originalFile} to ${validatedOriginal}`);
+          } else {
+            renamedFiles.push(originalFile);
+          }
         }
       } catch (error) {
         console.warn(`Worker ${this.taskId} failed to rename ${originalFile}:`, error.message);
@@ -781,11 +892,11 @@ async function checkDownloadToolAvailable() {
     const result = await new Promise((resolve, reject) => {
       const process = spawn(DOWNLOAD_TOOL, ['--version']);
       let output = '';
-      
+
       process.stdout.on('data', (data) => {
         output += data.toString();
       });
-      
+
       process.on('close', (code) => {
         if (code === 0) {
           resolve(output);
@@ -793,12 +904,12 @@ async function checkDownloadToolAvailable() {
           reject(new Error(`${DOWNLOAD_TOOL} version check failed with code ${code}`));
         }
       });
-      
+
       process.on('error', (error) => {
         reject(error);
       });
     });
-    
+
     console.log(`${DOWNLOAD_TOOL} version check:`, result.split('\n')[0]);
     return true;
   } catch (error) {
