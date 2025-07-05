@@ -14,7 +14,6 @@ services:
       - PORT=3001
       - DATA_DIR=/root/data/media-get
       - DOWNLOADS_DIR=/app/downloads
-      - DOWNLOAD_TOOL=${DOWNLOAD_TOOL:-yt-dlp}
       - WORKER_INTERVAL=${WORKER_INTERVAL:-5000}
       - MAX_CONCURRENT_DOWNLOADS=${MAX_CONCURRENT_DOWNLOADS:-3}
     restart: unless-stopped

@@ -2,16 +2,52 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 export interface MediaInfo {
-  site: string;
+  id?: string;
   title: string;
+  uploader?: string;
+  uploader_id?: string;
+  description?: string;
+  duration?: number;
+  view_count?: number;
+  like_count?: number;
+  timestamp?: number;
+  upload_date?: string;
+  extractor?: string;
+  extractor_key?: string;
+  webpage_url?: string;
+  thumbnail?: string;
+  thumbnails?: Array<{
+    url: string;
+    id: string;
+  }>;
   formats: Array<{
-    itag: string;
-    container: string;
-    quality: string;
-    size: string;
-    type: 'video' | 'audio' | 'image';
+    format_id: string;
+    url?: string;
+    ext: string;
+    format?: string;
+    format_note?: string;
+    width?: number;
+    height?: number;
+    fps?: number;
+    vcodec?: string;
+    acodec?: string;
+    tbr?: number;
+    vbr?: number;
+    abr?: number;
+    filesize?: number;
+    filesize_approx?: number;
+    quality?: number;
+    protocol?: string;
+    resolution?: string;
+    aspect_ratio?: number;
+    dynamic_range?: string;
+    video_ext?: string;
+    audio_ext?: string;
+    http_headers?: Record<string, string>;
   }>;
   isPlaylist?: boolean;
+  // Legacy format support for backward compatibility
+  site?: string;
 }
 
 export interface DownloadResponse {
@@ -82,6 +118,15 @@ export interface DownloadRecord {
     type: string;
     format: string;
   }>;
+  mediaInfo?: {
+    uploader?: string;
+    duration?: number;
+    view_count?: number;
+    upload_date?: string;
+    format_id?: string;
+    vcodec?: string;
+    acodec?: string;
+  };
 }
 
 export interface SupportedSite {
@@ -136,10 +181,10 @@ class ApiService {
   }
 
   async downloadMedia(
-    url: string, 
-    userId: string, 
-    itag?: string, 
-    outputName?: string, 
+    url: string,
+    userId: string,
+    format_id?: string,
+    outputName?: string,
     cookies?: string,
     downloadPlaylist?: boolean
   ): Promise<DownloadResponse> {
@@ -148,11 +193,11 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
-        url, 
-        userId, 
-        itag, 
-        outputName, 
+      body: JSON.stringify({
+        url,
+        userId,
+        format_id,
+        outputName,
         cookies,
         downloadPlaylist: downloadPlaylist || false
       }),
@@ -168,7 +213,7 @@ class ApiService {
 
   async getTaskStatus(taskId: string): Promise<TaskStatus> {
     const response = await fetch(this.getApiUrl(`/task/${taskId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch task status');
     }
@@ -178,7 +223,7 @@ class ApiService {
 
   async getUserDownloads(userId: string): Promise<DownloadRecord[]> {
     const response = await fetch(this.getApiUrl(`/downloads/${userId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch user downloads');
     }
@@ -188,7 +233,7 @@ class ApiService {
 
   async getUserStats(userId: string): Promise<UserStats> {
     const response = await fetch(this.getApiUrl(`/stats/${userId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch user statistics');
     }
@@ -227,7 +272,7 @@ class ApiService {
 
   async getCookies(userId: string, platform: string): Promise<CookieData> {
     const response = await fetch(this.getApiUrl(`/cookies/${userId}/${platform}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch cookies');
     }
@@ -237,7 +282,7 @@ class ApiService {
 
   async getUserCookies(userId: string): Promise<Array<{ platform: string; updatedAt: string }>> {
     const response = await fetch(this.getApiUrl(`/cookies/${userId}`));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch user cookies');
     }
@@ -259,7 +304,7 @@ class ApiService {
 
   async getSupportedSites(): Promise<SupportedSite[]> {
     const response = await fetch(this.getApiUrl('/supported-sites'));
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch supported sites');
     }
@@ -267,14 +312,14 @@ class ApiService {
     return response.json();
   }
 
-  async checkYouGetInstallation(): Promise<{ installed: boolean; version?: string; error?: string; ffmpegAvailable?: boolean }> {
+  async checkYtDlpInstallation(): Promise<{ installed: boolean; version?: string; error?: string; ffmpegAvailable?: boolean }> {
     try {
-      const response = await fetch(this.getApiUrl('/check-youget'));
+      const response = await fetch(this.getApiUrl('/check-yt-dlp'));
       return response.json();
     } catch (error) {
-      return { 
-        installed: false, 
-        error: 'Cannot connect to backend server' 
+      return {
+        installed: false,
+        error: 'Cannot connect to backend server'
       };
     }
   }
@@ -287,7 +332,21 @@ class ApiService {
   // Helper method to get the correct download URL for files
   getFileDownloadUrl(downloadPath: string): string {
     // downloadPath already includes /downloads/... so we just need the base URL
-    return `${this.getDownloadBaseUrl()}${downloadPath}`;
+    // Ensure proper URL encoding for special characters in filenames
+    const baseUrl = this.getDownloadBaseUrl();
+
+    // Split path into segments and encode each filename part properly
+    const pathParts = downloadPath.split('/');
+    const encodedParts = pathParts.map((part, index) => {
+      // Only encode the filename parts (not /downloads/ or directory names that are UUIDs)
+      if (index >= 2 && part.includes('.')) {
+        // This is likely a filename with extension
+        return encodeURIComponent(part);
+      }
+      return part;
+    });
+
+    return `${baseUrl}${encodedParts.join('/')}`;
   }
 }
 

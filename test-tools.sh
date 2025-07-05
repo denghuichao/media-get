@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # MediaGet Download Tool Test Script
-# This script tests both you-get and yt-dlp installations and basic functionality
+# This script tests yt-dlp installation and basic functionality
 
 echo "🧪 MediaGet Download Tool Test Script"
 echo "======================================"
@@ -10,24 +10,6 @@ echo
 # Test URL for basic functionality
 TEST_URL="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
-# Test you-get installation
-echo "📦 Testing you-get installation..."
-if command -v you-get &> /dev/null; then
-    echo "✅ you-get is installed"
-    you-get --version
-    
-    echo "🔍 Testing you-get analysis (dry run)..."
-    if you-get --info "$TEST_URL" &> /dev/null; then
-        echo "✅ you-get can analyze URLs"
-    else
-        echo "❌ you-get failed to analyze test URL"
-    fi
-else
-    echo "❌ you-get is NOT installed"
-    echo "   Install with: pip install you-get"
-fi
-
-echo
 echo "📦 Testing yt-dlp installation..."
 if command -v yt-dlp &> /dev/null; then
     echo "✅ yt-dlp is installed"
@@ -73,6 +55,6 @@ echo "MAX_CONCURRENT_DOWNLOADS=${MAX_CONCURRENT_DOWNLOADS:-3 (default)}"
 echo
 echo "🏁 Test Complete!"
 echo
-echo "💡 To change the download tool, set the environment variable:"
-echo "   export DOWNLOAD_TOOL=yt-dlp     # Use yt-dlp"
-echo "   export DOWNLOAD_TOOL=you-get    # Use you-get"
+echo "💡 MediaGet uses yt-dlp as the download tool:"
+echo "   ✅ yt-dlp: Extensive site support (1800+ sites)"
+echo "   ✅ FFmpeg: Video/audio processing and merging"

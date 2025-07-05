@@ -22,9 +22,6 @@ check_tool() {
     echo
 }
 
-# Test with you-get
-check_tool "you-get"
-
 # Test with yt-dlp  
 check_tool "yt-dlp"
 

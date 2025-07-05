@@ -115,11 +115,10 @@
     "status": "All features available now"
   },
   "supportedSites": {
-    "title": "100+ Supported Platforms",
+    "title": "Top Supported Platforms",
     "subtitle": "Download from the most popular video, audio, and image sharing platforms worldwide",
-    "showMore": "Show All Sites",
-    "showLess": "Show Less",
-    "moreCount": "+{{count}} more sites supported",
+    "showAllSites": "Show All Sites",
+    "viewAllDescription": "View all 100+ supported platforms with advanced search and filtering",
     "types": {
       "video": "Video Downloads",
       "audio": "Audio Downloads",
@@ -134,6 +133,23 @@
         "Multiple formats"
       ]
     }
+  },
+  "allSupportedSites": {
+    "title": "All Supported Sites",
+    "subtitle": "Explore our complete list of 100+ supported platforms for downloading videos, audio, and images",
+    "searchPlaceholder": "Search sites...",
+    "resultsCount": "Showing {{count}} of {{total}} sites",
+    "sitesCount": "sites",
+    "filters": {
+      "allTypes": "All Types",
+      "allRegions": "All Regions"
+    },
+    "noResults": {
+      "title": "No sites found",
+      "description": "Try adjusting your search or filters to find what you're looking for.",
+      "clearFilters": "Clear Filters"
+    },
+    "backToHome": "Back to Home"
   },
   "dashboard": {
     "welcome": "Welcome back, {{name}}!",

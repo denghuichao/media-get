@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
 
 interface Config {
-    downloadTool: string;
+    // Future configuration options can be added here
 }
 
 interface ConfigContextType {
@@ -25,35 +25,15 @@ interface ConfigProviderProps {
 }
 
 export const ConfigProvider: React.FC<ConfigProviderProps> = ({ children }) => {
-    const [config, setConfig] = useState<Config | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        const fetchConfig = async () => {
-            try {
-                const response = await fetch('/api/config');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch config');
-                }
-                const configData = await response.json();
-                setConfig(configData);
-                setError(null);
-            } catch (err) {
-                console.error('Error fetching config:', err);
-                setError(err instanceof Error ? err.message : 'Unknown error');
-                // Fallback to default value
-                setConfig({ downloadTool: 'yt-dlp' });
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchConfig();
-    }, []);
+    // Static configuration - no need to fetch from server
+    const config: Config = {};
 
     return (
-        <ConfigContext.Provider value={{ config, loading, error }}>
+        <ConfigContext.Provider value={{
+            config,
+            loading: false,
+            error: null
+        }}>
             {children}
         </ConfigContext.Provider>
     );

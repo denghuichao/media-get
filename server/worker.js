@@ -15,7 +15,7 @@ const DATA_DIR = process.env.DATA_DIR || DEFAULT_DATA_DIR;
 
 // Configuration
 const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(DATA_DIR, 'downloads');
-const DOWNLOAD_TOOL = process.env.DOWNLOAD_TOOL || 'yt-dlp'; // 'you-get' or 'yt-dlp'
+const DOWNLOAD_TOOL = 'yt-dlp'; // Fixed to yt-dlp only
 const WORKER_INTERVAL = parseInt(process.env.WORKER_INTERVAL) || 5000; // 5 seconds
 const MAX_CONCURRENT_DOWNLOADS = parseInt(process.env.MAX_CONCURRENT_DOWNLOADS) || 3;
 const CLEANUP_INTERVAL_HOURS = parseInt(process.env.CLEANUP_INTERVAL_HOURS) || 24;
@@ -252,49 +252,36 @@ class DownloadWorker {
 
   // Prepare download arguments based on the tool
   prepareDownloadArgs(downloadDir) {
-    if (DOWNLOAD_TOOL === 'yt-dlp') {
-      const args = [
-        // Use a shorter output template with length limits
-        '-o', path.join(downloadDir, '%(title).60s.%(ext)s'),
-        '--no-playlist', // Don't download playlists by default
-        '--write-info-json', // Write metadata
-        '--write-thumbnail', // Download thumbnail
-        '--ignore-errors', // Continue with errors to handle unavailable formats gracefully
-        '--no-warnings', // Reduce noise in logs
-        '--extract-flat', 'false' // Ensure full extraction
-      ];
+    const args = [
+      // Use a shorter output template with length limits
+      '-o', path.join(downloadDir, '%(title).60s.%(ext)s'),
+      '--no-playlist', // Don't download playlists by default
+      '--write-info-json', // Write metadata
+      '--write-thumbnail', // Download thumbnail
+      '--ignore-errors', // Continue with errors to handle unavailable formats gracefully
+      '--no-warnings', // Reduce noise in logs
+      '--extract-flat', 'false' // Ensure full extraction
+    ];
 
-      // Add format selection if specified
-      if (this.task.media_info && this.task.media_info.itag) {
-        args.push('-f', this.task.media_info.itag);
-      } else {
-        // Default to best quality video+audio or best available
-        args.push('-f', 'best[height<=1080]/best');
-      }
-
-      // Add retry options for better reliability
-      args.push('--retries', '3');
-      args.push('--fragment-retries', '3');
-
-      // Add output template restrictions for better file naming
-      args.push('--restrict-filenames');
-      // Limit filename length to avoid filesystem issues
-      args.push('--trim-filenames', '200');
-
-      args.push(this.task.url);
-      return args;
+    // Add format selection if specified
+    if (this.task.media_info && this.task.media_info.itag) {
+      args.push('-f', this.task.media_info.itag);
     } else {
-      // you-get arguments
-      const args = ['-o', downloadDir];
-
-      // Add format selection if specified
-      if (this.task.media_info && this.task.media_info.itag) {
-        args.push(`--format=${this.task.media_info.itag}`);
-      }
-
-      args.push(this.task.url);
-      return args;
+      // Default to best quality video+audio or best available
+      args.push('-f', 'best[height<=1080]/best');
     }
+
+    // Add retry options for better reliability
+    args.push('--retries', '3');
+    args.push('--fragment-retries', '3');
+
+    // Add output template restrictions for better file naming
+    args.push('--restrict-filenames');
+    // Limit filename length to avoid filesystem issues
+    args.push('--trim-filenames', '200');
+
+    args.push(this.task.url);
+    return args;
   }
 
   // Execute download tool command
@@ -378,11 +365,6 @@ class DownloadWorker {
         clearTimeout(timeout);
       });
     });
-  }
-
-  // Execute you-get command (backward compatibility)
-  executeYouGet(args) {
-    return this.executeDownloadTool(args);
   }
 
   // Execute FFmpeg command
@@ -886,11 +868,11 @@ class DownloadWorker {
   }
 }
 
-// Check if download tool is available and working
+// Check if yt-dlp is available and working
 async function checkDownloadToolAvailable() {
   try {
     const result = await new Promise((resolve, reject) => {
-      const process = spawn(DOWNLOAD_TOOL, ['--version']);
+      const process = spawn('yt-dlp', ['--version']);
       let output = '';
 
       process.stdout.on('data', (data) => {
@@ -901,7 +883,7 @@ async function checkDownloadToolAvailable() {
         if (code === 0) {
           resolve(output);
         } else {
-          reject(new Error(`${DOWNLOAD_TOOL} version check failed with code ${code}`));
+          reject(new Error(`yt-dlp version check failed with code ${code}`));
         }
       });
 
@@ -910,14 +892,12 @@ async function checkDownloadToolAvailable() {
       });
     });
 
-    console.log(`${DOWNLOAD_TOOL} version check:`, result.split('\n')[0]);
+    console.log(`yt-dlp version check:`, result.split('\n')[0]);
     return true;
   } catch (error) {
-    console.error(`${DOWNLOAD_TOOL} is not available:`, error.message);
-    console.error(`Please install ${DOWNLOAD_TOOL} to use this worker system.`);
-    if (DOWNLOAD_TOOL === 'yt-dlp') {
-      console.error('Install with: pip install yt-dlp');
-    }
+    console.error(`yt-dlp is not available:`, error.message);
+    console.error(`Please install yt-dlp to use this worker system.`);
+    console.error('Install with: pip install yt-dlp');
     return false;
   }
 }
@@ -925,7 +905,7 @@ async function checkDownloadToolAvailable() {
 // Initialize and start the dispatcher
 async function startWorkerSystem() {
   console.log('Starting MediaGet Download Worker System...');
-  console.log(`Download tool: ${DOWNLOAD_TOOL}`);
+  console.log(`Download tool: yt-dlp`);
   console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads directory: ${DOWNLOADS_DIR}`);
   console.log(`Worker interval: ${WORKER_INTERVAL}ms`);

@@ -1,10 +1,7 @@
 import { BookOpen, Users, Award, Shield, Clock, Zap } from 'lucide-react';
-import { useConfig } from '../contexts/ConfigContext';
 
 export default function AboutAndQuality() {
-    const { config } = useConfig();
-    const downloadTool = config?.downloadTool || 'yt-dlp';
-    const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
+    const toolDisplayName = 'yt-dlp';
     return (
         <div className="min-h-screen bg-gray-50 py-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

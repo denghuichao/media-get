@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Media Test</title>
+</head>
+
+<body>
+    <h1>Media File Test</h1>
+
+    <h2>Video Test</h2>
+    <video controls crossorigin="anonymous" preload="metadata" width="640" height="360" style="border: 1px solid #ccc;">
+        <source
+            src="http://localhost:3001/downloads/93296777-f85c-4d9f-ba1c-c74361916587/The-catastrophic-risks-of-AI--and-a-safer-path_default.mp4"
+            type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+
+    <h2>Image Test</h2>
+    <img src="http://localhost:3001/downloads/93296777-f85c-4d9f-ba1c-c74361916587/The-catastrophic-risks-of-AI--and-a-safer-path_default.jpg"
+        alt="Thumbnail" style="max-width: 300px; border: 1px solid #ccc;" crossorigin="anonymous">
+
+    <h2>Debug Info</h2>
+    <div id="debug"></div>
+
+    <script>
+        const video = document.querySelector('video');
+        const img = document.querySelector('img');
+        const debug = document.getElementById('debug');
+
+        video.addEventListener('loadstart', () => {
+            debug.innerHTML += '<p>Video: Load started</p>';
+        });
+
+        video.addEventListener('canplay', () => {
+            debug.innerHTML += '<p>Video: Can play</p>';
+        });
+
+        video.addEventListener('error', (e) => {
+            debug.innerHTML += `<p style="color: red;">Video Error: ${e.target.error ? e.target.error.message : 'Unknown error'}</p>`;
+            console.error('Video error:', e);
+        });
+
+        img.addEventListener('load', () => {
+            debug.innerHTML += '<p>Image: Loaded successfully</p>';
+        });
+
+        img.addEventListener('error', (e) => {
+            debug.innerHTML += '<p style="color: red;">Image Error: Failed to load</p>';
+            console.error('Image error:', e);
+        });
+    </script>
+</body>
+
+</html>

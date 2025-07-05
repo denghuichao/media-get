@@ -1,14 +1,11 @@
 import React from 'react';
 import { Shield, Zap, Settings, Download, PlayCircle, Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useConfig } from '../contexts/ConfigContext';
 
 export default function Features() {
   const { t } = useTranslation();
-  const { config } = useConfig();
 
-  const downloadTool = config?.downloadTool || 'yt-dlp';
-  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
+  const toolDisplayName = 'yt-dlp';
 
   const features = [
     {

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Simple Image Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-url {
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            word-break: break-all;
+            font-size: 12px;
+        }
+
+        .test-image {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .success {
+            border-color: green !important;
+        }
+
+        .error {
+            border-color: red !important;
+        }
+
+        .status {
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.loading {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Direct Image Loading Test</h1>
+
+        <h2>Test 1: English filename</h2>
+        <div class="test-url">
+            http://localhost:3001/downloads/14ff45aa-886d-490e-a66a-8a87e83ecab0/The-catastrophic-risks-of-AI-and-a-safer-path_default.jpg
+        </div>
+        <div id="status1" class="status loading">Loading...</div>
+        <img id="img1" class="test-image"
+            src="http://localhost:3001/downloads/14ff45aa-886d-490e-a66a-8a87e83ecab0/The-catastrophic-risks-of-AI-and-a-safer-path_default.jpg"
+            alt="Test Image 1">
+
+        <h2>Test 2: Chinese filename (URL encoded)</h2>
+        <div class="test-url">
+            http://localhost:3001/downloads/70a1b563-caf3-45ae-baa4-b310cc5db2b9/%E6%89%8E%E5%BF%83%E7%9A%84%E7%9C%9F%E7%9B%B8%E4%B8%8A%E7%8F%AD%E6%98%AF%E5%A6%82%E4%BD%95%E6%91%A7%E6%AF%81%E6%88%91%E4%BB%AC%E7%9A%84%E5%BF%83%E6%80%81%E7%94%9F%E6%B4%BB%E5%92%8C%E5%B9%B8%E7%A6%8F%E6%84%9F%E7%9A%84%E5%9B%B4%E7%82%89%E5%A4%9C%E8%AF%9D_default.jpg
+        </div>
+        <div id="status2" class="status loading">Loading...</div>
+        <img id="img2" class="test-image"
+            src="http://localhost:3001/downloads/70a1b563-caf3-45ae-baa4-b310cc5db2b9/%E6%89%8E%E5%BF%83%E7%9A%84%E7%9C%9F%E7%9B%B8%E4%B8%8A%E7%8F%AD%E6%98%AF%E5%A6%82%E4%BD%95%E6%91%A7%E6%AF%81%E6%88%91%E4%BB%AC%E7%9A%84%E5%BF%83%E6%80%81%E7%94%9F%E6%B4%BB%E5%92%8C%E5%B9%B8%E7%A6%8F%E6%84%9F%E7%9A%84%E5%9B%B4%E7%82%89%E5%A4%9C%E8%AF%9D_default.jpg"
+            alt="Test Image 2">
+
+        <h2>Debug Info</h2>
+        <div id="debug"></div>
+    </div>
+
+    <script>
+        console.log('=== IMAGE TEST PAGE ===');
+
+        function updateStatus(imgId, statusId, success, message) {
+            const status = document.getElementById(statusId);
+            const img = document.getElementById(imgId);
+
+            if (success) {
+                status.className = 'status success';
+                status.textContent = 'SUCCESS: ' + message;
+                img.classList.add('success');
+                img.classList.remove('error');
+            } else {
+                status.className = 'status error';
+                status.textContent = 'ERROR: ' + message;
+                img.classList.add('error');
+                img.classList.remove('success');
+            }
+        }
+
+        // Test image 1
+        document.getElementById('img1').onload = function () {
+            console.log('Image 1 loaded successfully');
+            const img = this;
+            updateStatus('img1', 'status1', true, `Loaded ${img.naturalWidth}x${img.naturalHeight}`);
+        };
+
+        document.getElementById('img1').onerror = function (e) {
+            console.error('Image 1 failed to load:', e);
+            updateStatus('img1', 'status1', false, 'Failed to load');
+        };
+
+        // Test image 2
+        document.getElementById('img2').onload = function () {
+            console.log('Image 2 loaded successfully');
+            const img = this;
+            updateStatus('img2', 'status2', true, `Loaded ${img.naturalWidth}x${img.naturalHeight}`);
+        };
+
+        document.getElementById('img2').onerror = function (e) {
+            console.error('Image 2 failed to load:', e);
+            updateStatus('img2', 'status2', false, 'Failed to load');
+        };
+
+        // Debug info
+        setTimeout(() => {
+            const debug = document.getElementById('debug');
+            debug.innerHTML = `
+                <strong>Current URL:</strong> ${window.location.href}<br>
+                <strong>User Agent:</strong> ${navigator.userAgent}<br>
+                <strong>Timestamp:</strong> ${new Date().toISOString()}
+            `;
+        }, 1000);
+    </script>
+</body>
+
+</html>

@@ -121,7 +121,7 @@ export class DownloadDispatcher {
   // Dispatch a single task to a worker thread
   async dispatchToWorker(task) {
     const taskId = task.task_id;
-    
+
     if (this.activeWorkers.has(taskId)) {
       console.log(`Task ${taskId} is already being processed`);
       return;
@@ -147,21 +147,21 @@ export class DownloadDispatcher {
     try {
       const now = Date.now();
       const maxAge = MAX_DOWNLOAD_AGE_HOURS * 60 * 60 * 1000;
-      
+
       const items = fs.readdirSync(DOWNLOADS_DIR);
       let cleanedCount = 0;
       const cleanedTaskIds = [];
-      
+
       for (const item of items) {
         const itemPath = path.join(DOWNLOADS_DIR, item);
-        
+
         try {
           const stats = fs.statSync(itemPath);
-          
+
           if (stats.isDirectory() && (now - stats.mtime.getTime()) > maxAge) {
             // The directory name should be the task_id
             cleanedTaskIds.push(item);
-            
+
             fs.rmSync(itemPath, { recursive: true, force: true });
             cleanedCount++;
             console.log(`Cleaned up old download directory: ${item}`);
@@ -170,10 +170,10 @@ export class DownloadDispatcher {
           console.warn(`Error checking stats for ${item}:`, statError.message);
         }
       }
-      
+
       if (cleanedCount > 0) {
         console.log(`Cleanup completed: removed ${cleanedCount} old download directories`);
-        
+
         // Mark corresponding tasks as invalid in database
         if (cleanedTaskIds.length > 0) {
           DownloadTaskDB.markFilesCleanedUp(cleanedTaskIds).then(result => {
@@ -215,65 +215,77 @@ export class DownloadWorker {
     try {
       // Update task status to processing
       await DownloadTaskDB.updateTaskProgress(this.taskId, 0, 'processing');
-      
+
       // Generate task download directory using task_id
       const { dirName, fullPath: downloadDir } = this.generateTaskDownloadDir();
-      
+
       const ffmpegAvailable = await this.checkFFmpegAvailable();
       console.log(`FFmpeg available for task ${this.taskId}:`, ffmpegAvailable);
-      
+
       const initialFiles = fs.existsSync(downloadDir) ? fs.readdirSync(downloadDir) : [];
-      
-      // Prepare you-get arguments
-      const args = ['-o', downloadDir];
-      
+
+      // Prepare yt-dlp arguments
+      const args = [
+        '-o', path.join(downloadDir, '%(title).60s.%(ext)s'),
+        '--write-info-json',
+        '--write-thumbnail',
+        '--ignore-errors',
+        '--no-warnings',
+        '--restrict-filenames',
+        '--trim-filenames', '200'
+      ];
+
       // Add format selection if specified
-      if (this.task.media_info && this.task.media_info.itag) {
-        args.push(`--format=${this.task.media_info.itag}`);
+      if (this.task.media_info && this.task.media_info.format_id) {
+        args.push('-f', this.task.media_info.format_id);
+      } else {
+        args.push('-f', 'best[height<=1080]/best');
       }
-      
+
       // Add playlist option if this is a playlist download
       if (this.task.is_playlist) {
-        args.push('-l');  // Use -l flag for playlist downloads
-        console.log(`Worker ${this.taskId} downloading playlist with -l flag`);
+        // Remove --no-playlist for playlist downloads
+        console.log(`Worker ${this.taskId} downloading playlist`);
+      } else {
+        args.push('--no-playlist');
       }
-      
+
       // Add cookies if available
       const cookiesFile = await this.prepareCookiesFile();
       if (cookiesFile) {
         args.push('--cookies', cookiesFile);
         console.log(`Worker ${this.taskId} using cookies file: ${cookiesFile}`);
       }
-      
+
       args.push(this.task.url);
-      
-      console.log(`Worker ${this.taskId} executing you-get with args:`, args);
-      
+
+      console.log(`Worker ${this.taskId} executing yt-dlp with args:`, args);
+
       // Update progress to 25%
       await DownloadTaskDB.updateTaskProgress(this.taskId, 25);
-      
+
       // Execute download
-      const output = await this.executeYouGet(args);
+      const output = await this.executeYtDlp(args);
       console.log(`Worker ${this.taskId} download output:`, output);
-      
+
       // Update progress to 75%
       await DownloadTaskDB.updateTaskProgress(this.taskId, 75);
-      
+
       // Process downloaded files
       const result = await this.processDownloadedFiles(downloadDir, initialFiles, dirName, ffmpegAvailable);
-      
+
       // Complete the task
       await DownloadTaskDB.completeTask(this.taskId, result);
       console.log(`Worker completed task: ${this.taskId} with ${result.files.length} files`);
-      
+
       // Clean up cookies file if it was created
       if (cookiesFile) {
         this.cleanupCookiesFile(cookiesFile);
       }
-      
+
     } catch (error) {
       console.error(`Worker failed for task ${this.taskId}:`, error.message);
-      
+
       // Clean error message by removing ANSI escape codes
       const cleanError = this.cleanErrorMessage(error.message);
       await DownloadTaskDB.failTask(this.taskId, cleanError);
@@ -283,31 +295,47 @@ export class DownloadWorker {
   // Clean error message by removing ANSI escape codes and formatting
   cleanErrorMessage(errorMessage) {
     if (!errorMessage) return 'Download failed due to an unknown error';
-    
+
     // Remove ANSI escape codes (color codes, formatting)
     let cleaned = errorMessage.replace(/\x1b\[[0-9;]*m/g, '');
-    
+
     // Remove extra whitespace and newlines
     cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    
+
     // Split into lines and filter out empty/debug lines
     const lines = cleaned.split('\n').filter(line => {
       const trimmed = line.trim();
-      return trimmed && 
-             !trimmed.startsWith('you-get:   (') && // Debug info
-             !trimmed.startsWith('[0m') && // Color codes
-             !trimmed.startsWith('[33m') && // Color codes
-             trimmed.length > 5; // Meaningful content
+      return trimmed &&
+        !trimmed.startsWith('[debug]') && // Debug info
+        !trimmed.startsWith('[0m') && // Color codes
+        !trimmed.startsWith('[33m') && // Color codes
+        trimmed.length > 5; // Meaningful content
     });
-    
-    // Look for specific you-get error patterns and extract meaningful messages
+
+    // Look for specific yt-dlp error patterns and extract meaningful messages
     const errorPatterns = [
       {
-        pattern: /you-get: You will need login cookies/i,
+        pattern: /This video requires payment/i,
+        message: 'This video requires payment to access'
+      },
+      {
+        pattern: /Private video/i,
+        message: 'This video is private'
+      },
+      {
+        pattern: /Video unavailable/i,
+        message: 'Video is unavailable'
+      },
+      {
+        pattern: /Sign in to confirm your age/i,
+        message: 'Age verification required - Please sign in to the website first'
+      },
+      {
+        pattern: /cookies/i,
         message: 'Login required - Please sign in to the website first'
       },
       {
-        pattern: /you-get: \[error\]/i,
+        pattern: /ERROR:/i,
         message: 'Download error occurred'
       },
       {
@@ -335,53 +363,53 @@ export class DownloadWorker {
         message: 'Invalid URL format'
       }
     ];
-    
+
     // Check for known error patterns
     for (const { pattern, message } of errorPatterns) {
       if (pattern.test(cleaned)) {
         return message;
       }
     }
-    
+
     // If no specific pattern matches, try to extract the most relevant error line
     const relevantLines = lines.filter(line => {
       const lower = line.toLowerCase();
-      return lower.includes('error') || 
-             lower.includes('failed') || 
-             lower.includes('wrong') ||
-             lower.includes('problem') ||
-             lower.includes('issue');
+      return lower.includes('error') ||
+        lower.includes('failed') ||
+        lower.includes('wrong') ||
+        lower.includes('problem') ||
+        lower.includes('issue');
     });
-    
+
     if (relevantLines.length > 0) {
       // Take the first relevant error line and clean it up
       let errorLine = relevantLines[0];
-      
-      // Remove you-get prefixes
-      errorLine = errorLine.replace(/^you-get:\s*/i, '');
-      errorLine = errorLine.replace(/^\[error\]\s*/i, '');
-      
+
+      // Remove yt-dlp prefixes
+      errorLine = errorLine.replace(/^ERROR:\s*/i, '');
+      errorLine = errorLine.replace(/^\[.*?\]\s*/i, '');
+
       // Capitalize first letter
       errorLine = errorLine.charAt(0).toUpperCase() + errorLine.slice(1);
-      
+
       // Limit length
       if (errorLine.length > 100) {
         errorLine = errorLine.substring(0, 100) + '...';
       }
-      
+
       return errorLine;
     }
-    
+
     // Fallback: return a generic message
     return 'Download failed - Please try again or check if the URL is valid';
   }
 
-  // Prepare cookies file for you-get
+  // Prepare cookies file for yt-dlp
   async prepareCookiesFile() {
     try {
       // Check if task has cookies or if user has saved cookies for this platform
       let cookiesData = null;
-      
+
       if (this.task.cookies) {
         cookiesData = this.task.cookies;
       } else {
@@ -391,19 +419,19 @@ export class DownloadWorker {
           cookiesData = userCookies.cookies_data;
         }
       }
-      
+
       if (!cookiesData) {
         return null;
       }
-      
+
       // Create temporary cookies file
       const cookiesFileName = `cookies_${this.taskId}_${Date.now()}.txt`;
       const cookiesFilePath = path.join(DOWNLOADS_DIR, cookiesFileName);
-      
+
       fs.writeFileSync(cookiesFilePath, cookiesData, 'utf8');
-      
+
       return cookiesFilePath;
-      
+
     } catch (error) {
       console.warn(`Worker ${this.taskId} failed to prepare cookies file:`, error.message);
       return null;
@@ -426,30 +454,30 @@ export class DownloadWorker {
   generateTaskDownloadDir() {
     const dirName = this.taskId; // Use task_id directly as directory name
     const taskDir = path.join(DOWNLOADS_DIR, dirName);
-    
+
     if (!fs.existsSync(taskDir)) {
       fs.mkdirSync(taskDir, { recursive: true });
     }
-    
+
     return { dirName, fullPath: taskDir };
   }
 
-  // Execute you-get command
-  executeYouGet(args) {
+  // Execute yt-dlp command
+  executeYtDlp(args) {
     return new Promise((resolve, reject) => {
-      const youget = spawn('you-get', args);
+      const ytdlp = spawn('yt-dlp', args);
       let stdout = '';
       let stderr = '';
 
-      youget.stdout.on('data', (data) => {
+      ytdlp.stdout.on('data', (data) => {
         stdout += data.toString();
       });
 
-      youget.stderr.on('data', (data) => {
+      ytdlp.stderr.on('data', (data) => {
         stderr += data.toString();
       });
 
-      youget.on('close', (code) => {
+      ytdlp.on('close', (code) => {
         if (code === 0) {
           resolve(stdout);
         } else {
@@ -457,7 +485,7 @@ export class DownloadWorker {
         }
       });
 
-      youget.on('error', (error) => {
+      ytdlp.on('error', (error) => {
         reject(error);
       });
     });
@@ -514,38 +542,38 @@ export class DownloadWorker {
     const allFiles = fs.readdirSync(downloadDir);
     const newFiles = allFiles.filter(file => !initialFiles.includes(file));
     console.log(`Worker ${this.taskId} new files after download:`, newFiles);
-    
+
     const { mediaFiles, metadataFiles } = this.findMediaFiles(newFiles);
     console.log(`Worker ${this.taskId} media files:`, mediaFiles);
-    
+
     // Get title and itag for renaming
     const title = this.task.media_info?.title || 'download';
     const itag = this.task.media_info?.itag || 'default';
-    
+
     // Rename files with title_itag prefix
     const renamedMediaFiles = this.renameDownloadedFiles(mediaFiles, downloadDir, title, itag);
-    
+
     let finalFiles = [];
-    let message = this.task.is_playlist 
+    let message = this.task.is_playlist
       ? `Playlist download completed. ${renamedMediaFiles.length} files downloaded.`
       : 'Download completed successfully';
-    
+
     if (renamedMediaFiles.length === 1 && !this.task.is_playlist) {
       finalFiles = renamedMediaFiles;
     } else if (renamedMediaFiles.length === 2 && ffmpegAvailable && !this.task.is_playlist) {
       console.log(`Worker ${this.taskId} attempting to merge DASH video and audio files...`);
-      
+
       try {
         const { videoOnlyFile, audioOnlyFile } = await this.identifyDashFiles(renamedMediaFiles, downloadDir);
-        
+
         if (videoOnlyFile && audioOnlyFile) {
           console.log(`Worker ${this.taskId} identified video: ${videoOnlyFile.filename}, audio: ${audioOnlyFile.filename}`);
-          
-          const outputFilename = this.generateCleanFilename(title, itag, 'mp4');
-          
+
+          const outputFilename = this.generateCleanFilename(title, format_id, 'mp4');
+
           const mergedFile = await this.mergeVideoAudio(
-            videoOnlyFile.filename, 
-            audioOnlyFile.filename, 
+            videoOnlyFile.filename,
+            audioOnlyFile.filename,
             outputFilename,
             downloadDir
           );
@@ -571,7 +599,7 @@ export class DownloadWorker {
       }
       console.log(`Worker ${this.taskId} multiple files downloaded (${renamedMediaFiles.length}), returning all files`);
     }
-    
+
     if (finalFiles.length === 0) {
       throw new Error(`No media files found. All files: ${newFiles.join(', ')}`);
     }
@@ -583,7 +611,7 @@ export class DownloadWorker {
         const stats = fs.statSync(filePath);
         const fileSizeBytes = stats.size;
         const fileSizeMB = (fileSizeBytes / (1024 * 1024)).toFixed(1);
-        
+
         // Determine file type
         const ext = path.extname(filename).toLowerCase();
         let type = 'video';
@@ -592,7 +620,7 @@ export class DownloadWorker {
         } else if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(ext)) {
           type = 'image';
         }
-        
+
         return {
           filename,
           downloadPath: `/downloads/${dirName}/${filename}`,
@@ -611,25 +639,25 @@ export class DownloadWorker {
   findMediaFiles(files) {
     const mediaFiles = [];
     const metadataFiles = [];
-    
+
     files.forEach(file => {
       const fileName = file.toLowerCase();
-      
-      if (fileName.includes('.part') || 
-          fileName.includes('.tmp') || 
-          fileName.startsWith('.') ||
-          fileName.includes('~')) {
+
+      if (fileName.includes('.part') ||
+        fileName.includes('.tmp') ||
+        fileName.startsWith('.') ||
+        fileName.includes('~')) {
         return;
       }
-      
-      if (fileName.endsWith('.cmt.xml') || 
-          fileName.endsWith('.info.json') || 
-          fileName.endsWith('.description') ||
-          fileName.endsWith('.annotations.xml') ||
-          fileName.endsWith('.srt') ||
-          fileName.endsWith('.vtt') ||
-          fileName.endsWith('.ass') ||
-          fileName.endsWith('.ssa')) {
+
+      if (fileName.endsWith('.cmt.xml') ||
+        fileName.endsWith('.info.json') ||
+        fileName.endsWith('.description') ||
+        fileName.endsWith('.annotations.xml') ||
+        fileName.endsWith('.srt') ||
+        fileName.endsWith('.vtt') ||
+        fileName.endsWith('.ass') ||
+        fileName.endsWith('.ssa')) {
         metadataFiles.push(file);
       } else {
         const mediaExtensions = [
@@ -637,47 +665,52 @@ export class DownloadWorker {
           '.mp3', '.m4a', '.aac', '.flac', '.ogg', '.wav', '.wma',
           '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'
         ];
-        
+
         if (mediaExtensions.some(ext => fileName.endsWith(ext))) {
           mediaFiles.push(file);
         }
       }
     });
-    
+
     return { mediaFiles, metadataFiles };
   }
 
-  // Generate a clean filename from title and itag
-  generateCleanFilename(title, itag, extension = 'mp4') {
+  // Generate a clean filename from title and format_id
+  generateCleanFilename(title, format_id, extension = 'mp4') {
     const cleanTitle = title
-      .replace(/[<>:"/\\|?*]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-\u4e00-\u9fff]/g, '')
-      .substring(0, 80); // Shorter to accommodate itag prefix
-    
-    return `${cleanTitle}_${itag}.${extension}`;
+      .replace(/[<>:"/\\|?*]/g, '') // Remove forbidden characters
+      .replace(/\s+/g, '-') // Replace spaces with single dash
+      .replace(/[^\w\-\u4e00-\u9fff]/g, '') // Keep only alphanumeric, dash, and Chinese characters
+      .replace(/--+/g, '-') // Replace multiple consecutive dashes with single dash
+      .replace(/^-+|-+$/g, '') // Remove leading/trailing dashes
+      .substring(0, 80); // Shorter to accommodate format_id prefix
+
+    // Ensure we don't have an empty title
+    const finalTitle = cleanTitle || 'media';
+
+    return `${finalTitle}_${format_id}.${extension}`;
   }
 
-  // Rename downloaded files with title_itag prefix
-  renameDownloadedFiles(mediaFiles, downloadDir, title, itag) {
+  // Rename downloaded files with title_format_id prefix
+  renameDownloadedFiles(mediaFiles, downloadDir, title, format_id) {
     const renamedFiles = [];
-    
+
     for (let i = 0; i < mediaFiles.length; i++) {
       const originalFile = mediaFiles[i];
       const originalPath = path.join(downloadDir, originalFile);
       const ext = path.extname(originalFile).slice(1); // Remove the dot
-      
+
       // For playlists, add index to filename
       let newFilename;
       if (this.task.is_playlist && mediaFiles.length > 1) {
         const paddedIndex = String(i + 1).padStart(3, '0');
-        newFilename = this.generateCleanFilename(`${title}_${paddedIndex}`, itag, ext);
+        newFilename = this.generateCleanFilename(`${title}_${paddedIndex}`, format_id, ext);
       } else {
-        newFilename = this.generateCleanFilename(title, itag, ext);
+        newFilename = this.generateCleanFilename(title, format_id, ext);
       }
-      
+
       const newPath = path.join(downloadDir, newFilename);
-      
+
       try {
         // Check if the new filename already exists
         if (fs.existsSync(newPath) && newPath !== originalPath) {
@@ -702,7 +735,7 @@ export class DownloadWorker {
         renamedFiles.push(originalFile); // Keep original name if rename fails
       }
     }
-    
+
     return renamedFiles;
   }
 
@@ -716,12 +749,12 @@ export class DownloadWorker {
           '-show_streams',
           filePath
         ]);
-        
+
         let stdout = '';
         ffprobe.stdout.on('data', (data) => {
           stdout += data.toString();
         });
-        
+
         ffprobe.on('close', (code) => {
           if (code === 0) {
             try {
@@ -734,14 +767,14 @@ export class DownloadWorker {
             reject(new Error('ffprobe failed'));
           }
         });
-        
+
         ffprobe.on('error', reject);
       });
-      
+
       const streams = result.streams || [];
       const hasVideo = streams.some(s => s.codec_type === 'video');
       const hasAudio = streams.some(s => s.codec_type === 'audio');
-      
+
       return { hasVideo, hasAudio };
     } catch (error) {
       console.warn(`Worker ${this.taskId} could not analyze file content:`, error.message);
@@ -752,7 +785,7 @@ export class DownloadWorker {
   // Smart file identification for DASH merging
   async identifyDashFiles(mediaFiles, downloadDir) {
     const fileAnalysis = [];
-    
+
     for (const file of mediaFiles) {
       const filePath = path.join(downloadDir, file);
       const analysis = await this.analyzeFileContent(filePath);
@@ -761,10 +794,10 @@ export class DownloadWorker {
         ...analysis
       });
     }
-    
+
     const videoOnlyFile = fileAnalysis.find(f => f.hasVideo && !f.hasAudio);
     const audioOnlyFile = fileAnalysis.find(f => f.hasAudio && !f.hasVideo);
-    
+
     return { videoOnlyFile, audioOnlyFile };
   }
 
@@ -773,9 +806,9 @@ export class DownloadWorker {
     const videoPath = path.join(downloadDir, videoFile);
     const audioPath = path.join(downloadDir, audioFile);
     const outputPath = path.join(downloadDir, outputFile);
-    
+
     console.log(`Worker ${this.taskId} merging: ${videoFile} + ${audioFile} -> ${outputFile}`);
-    
+
     const args = [
       '-i', videoPath,
       '-i', audioPath,
@@ -784,9 +817,9 @@ export class DownloadWorker {
       '-y',
       outputPath
     ];
-    
+
     await this.executeFFmpeg(args);
-    
+
     try {
       fs.unlinkSync(videoPath);
       fs.unlinkSync(audioPath);
@@ -794,7 +827,7 @@ export class DownloadWorker {
     } catch (error) {
       console.warn(`Worker ${this.taskId} could not clean up temporary files:`, error.message);
     }
-    
+
     return outputFile;
   }
 }

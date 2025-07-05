@@ -1,18 +1,13 @@
 import React from 'react';
 import { Download, Home, LayoutDashboard, Heart, Info } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useConfig } from '../contexts/ConfigContext';
 import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Header() {
   const { t } = useTranslation();
-  const { config } = useConfig();
 
-  const downloadTool = config?.downloadTool || 'yt-dlp';
-  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
-  const toolUrl = downloadTool === 'yt-dlp'
-    ? 'https://github.com/yt-dlp/yt-dlp'
-    : 'https://github.com/soimort/you-get';
+  const toolDisplayName = 'yt-dlp';
+  const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
 
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50" role="banner">

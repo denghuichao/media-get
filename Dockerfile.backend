@@ -7,11 +7,11 @@ RUN apk add --no-cache python3 py3-pip ffmpeg curl
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install both you-get and yt-dlp for maximum compatibility
-RUN pip install you-get yt-dlp
+# Install yt-dlp only (removed you-get dependency)
+RUN pip install yt-dlp
 
-# Verify installations
-RUN you-get --version && yt-dlp --version
+# Verify installation
+RUN yt-dlp --version && ffmpeg -version
 
 # Set working directory
 WORKDIR /app

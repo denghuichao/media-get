@@ -19,14 +19,29 @@ const PORT = process.env.PORT || 3001;
 const DEFAULT_DATA_DIR = path.join(os.homedir(), 'data', 'media-get');
 const DATA_DIR = process.env.DATA_DIR || DEFAULT_DATA_DIR;
 
-// Configuration from environment
+// Configuration - fixed to yt-dlp only
 const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(DATA_DIR, 'downloads');
-const DOWNLOAD_TOOL = process.env.DOWNLOAD_TOOL || 'yt-dlp'; // 'you-get' or 'yt-dlp'
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/downloads', express.static(DOWNLOADS_DIR));
+
+// Enhanced static file serving for downloads with proper CORS and media headers
+app.use('/downloads', (req, res, next) => {
+  // Set CORS headers for media files
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Range');
+  res.header('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+
+  next();
+}, express.static(DOWNLOADS_DIR));
 
 // Ensure downloads directory exists
 if (!fs.existsSync(DOWNLOADS_DIR)) {
@@ -78,7 +93,7 @@ async function initializeServer() {
 }
 
 // Helper function to execute download tools commands
-function executeDownloadTool(args, tool = DOWNLOAD_TOOL) {
+function executeDownloadTool(args, tool = 'yt-dlp') {
   return new Promise((resolve, reject) => {
     const downloadTool = spawn(tool, args);
     let stdout = '';
@@ -106,12 +121,7 @@ function executeDownloadTool(args, tool = DOWNLOAD_TOOL) {
   });
 }
 
-// Backward compatibility function for you-get
-function executeYouGet(args) {
-  return executeDownloadTool(args, 'you-get');
-}
-
-// Parse yt-dlp JSON output
+// Parse yt-dlp JSON output and return the raw yt-dlp format
 function parseYtDlpJson(output) {
   try {
     const lines = output.split('\n').filter(line => line.trim());
@@ -134,151 +144,11 @@ function parseYtDlpJson(output) {
       throw new Error('No valid JSON found in yt-dlp output');
     }
 
-    const info = {
-      site: jsonData.extractor_key || jsonData.extractor || '',
-      title: jsonData.title || '',
-      formats: []
-    };
-
-    if (jsonData.formats && Array.isArray(jsonData.formats)) {
-      for (const format of jsonData.formats) {
-        let type = 'video';
-        const ext = format.ext || 'mp4';
-        const quality = format.format_note || format.quality || '';
-
-        // Determine type based on video/audio codecs
-        if (format.vcodec === 'none' && format.acodec !== 'none') {
-          type = 'audio';
-        } else if (format.acodec === 'none' && format.vcodec !== 'none') {
-          type = 'video';
-        } else if (['mp3', 'm4a', 'aac', 'flac', 'ogg', 'wav'].includes(ext.toLowerCase())) {
-          type = 'audio';
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext.toLowerCase())) {
-          type = 'image';
-        }
-
-        let size = 'Unknown';
-        if (format.filesize && typeof format.filesize === 'number') {
-          const sizeInMB = format.filesize / (1024 * 1024);
-          if (sizeInMB >= 1) {
-            size = `${sizeInMB.toFixed(1)} MB`;
-          } else {
-            const sizeInKB = format.filesize / 1024;
-            size = `${sizeInKB.toFixed(1)} KB`;
-          }
-        } else if (format.filesize_approx && typeof format.filesize_approx === 'number') {
-          const sizeInMB = format.filesize_approx / (1024 * 1024);
-          if (sizeInMB >= 1) {
-            size = `~${sizeInMB.toFixed(1)} MB`;
-          } else {
-            const sizeInKB = format.filesize_approx / 1024;
-            size = `~${sizeInKB.toFixed(1)} KB`;
-          }
-        }
-
-        let qualityNote = quality;
-        if (format.height) {
-          qualityNote = `${format.height}p${qualityNote ? ' ' + qualityNote : ''}`;
-        } else if (format.width) {
-          qualityNote = `${format.width}x${qualityNote ? ' ' + qualityNote : ''}`;
-        } else if (format.abr) {
-          qualityNote = `${format.abr}kbps${qualityNote ? ' ' + qualityNote : ''}`;
-        }
-
-        info.formats.push({
-          itag: format.format_id || format.id,
-          container: ext,
-          quality: qualityNote || ext,
-          size: size,
-          type: type
-        });
-      }
-    }
-
-    return info;
+    // Return the raw yt-dlp JSON data with minimal processing
+    return jsonData;
   } catch (error) {
     console.error('Error parsing yt-dlp JSON:', error);
     throw new Error('Failed to parse yt-dlp output');
-  }
-}
-
-// Parse download tool output based on the tool used
-function parseDownloadToolOutput(output, tool = DOWNLOAD_TOOL) {
-  if (tool === 'yt-dlp') {
-    return parseYtDlpJson(output);
-  } else {
-    return parseYouGetJson(output);
-  }
-}
-function parseYouGetJson(output) {
-  try {
-    const lines = output.split('\n');
-    let jsonStart = -1;
-
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim().startsWith('{')) {
-        jsonStart = i;
-        break;
-      }
-    }
-
-    if (jsonStart === -1) {
-      throw new Error('No JSON found in you-get output');
-    }
-
-    const jsonString = lines.slice(jsonStart).join('\n');
-    const data = JSON.parse(jsonString);
-
-    const info = {
-      site: data.site || '',
-      title: data.title || '',
-      formats: []
-    };
-
-    if (data.streams && typeof data.streams === 'object') {
-      for (const [formatId, streamData] of Object.entries(data.streams)) {
-        let type = 'video';
-        const container = streamData.container || 'mp4';
-        const quality = streamData.quality || '';
-
-        if (['mp3', 'm4a', 'aac', 'flac', 'ogg', 'wav'].includes(container.toLowerCase())) {
-          type = 'audio';
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(container.toLowerCase())) {
-          type = 'image';
-        } else if (quality.toLowerCase().includes('audio') || quality.toLowerCase().includes('kbps')) {
-          type = 'audio';
-        }
-
-        let size = 'Unknown';
-        if (streamData.size && typeof streamData.size === 'number') {
-          const sizeInMB = streamData.size / (1024 * 1024);
-          if (sizeInMB >= 1) {
-            size = `${sizeInMB.toFixed(1)} MiB`;
-          } else {
-            const sizeInKB = streamData.size / 1024;
-            size = `${sizeInKB.toFixed(1)} KiB`;
-          }
-        }
-
-        let qualityNote = quality;
-        if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
-          qualityNote += ' (Video+Audio will be merged)';
-        }
-
-        info.formats.push({
-          itag: formatId,
-          container: container,
-          quality: qualityNote,
-          size: size,
-          type: type
-        });
-      }
-    }
-
-    return info;
-  } catch (error) {
-    console.error('Error parsing you-get JSON:', error);
-    throw new Error('Failed to parse you-get output');
   }
 }
 
@@ -333,24 +203,16 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'Invalid URL format' });
     }
 
-    console.log(`Analyzing URL with ${DOWNLOAD_TOOL}: ${url}`);
+    console.log(`Analyzing URL with yt-dlp: ${url}`);
 
-    let output;
-    let mediaInfo;
-
-    if (DOWNLOAD_TOOL === 'yt-dlp') {
-      output = await executeDownloadTool(['--dump-json', url], 'yt-dlp');
-      mediaInfo = parseYtDlpJson(output);
-    } else {
-      output = await executeDownloadTool(['--json', url], 'you-get');
-      mediaInfo = parseYouGetJson(output);
-    }
+    let output = await executeDownloadTool(['--dump-json', url], 'yt-dlp');
+    let mediaInfo = parseYtDlpJson(output);
 
     if (!mediaInfo.title) {
       return res.status(404).json({ error: 'No media found at this URL' });
     }
 
-    // Add playlist detection info
+    // Add playlist detection info to the response
     mediaInfo.isPlaylist = isPlaylistUrl(url);
 
     res.json(mediaInfo);
@@ -366,7 +228,7 @@ app.post('/api/analyze', async (req, res) => {
 // Create download task endpoint
 app.post('/api/download', async (req, res) => {
   try {
-    const { url, itag, outputName, userId, cookies, downloadPlaylist = false } = req.body;
+    const { url, format_id, outputName, userId, cookies, downloadPlaylist = false } = req.body;
 
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
@@ -376,51 +238,56 @@ app.post('/api/download', async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    console.log(`Creating download task for user ${userId}: ${url} with format: ${itag}, playlist: ${downloadPlaylist}`);
+    console.log(`Creating download task for user ${userId}: ${url} with format: ${format_id}, playlist: ${downloadPlaylist}`);
 
     // Get media info for the task
     let mediaInfo;
     try {
-      let analyzeOutput;
-      if (DOWNLOAD_TOOL === 'yt-dlp') {
-        analyzeOutput = await executeDownloadTool(['--dump-json', url], 'yt-dlp');
-        mediaInfo = parseYtDlpJson(analyzeOutput);
-      } else {
-        analyzeOutput = await executeDownloadTool(['--json', url], 'you-get');
-        mediaInfo = parseYouGetJson(analyzeOutput);
-      }
+      let analyzeOutput = await executeDownloadTool(['--dump-json', url], 'yt-dlp');
+      mediaInfo = parseYtDlpJson(analyzeOutput);
     } catch (error) {
       console.warn('Could not get media info:', error.message);
-      mediaInfo = { site: 'Unknown', title: 'Unknown', formats: [] };
+      mediaInfo = { extractor_key: 'Unknown', title: 'Unknown', formats: [] };
     }
 
     // Find selected format info
     let selectedFormat = null;
-    if (itag && mediaInfo.formats) {
-      selectedFormat = mediaInfo.formats.find(f => f.itag === itag);
+    if (format_id && mediaInfo.formats) {
+      selectedFormat = mediaInfo.formats.find(f => f.format_id === format_id);
     }
 
-    // Determine media type and platform
+    // Determine media type based on selected format
     let mediaType = 'video';
     if (selectedFormat) {
-      mediaType = selectedFormat.type;
+      if (selectedFormat.vcodec === 'none' && selectedFormat.acodec !== 'none') {
+        mediaType = 'audio';
+      } else if (selectedFormat.acodec === 'none' && selectedFormat.vcodec !== 'none') {
+        mediaType = 'video';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes((selectedFormat.ext || '').toLowerCase())) {
+        mediaType = 'image';
+      }
     } else if (mediaInfo.formats && mediaInfo.formats.length > 0) {
-      mediaType = mediaInfo.formats[0].type;
+      const firstFormat = mediaInfo.formats[0];
+      if (firstFormat.vcodec === 'none' && firstFormat.acodec !== 'none') {
+        mediaType = 'audio';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes((firstFormat.ext || '').toLowerCase())) {
+        mediaType = 'image';
+      }
     }
 
-    // Create download task
+    // Create download task with yt-dlp format
     const taskId = uuidv4();
     const taskData = {
       user_id: userId,
       task_id: taskId,
       media_type: mediaType,
-      platform_name: mediaInfo.site,
+      platform_name: mediaInfo.extractor_key || mediaInfo.extractor || 'Unknown',
       url: url,
       media_info: {
-        title: mediaInfo.title,
-        site: mediaInfo.site,
-        itag: itag,
+        // Store the complete yt-dlp media info
+        ...mediaInfo,
         selectedFormat: selectedFormat,
+        format_id: format_id,
         outputName: outputName,
         downloadPlaylist: downloadPlaylist
       },
@@ -442,7 +309,7 @@ app.post('/api/download', async (req, res) => {
         id: taskId,
         status: 'pending',
         title: mediaInfo.title,
-        site: mediaInfo.site,
+        site: mediaInfo.extractor_key || mediaInfo.extractor,
         url: url,
         isPlaylist: downloadPlaylist
       }
@@ -524,27 +391,79 @@ app.get('/api/downloads/:userId', async (req, res) => {
 
     const tasks = await DownloadTaskDB.getTasksByUid(params);
 
-    // Transform tasks to match frontend expectations
-    const downloads = tasks.map(task => ({
-      id: task.task_id,
-      url: task.url,
-      title: task.media_info?.title || 'Unknown',
-      site: task.platform_name,
-      format: task.result?.files?.[0]?.format || 'unknown',
-      quality: task.media_info?.selectedFormat?.quality || 'default',
-      size: task.result?.files?.[0]?.size || '0 MB',
-      status: task.status,
-      type: task.media_type,
-      timestamp: task.created_at,
-      downloadPath: task.result?.files?.[0]?.downloadPath,
-      filename: task.result?.files?.[0]?.filename,
-      downloadDir: task.result?.downloadDir,
-      progress: task.progress,
-      error: task.error,
-      isPlaylist: task.is_playlist,
-      files: task.result?.files || null,
-      fileCount: task.result?.files?.length || (task.result?.files ? 1 : 0)
-    }));
+    // Transform tasks to match frontend expectations with enhanced yt-dlp info
+    const downloads = tasks.map(task => {
+      const selectedFormat = task.media_info?.selectedFormat;
+
+      // Build comprehensive quality/format string from yt-dlp data
+      let qualityDisplay = 'default';
+      if (selectedFormat) {
+        const parts = [];
+
+        // Add resolution for video
+        if (selectedFormat.height && selectedFormat.width) {
+          parts.push(`${selectedFormat.width}x${selectedFormat.height}`);
+        } else if (selectedFormat.height) {
+          parts.push(`${selectedFormat.height}p`);
+        } else if (selectedFormat.resolution && selectedFormat.resolution !== 'audio only') {
+          parts.push(selectedFormat.resolution);
+        }
+
+        // Add format note if available
+        if (selectedFormat.format_note && selectedFormat.format_note !== 'Default') {
+          parts.push(selectedFormat.format_note);
+        }
+
+        // Add bitrate info
+        if (selectedFormat.tbr) {
+          parts.push(`${selectedFormat.tbr}k`);
+        } else if (selectedFormat.abr && selectedFormat.vcodec === 'none') {
+          parts.push(`${selectedFormat.abr}kbps`);
+        } else if (selectedFormat.vbr && selectedFormat.acodec === 'none') {
+          parts.push(`${selectedFormat.vbr}kbps`);
+        }
+
+        // Add codec info for clarity
+        if (selectedFormat.vcodec === 'none' && selectedFormat.acodec !== 'none') {
+          parts.push('Audio only');
+        } else if (selectedFormat.acodec === 'none' && selectedFormat.vcodec !== 'none') {
+          parts.push('Video only');
+        }
+
+        qualityDisplay = parts.length > 0 ? parts.join(', ') : selectedFormat.format || selectedFormat.format_id || 'default';
+      }
+
+      return {
+        id: task.task_id,
+        url: task.url,
+        title: task.media_info?.title || 'Unknown',
+        site: task.platform_name,
+        format: task.result?.files?.[0]?.format || selectedFormat?.ext || 'unknown',
+        quality: qualityDisplay,
+        size: task.result?.files?.[0]?.size || '0 MB',
+        status: task.status,
+        type: task.media_type,
+        timestamp: task.created_at,
+        downloadPath: task.result?.files?.[0]?.downloadPath,
+        filename: task.result?.files?.[0]?.filename,
+        downloadDir: task.result?.downloadDir,
+        progress: task.progress,
+        error: task.error,
+        isPlaylist: task.is_playlist,
+        files: task.result?.files || null,
+        fileCount: task.result?.files?.length || (task.result?.files ? 1 : 0),
+        // Add additional yt-dlp metadata for display
+        mediaInfo: {
+          uploader: task.media_info?.uploader,
+          duration: task.media_info?.duration,
+          view_count: task.media_info?.view_count,
+          upload_date: task.media_info?.upload_date,
+          format_id: selectedFormat?.format_id,
+          vcodec: selectedFormat?.vcodec,
+          acodec: selectedFormat?.acodec
+        }
+      };
+    });
 
     res.json(downloads);
   } catch (error) {
@@ -730,10 +649,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Check you-get installation
-app.get('/api/check-youget', async (req, res) => {
+// Check yt-dlp installation
+app.get('/api/check-yt-dlp', async (req, res) => {
   try {
-    const output = await executeYouGet(['--version']);
+    const output = await executeDownloadTool(['--version'], 'yt-dlp');
 
     // Check FFmpeg availability
     let ffmpegAvailable = false;
@@ -756,22 +675,15 @@ app.get('/api/check-youget', async (req, res) => {
       version: output.trim(),
       ffmpegAvailable: ffmpegAvailable,
       workerSystem: workerSystem ? 'running' : 'not running',
-      message: `you-get is properly installed${ffmpegAvailable ? ' with FFmpeg support for video/audio merging' : ' (install FFmpeg for automatic video/audio merging)'}`
+      message: `yt-dlp is properly installed${ffmpegAvailable ? ' with FFmpeg support for video/audio merging' : ' (install FFmpeg for automatic video/audio merging)'}`
     });
   } catch (error) {
     res.status(500).json({
       installed: false,
-      error: 'you-get is not installed or not accessible',
+      error: 'yt-dlp is not installed or not accessible',
       details: error.message
     });
   }
-});
-
-// Get current config (download tool etc)
-app.get('/api/config', (req, res) => {
-  res.json({
-    downloadTool: DOWNLOAD_TOOL
-  });
 });
 
 // Handle graceful shutdown

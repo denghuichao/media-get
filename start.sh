@@ -17,31 +17,24 @@ if [ ! -f .env ]; then
 fi
 
 # Parse command line arguments
-TOOL=""
 ENVIRONMENT="development"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --tool=*)
-            TOOL="${1#*=}"
-            shift
-            ;;
         --env=*)
             ENVIRONMENT="${1#*=}"
             shift
             ;;
         --help|-h)
-            echo "Usage: $0 [--tool=you-get|yt-dlp] [--env=development|production]"
+            echo "Usage: $0 [--env=development|production]"
             echo
             echo "Options:"
-            echo "  --tool=TOOL        Set download tool (you-get or yt-dlp)"
             echo "  --env=ENV         Set environment (development or production)"
             echo "  --help, -h        Show this help message"
             echo
             echo "Examples:"
             echo "  $0                           # Start with default settings"
-            echo "  $0 --tool=yt-dlp            # Start with yt-dlp"
-            echo "  $0 --tool=you-get --env=prod # Start with you-get in production"
+            echo "  $0 --env=prod               # Start in production mode"
             exit 0
             ;;
         *)
@@ -52,40 +45,22 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Set download tool if specified
-if [ -n "$TOOL" ]; then
-    export DOWNLOAD_TOOL="$TOOL"
-    echo "🛠️ Using download tool: $TOOL"
-fi
+# Set default download tool to yt-dlp
+export DOWNLOAD_TOOL="yt-dlp"
+echo "🛠️ Using download tool: yt-dlp"
 
-# Use the tool from environment variable or default
-CURRENT_TOOL="${DOWNLOAD_TOOL:-yt-dlp}"
-echo "📦 Current download tool: $CURRENT_TOOL"
-
-# Check if the selected tool is installed
-echo "🔍 Checking if $CURRENT_TOOL is installed..."
-if command -v "$CURRENT_TOOL" &> /dev/null; then
-    echo "✅ $CURRENT_TOOL is installed"
-    $CURRENT_TOOL --version | head -1
+# Check if yt-dlp is installed
+echo "🔍 Checking if yt-dlp is installed..."
+if command -v "yt-dlp" &> /dev/null; then
+    echo "✅ yt-dlp is installed"
+    yt-dlp --version | head -1
 else
-    echo "❌ $CURRENT_TOOL is NOT installed!"
+    echo "❌ yt-dlp is NOT installed!"
     echo
-    if [ "$CURRENT_TOOL" = "yt-dlp" ]; then
-        echo "Install yt-dlp with:"
-        echo "  pip install yt-dlp"
-        echo "  # or"
-        echo "  pipx install yt-dlp"
-    else
-        echo "Install you-get with:"
-        echo "  pip install you-get"
-    fi
-    echo
-    echo "Or switch to the other tool:"
-    if [ "$CURRENT_TOOL" = "yt-dlp" ]; then
-        echo "  export DOWNLOAD_TOOL=you-get"
-    else
-        echo "  export DOWNLOAD_TOOL=yt-dlp"
-    fi
+    echo "Install yt-dlp with:"
+    echo "  pip install yt-dlp"
+    echo "  # or"
+    echo "  pipx install yt-dlp"
     exit 1
 fi
 

@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
 import SupportedSites from './components/SupportedSites';
+import AllSupportedSites from './components/AllSupportedSites';
 import Footer from './components/Footer';
 import SystemStatus from './components/SystemStatus';
 import Dashboard from './components/Dashboard';
@@ -16,7 +17,7 @@ import { ConfigProvider } from './contexts/ConfigContext';
 import { useTranslation } from 'react-i18next';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'privacy' | 'terms' | 'disclaimer' | 'about'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'privacy' | 'terms' | 'disclaimer' | 'about' | 'supported-sites'>('home');
   const { t } = useTranslation();
 
   // Listen for hash changes to handle navigation
@@ -33,6 +34,8 @@ function App() {
         setCurrentPage('disclaimer');
       } else if (hash === 'about') {
         setCurrentPage('about');
+      } else if (hash === 'supported-sites') {
+        setCurrentPage('supported-sites');
       } else {
         setCurrentPage('home');
       }
@@ -77,6 +80,12 @@ function App() {
           description: 'Learn about MediaGet\'s mission, technology, and commitment to ethical media downloading practices.',
           canonicalUrl: 'https://media-get.site/#about'
         };
+      case 'supported-sites':
+        return {
+          title: 'All Supported Sites - MediaGet',
+          description: 'Browse all 100+ supported platforms for video, audio, and image downloads with MediaGet.',
+          canonicalUrl: 'https://media-get.site/#supported-sites'
+        };
       default:
         return {
           title: t('seo.pages.home.title'),
@@ -119,6 +128,10 @@ function App() {
         ) : currentPage === 'about' ? (
           <main role="main" aria-label="About MediaGet">
             <AboutAndQuality />
+          </main>
+        ) : currentPage === 'supported-sites' ? (
+          <main role="main" aria-label="All Supported Sites">
+            <AllSupportedSites />
           </main>
         ) : null}
         <Footer />

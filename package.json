@@ -13,7 +13,6 @@
     "worker": "node server/worker.js",
     "start": "./start.sh",
     "start:yt-dlp": "DOWNLOAD_TOOL=yt-dlp ./start.sh",
-    "start:you-get": "DOWNLOAD_TOOL=you-get ./start.sh",
     "test:tools": "./test-tools.sh",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",

@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useConfig } from '../contexts/ConfigContext';
 import { apiService } from '../services/api';
 
 export default function SystemStatus() {
   const { t } = useTranslation();
-  const { config } = useConfig();
   const [status, setStatus] = useState<{
     yougetInstalled: boolean;
     version?: string;
@@ -17,18 +15,15 @@ export default function SystemStatus() {
     loading: true
   });
 
-  const downloadTool = config?.downloadTool || 'yt-dlp';
-  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
-  const toolUrl = downloadTool === 'yt-dlp'
-    ? 'https://github.com/yt-dlp/yt-dlp'
-    : 'https://github.com/soimort/you-get';
-  const installCommand = downloadTool === 'yt-dlp' ? 'pip install yt-dlp' : 'pip install you-get';
+  const toolDisplayName = 'yt-dlp';
+  const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
+  const installCommand = 'pip install yt-dlp';
 
   const checkStatus = async () => {
     setStatus(prev => ({ ...prev, loading: true }));
 
     try {
-      const result = await apiService.checkYouGetInstallation();
+      const result = await apiService.checkYtDlpInstallation();
       setStatus({
         yougetInstalled: result.installed,
         version: result.version,

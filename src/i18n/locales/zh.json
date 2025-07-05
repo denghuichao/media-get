@@ -108,11 +108,10 @@
     "status": "所有功能现已可用"
   },
   "supportedSites": {
-    "title": "支持100多个平台",
+    "title": "热门支持平台",
     "subtitle": "从全球最受欢迎的视频、音频和图片分享平台下载",
-    "showMore": "显示所有网站",
-    "showLess": "收起",
-    "moreCount": "还支持{{count}}个网站",
+    "showAllSites": "查看所有网站",
+    "viewAllDescription": "查看所有100多个支持的平台，支持高级搜索和过滤",
     "types": {
       "video": "视频下载",
       "audio": "音频下载",
@@ -127,6 +126,23 @@
         "多种格式"
       ]
     }
+  },
+  "allSupportedSites": {
+    "title": "所有支持的网站",
+    "subtitle": "浏览我们完整的100多个支持平台列表，下载视频、音频和图片",
+    "searchPlaceholder": "搜索网站...",
+    "resultsCount": "显示 {{count}} 个，共 {{total}} 个网站",
+    "sitesCount": "个网站",
+    "filters": {
+      "allTypes": "所有类型",
+      "allRegions": "所有地区"
+    },
+    "noResults": {
+      "title": "未找到网站",
+      "description": "请尝试调整您的搜索或过滤条件来找到所需内容。",
+      "clearFilters": "清除过滤器"
+    },
+    "backToHome": "返回首页"
   },
   "dashboard": {
     "welcome": "欢迎回来，{{name}}！",

@@ -1,19 +1,14 @@
 import { Download, Github, Twitter, Mail, Heart } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useConfig } from '../contexts/ConfigContext';
 
 export default function Footer() {
   const { t } = useTranslation();
-  const { config } = useConfig();
   const contactEmail = 'support@media-get.com';
   const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com';
   const twitterUrl = import.meta.env.VITE_TWITTER_URL || 'https://twitter.com';
 
-  const downloadTool = config?.downloadTool || 'yt-dlp';
-  const toolDisplayName = downloadTool === 'yt-dlp' ? 'yt-dlp' : 'you-get';
-  const toolUrl = downloadTool === 'yt-dlp'
-    ? 'https://github.com/yt-dlp/yt-dlp'
-    : 'https://github.com/soimort/you-get';
+  const toolDisplayName = 'yt-dlp';
+  const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
 
   return (
     <footer className="bg-gray-900 text-white" role="contentinfo">
