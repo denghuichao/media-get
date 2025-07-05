@@ -62,12 +62,9 @@
     "downloadNow": "立即下载",
     "downloading": "下载中...",
     "selectFormat": "选择格式和质量",
-    "authStatus": {
-      "signedIn": "匿名用户 {{name}} • 准备下载"
-    },
     "poweredBy": {
       "prefix": "基于",
-      "suffix": "构建 - 受到全球数千用户信赖"
+      "suffix": "构建 - 受到全球数百万用户信赖"
     },
     "features": [
       "支持100多个平台",
