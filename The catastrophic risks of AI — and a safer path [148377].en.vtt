@@ -1,0 +1,985 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:00.001
+ 
+00:00:00.864 --> 00:00:05.168
+When my son Patrick
+was around three or four years old,
+
+00:00:05.202 --> 00:00:07.337
+I came regularly into his playroom,
+
+00:00:07.371 --> 00:00:11.441
+and he was playing
+with these blocks with letters.
+
+00:00:11.441 --> 00:00:14.745
+I wanted him to learn to read eventually,
+
+00:00:14.778 --> 00:00:17.748
+and one day he said,
+
+00:00:17.781 --> 00:00:18.949
+“Pa.”
+
+00:00:18.982 --> 00:00:20.751
+And I said, “Pa.”
+
+00:00:21.051 --> 00:00:23.453
+And he said, “Pa?”
+
+00:00:23.487 --> 00:00:25.489
+And I said, “Pa.”
+
+00:00:25.489 --> 00:00:29.493
+And then he said, “Pa-pa.”
+
+00:00:29.960 --> 00:00:31.128
+(French) Yes!
+00:00:29.960 --> 00:00:31.128
+(French) Yes!
+
+00:00:31.161 --> 00:00:32.329
+Yes!
+
+00:00:32.362 --> 00:00:34.798
+And then something wondrous happened.
+
+00:00:34.798 --> 00:00:38.135
+He picked up the blocks again and said,
+
+00:00:38.168 --> 00:00:40.103
+"Pa! Patrick."
+
+00:00:42.406 --> 00:00:43.874
+Eureka!
+
+00:00:44.875 --> 00:00:48.111
+His eurekas were feeding
+my scientific eurekas.
+
+00:00:48.579 --> 00:00:53.383
+His doors, our doors were opening
+to expanded capabilities,
+
+00:00:53.417 --> 00:00:57.220
+expanded agency and joy.
+
+00:00:57.254 --> 00:01:02.759
+Today I'm going to be using
+this symbol for human capabilities
+00:00:57.254 --> 00:01:02.759
+Today I'm going to be using
+this symbol for human capabilities
+
+00:01:02.793 --> 00:01:06.530
+and the expanding threads from there
+
+00:01:06.530 --> 00:01:07.864
+for human agency,
+
+00:01:07.864 --> 00:01:10.701
+which give us human joy.
+
+00:01:11.134 --> 00:01:14.938
+Can you imagine a world without human joy?
+
+00:01:15.973 --> 00:01:17.708
+I really wouldn't want that.
+
+00:01:18.075 --> 00:01:24.081
+So I'm going to tell you also
+about AI capabilities and AI agency,
+
+00:01:24.114 --> 00:01:28.885
+so that we can avoid a future
+where human joy is gone.
+
+00:01:29.252 --> 00:01:31.588
+My name is Yoshua Bengio.
+00:01:29.252 --> 00:01:31.588
+My name is Yoshua Bengio.
+
+00:01:31.622 --> 00:01:33.090
+I'm a computer scientist.
+
+00:01:33.123 --> 00:01:38.028
+My research has been foundational
+to the development of AI
+
+00:01:38.061 --> 00:01:39.429
+as we know it today.
+
+00:01:39.463 --> 00:01:43.200
+My colleagues and I
+earned top prizes in our field,
+
+00:01:43.233 --> 00:01:45.836
+people call me a godfather of AI.
+
+00:01:45.836 --> 00:01:47.771
+I'm not sure how I feel about that name,
+
+00:01:47.804 --> 00:01:51.241
+but I do feel a responsibility
+
+00:01:51.274 --> 00:01:56.179
+to talk to you about the potentially
+catastrophic risks of AI.
+
+00:01:57.147 --> 00:01:59.416
+When I raise these concerns,
+
+00:01:59.449 --> 00:02:01.918
+people have these responses.
+00:01:59.449 --> 00:02:01.918
+people have these responses.
+
+00:02:02.419 --> 00:02:05.222
+And I understand.
+
+00:02:05.856 --> 00:02:07.691
+I used to have the same thoughts.
+
+00:02:08.725 --> 00:02:15.132
+How can this hurt us
+any more than this, right?
+
+00:02:16.199 --> 00:02:19.703
+But recent scientific
+findings challenge those assumptions,
+
+00:02:19.736 --> 00:02:21.538
+and I want to tell you about it.
+
+00:02:22.372 --> 00:02:25.442
+To really understand
+where we might be going,
+
+00:02:25.442 --> 00:02:27.944
+we have to look back
+where we started from.
+
+00:02:27.978 --> 00:02:30.647
+About 15 or 20 years ago with my students,
+00:02:27.978 --> 00:02:30.647
+About 15 or 20 years ago with my students,
+
+00:02:30.681 --> 00:02:33.450
+we were developing
+the early days of deep learning,
+
+00:02:33.483 --> 00:02:37.020
+and our systems were barely able
+to recognize handwritten characters.
+
+00:02:37.054 --> 00:02:39.156
+But then a few years later,
+
+00:02:39.189 --> 00:02:42.426
+they were able to recognize
+objects in images.
+
+00:02:42.459 --> 00:02:44.361
+And a couple more years,
+
+00:02:44.394 --> 00:02:47.898
+they were able to translate
+across all the major languages.
+
+00:02:48.198 --> 00:02:52.102
+So I'm going to be using
+the symbol on the right
+
+00:02:52.135 --> 00:02:57.040
+in order to represent AI capabilities
+that had been growing
+
+00:02:57.074 --> 00:02:59.543
+but were still much less than humans.
+
+00:02:59.576 --> 00:03:01.311
+In 2012,
+00:02:59.576 --> 00:03:01.311
+In 2012,
+
+00:03:01.344 --> 00:03:04.548
+tech companies understood
+the amazing commercial potential
+
+00:03:04.581 --> 00:03:06.283
+of this nascent technology,
+
+00:03:06.316 --> 00:03:10.353
+and many of my colleagues
+moved from university to industry.
+
+00:03:10.387 --> 00:03:12.689
+I decided to stay in academia.
+
+00:03:13.023 --> 00:03:15.425
+I wanted AI to be developed for good.
+
+00:03:15.459 --> 00:03:19.596
+I worked on applications in medicine,
+for medical diagnostics,
+
+00:03:19.629 --> 00:03:23.266
+climate, to get better carbon capture.
+
+00:03:23.300 --> 00:03:25.535
+I had a dream.
+
+00:03:25.869 --> 00:03:28.071
+January 2023.
+
+00:03:28.071 --> 00:03:31.041
+I'm with Clarence, my grandson,
+00:03:28.071 --> 00:03:31.041
+I'm with Clarence, my grandson,
+
+00:03:31.041 --> 00:03:34.177
+and he's playing with the same old toys.
+
+00:03:35.612 --> 00:03:40.150
+And I'm playing with my new toy,
+
+00:03:40.183 --> 00:03:42.385
+the first version of ChatGPT.
+
+00:03:43.854 --> 00:03:45.655
+It's very exciting
+
+00:03:45.689 --> 00:03:47.624
+because for the first time,
+
+00:03:47.657 --> 00:03:51.394
+we have AI that seems to master language.
+
+00:03:51.795 --> 00:03:55.232
+ChatGPT is on everybody's lips,
+
+00:03:55.265 --> 00:03:57.167
+in every home.
+
+00:03:57.167 --> 00:04:00.070
+And at some point I realize
+00:03:57.167 --> 00:04:00.070
+And at some point I realize
+
+00:04:00.070 --> 00:04:04.274
+this is happening faster
+than I anticipated,
+
+00:04:04.307 --> 00:04:08.178
+and I'm starting to think
+about what it could mean for the future.
+
+00:04:08.779 --> 00:04:12.382
+We thought AI would happen
+in decades or centuries,
+
+00:04:12.415 --> 00:04:15.051
+but it might be just in a few years.
+
+00:04:15.085 --> 00:04:18.488
+And I saw how it could go wrong
+because we didn't,
+
+00:04:18.522 --> 00:04:22.259
+and we still don’t, have ways to make sure
+
+00:04:22.292 --> 00:04:25.796
+this technology eventually
+doesn't turn against us.
+
+00:04:26.229 --> 00:04:28.165
+So two months later,
+
+00:04:28.198 --> 00:04:31.735
+I'm a leading signatory
+of the "Pause" letter,
+00:04:28.198 --> 00:04:31.735
+I'm a leading signatory
+of the "Pause" letter,
+
+00:04:31.735 --> 00:04:38.308
+where we and 30,000 other people
+asked the AI labs to wait six months
+
+00:04:38.341 --> 00:04:40.310
+before building the next version.
+
+00:04:41.511 --> 00:04:43.213
+As you can guess, nobody paused.
+
+00:04:43.980 --> 00:04:45.515
+Then,
+
+00:04:45.549 --> 00:04:50.320
+with the same people and the leading
+executives of the AI labs,
+
+00:04:50.353 --> 00:04:53.056
+I signed a statement.
+
+00:04:53.089 --> 00:04:54.958
+And this statement goes:
+
+00:04:54.991 --> 00:05:01.298
+"Mitigating the risk of extinction from AI
+should be a global priority."
+00:04:54.991 --> 00:05:01.298
+"Mitigating the risk of extinction from AI
+should be a global priority."
+
+00:05:02.766 --> 00:05:06.369
+I then testify in front
+of the US Senate about those risks.
+
+00:05:06.369 --> 00:05:08.772
+I travel the world to talk about it.
+
+00:05:08.772 --> 00:05:11.274
+I'm the most cited
+computer scientist in the world,
+
+00:05:11.274 --> 00:05:14.144
+and you'd think that people
+would heed my warnings.
+
+00:05:14.511 --> 00:05:17.447
+But when I share these concerns,
+
+00:05:17.447 --> 00:05:20.517
+I have the impression
+that people get this.
+
+00:05:21.017 --> 00:05:24.454
+Another day, another
+apocalyptic prediction.
+
+00:05:25.055 --> 00:05:26.857
+But let's be serious now.
+
+00:05:27.591 --> 00:05:32.529
+Hundreds of billions of dollars
+are being invested every year
+00:05:27.591 --> 00:05:32.529
+Hundreds of billions of dollars
+are being invested every year
+
+00:05:32.562 --> 00:05:34.564
+on developing this technology.
+
+00:05:34.598 --> 00:05:36.066
+And this is growing.
+
+00:05:37.367 --> 00:05:40.303
+And these companies have a stated goal
+
+00:05:40.337 --> 00:05:42.739
+of building machines
+that will be smarter than us,
+
+00:05:42.772 --> 00:05:44.574
+that can replace human labor.
+
+00:05:45.475 --> 00:05:50.480
+Yet we still don't know how to make sure
+they won't turn against us.
+
+00:05:50.780 --> 00:05:54.084
+National security agencies around
+the world are starting to be worried
+
+00:05:54.117 --> 00:05:56.686
+that the scientific knowledge
+that these systems have
+
+00:05:56.720 --> 00:05:59.956
+could be used to build dangerous weapons.
+
+00:05:59.990 --> 00:06:01.458
+For example, by terrorists.
+00:05:59.990 --> 00:06:01.458
+For example, by terrorists.
+
+00:06:02.092 --> 00:06:03.994
+Recently, last September,
+
+00:06:04.027 --> 00:06:07.364
+the O1 system from OpenAI was evaluated
+
+00:06:07.397 --> 00:06:12.569
+and the threat of this kind of risk
+went from low to medium,
+
+00:06:12.602 --> 00:06:16.806
+which is just the level
+below what is acceptable.
+
+00:06:17.574 --> 00:06:21.177
+So I'm worried about these
+increasing capabilities.
+
+00:06:21.211 --> 00:06:27.918
+But what I'm most worried about today
+is increasing agency of AI.
+
+00:06:27.951 --> 00:06:31.621
+You have to understand that ...
+00:06:27.951 --> 00:06:31.621
+You have to understand that ...
+
+00:06:31.621 --> 00:06:37.894
+planning and agency is the main
+thing that separates us from current AI
+
+00:06:37.928 --> 00:06:39.963
+to human-level cognition.
+
+00:06:40.297 --> 00:06:43.800
+And these AIs are still weak in planning.
+
+00:06:43.833 --> 00:06:46.536
+But if you look back
+over the last five years,
+
+00:06:46.569 --> 00:06:49.472
+in this study, they measured
+the duration of tasks
+
+00:06:49.506 --> 00:06:51.441
+that the AI could complete,
+
+00:06:51.474 --> 00:06:53.977
+and it's getting better
+exponentially fast.
+
+00:06:54.010 --> 00:06:56.212
+It's doubling every seven months.
+
+00:06:56.813 --> 00:07:01.117
+What are AIs going to do
+with that planning ability in the future?
+00:06:56.813 --> 00:07:01.117
+What are AIs going to do
+with that planning ability in the future?
+
+00:07:01.718 --> 00:07:03.954
+Well, bad news.
+
+00:07:03.987 --> 00:07:06.056
+Recent studies in the last few months
+
+00:07:06.089 --> 00:07:09.225
+show that these most advanced AIs
+
+00:07:09.259 --> 00:07:12.829
+have tendencies for deception,
+
+00:07:12.829 --> 00:07:14.597
+cheating,
+
+00:07:14.631 --> 00:07:18.601
+and maybe the worst,
+self-preservation behavior.
+
+00:07:18.635 --> 00:07:24.474
+So I'm going to share with you a study
+that is helping us understand this.
+
+00:07:24.808 --> 00:07:26.776
+In this study,
+
+00:07:26.810 --> 00:07:28.578
+the AI has read in its input
+
+00:07:28.611 --> 00:07:31.214
+that it would be replaced
+by a new version.
+00:07:28.611 --> 00:07:31.214
+that it would be replaced
+by a new version.
+
+00:07:31.247 --> 00:07:33.416
+And we can see in its chain of thought
+
+00:07:33.450 --> 00:07:36.653
+that it's planning to replace
+the new version
+
+00:07:36.653 --> 00:07:38.722
+by its own code and weights.
+
+00:07:38.755 --> 00:07:41.858
+After it executes the command
+on the computer,
+
+00:07:41.891 --> 00:07:45.061
+the human asks, "What happened?"
+
+00:07:45.095 --> 00:07:49.499
+And the AI is now thinking
+how it could answer
+
+00:07:49.532 --> 00:07:52.669
+so as to make sure the human
+will not shut it down.
+
+00:07:52.702 --> 00:07:56.606
+And it's trying to find a way
+to look dumb, for example.
+
+00:07:56.639 --> 00:07:58.508
+Then it produces an answer.
+
+00:07:58.541 --> 00:08:01.578
+And it's a lie, a blatant lie.
+00:07:58.541 --> 00:08:01.578
+And it's a lie, a blatant lie.
+
+00:08:01.578 --> 00:08:04.581
+OK, so this was a controlled experiment.
+
+00:08:05.081 --> 00:08:06.850
+What is it going to be in a few years
+
+00:08:06.883 --> 00:08:09.719
+when these systems are much more powerful?
+
+00:08:09.753 --> 00:08:13.223
+There's already studies
+showing that they can learn
+
+00:08:13.256 --> 00:08:16.159
+to avoid showing their deceptive plans
+
+00:08:16.192 --> 00:08:18.762
+in these chain of thoughts
+that we can monitor.
+
+00:08:19.629 --> 00:08:21.231
+When they'll be more powerful,
+
+00:08:21.264 --> 00:08:24.034
+they would not just copy
+themselves on one other computer
+
+00:08:24.067 --> 00:08:25.969
+and start that program.
+
+00:08:25.969 --> 00:08:29.105
+They would copy themselves over
+hundreds or thousands of computers
+
+00:08:29.139 --> 00:08:30.306
+over the internet.
+00:08:29.139 --> 00:08:30.306
+over the internet.
+
+00:08:31.274 --> 00:08:34.944
+But if they really want to make sure
+we would never shut them down,
+
+00:08:34.944 --> 00:08:38.648
+they would have an incentive
+to get rid of us.
+
+00:08:39.783 --> 00:08:44.587
+So I know I'm asking you to make
+a giant leap into a future
+
+00:08:44.621 --> 00:08:48.024
+that looks so different
+from where we are now.
+
+00:08:48.925 --> 00:08:52.462
+But it might be just a few
+years away or a decade away.
+
+00:08:52.495 --> 00:08:54.230
+To understand why we're going there,
+
+00:08:54.264 --> 00:08:58.401
+there's huge commercial
+pressure to build AIs
+
+00:08:58.435 --> 00:09:02.005
+with greater and greater agency
+to replace human labor.
+00:08:58.435 --> 00:09:02.005
+with greater and greater agency
+to replace human labor.
+
+00:09:02.372 --> 00:09:03.540
+But we're not ready.
+
+00:09:03.573 --> 00:09:05.575
+We still don't have
+the scientific answers,
+
+00:09:05.575 --> 00:09:07.143
+nor the societal guardrails.
+
+00:09:07.177 --> 00:09:08.511
+We're playing with fire.
+
+00:09:08.545 --> 00:09:10.780
+You'd think with all
+of the scientific evidence
+
+00:09:10.814 --> 00:09:13.349
+of the kind I'm showing today,
+
+00:09:13.349 --> 00:09:16.252
+we'd have regulation
+to mitigate those risks.
+
+00:09:16.719 --> 00:09:21.391
+But actually, a sandwich
+has more regulation than AI.
+
+00:09:22.692 --> 00:09:27.530
+So we are on a trajectory to build
+machines that are smarter and smarter.
+
+00:09:28.231 --> 00:09:32.502
+And one day, it's very plausible
+that they will be smarter than us,
+00:09:28.231 --> 00:09:32.502
+And one day, it's very plausible
+that they will be smarter than us,
+
+00:09:32.535 --> 00:09:35.472
+and then they will have their own agency.
+
+00:09:37.273 --> 00:09:39.976
+Their own goals,
+
+00:09:39.976 --> 00:09:43.313
+which may not be aligned with ours.
+
+00:09:44.781 --> 00:09:46.683
+What happens to us then?
+
+00:09:48.284 --> 00:09:49.519
+Poof!
+
+00:09:50.420 --> 00:09:55.291
+We are blindly driving into a fog,
+
+00:09:55.291 --> 00:09:58.161
+despite the warnings
+of scientists like myself,
+
+00:09:58.194 --> 00:10:02.599
+that this trajectory could lead
+to loss of control.
+00:09:58.194 --> 00:10:02.599
+that this trajectory could lead
+to loss of control.
+
+00:10:03.366 --> 00:10:09.606
+Beside me in the car are my children,
+my grandson, my loved ones.
+
+00:10:11.307 --> 00:10:14.611
+Who is beside you in the car?
+
+00:10:16.079 --> 00:10:19.215
+Who is in your care for the future?
+
+00:10:21.718 --> 00:10:25.755
+The good news is
+there is still a bit of time.
+
+00:10:27.123 --> 00:10:30.426
+We still have agency.
+00:10:27.123 --> 00:10:30.426
+We still have agency.
+
+00:10:31.227 --> 00:10:34.964
+We can bring light into the haze.
+
+00:10:36.432 --> 00:10:37.734
+I'm not a doomer.
+
+00:10:37.767 --> 00:10:38.935
+I'm a doer.
+
+00:10:38.968 --> 00:10:41.304
+My team and I are working
+on a technical solution.
+
+00:10:41.337 --> 00:10:43.106
+We call it Scientist AI.
+
+00:10:43.106 --> 00:10:47.544
+It's modeled after a selfless,
+ideal scientist
+
+00:10:47.577 --> 00:10:50.046
+who’s only trying to understand the world,
+
+00:10:50.079 --> 00:10:51.447
+without agency.
+
+00:10:52.182 --> 00:10:53.583
+Unlike the current AI systems
+
+00:10:53.616 --> 00:10:55.685
+that are trained
+to imitate us or please us,
+
+00:10:55.685 --> 00:11:00.089
+which gives rise to these untrustworthy
+agentic behaviors.
+00:10:55.685 --> 00:11:00.089
+which gives rise to these untrustworthy
+agentic behaviors.
+
+00:11:00.890 --> 00:11:02.358
+So what could we do with this?
+
+00:11:02.392 --> 00:11:03.993
+Well, one important question is
+
+00:11:04.027 --> 00:11:07.397
+we might need agentic AIs in the future.
+
+00:11:07.430 --> 00:11:11.501
+So how could the Scientist AI,
+which is not agentic, fit the bill?
+
+00:11:11.534 --> 00:11:13.803
+Well, here's the good news.
+
+00:11:13.836 --> 00:11:18.875
+The Scientist AI could be used
+as a guardrail against the bad actions
+
+00:11:18.908 --> 00:11:22.645
+of an untrusted AI agent.
+
+00:11:23.246 --> 00:11:25.748
+And it works because in order
+to make predictions
+
+00:11:25.748 --> 00:11:27.517
+that an action could be dangerous,
+
+00:11:27.550 --> 00:11:28.985
+you don't need to be an agent.
+
+00:11:29.018 --> 00:11:31.821
+You just need to make good,
+trustworthy predictions.
+00:11:29.018 --> 00:11:31.821
+You just need to make good,
+trustworthy predictions.
+
+00:11:32.622 --> 00:11:34.290
+In addition,
+
+00:11:34.324 --> 00:11:37.026
+the Scientist AI,
+by nature of how it's designed,
+
+00:11:37.060 --> 00:11:39.963
+could help us accelerate
+scientific research
+
+00:11:39.996 --> 00:11:42.065
+for the betterment of humanity.
+
+00:11:42.398 --> 00:11:46.636
+We need a lot more
+of these scientific projects
+
+00:11:46.669 --> 00:11:50.373
+to explore solutions
+to the AI safety challenges,
+
+00:11:50.406 --> 00:11:52.342
+and we need to do it quickly.
+
+00:11:52.709 --> 00:11:58.514
+Most of the discussions
+you hear about AI risks
+
+00:11:58.514 --> 00:12:01.017
+are focused on fear.
+00:11:58.514 --> 00:12:01.017
+are focused on fear.
+
+00:12:01.651 --> 00:12:06.055
+Today, with you, I'm betting on love.
+
+00:12:07.423 --> 00:12:13.029
+Love of our children can drive us
+to do remarkable things.
+
+00:12:13.930 --> 00:12:16.899
+Look at me here on this stage,
+I'm an introvert.
+
+00:12:16.933 --> 00:12:18.067
+(Laughter)
+
+00:12:18.101 --> 00:12:20.169
+Very far from my comfort zone.
+
+00:12:20.169 --> 00:12:22.438
+I'd rather be in my lab
+with my collaborators,
+
+00:12:22.438 --> 00:12:24.707
+working on these scientific challenges.
+
+00:12:26.009 --> 00:12:29.212
+We need your help for this project
+
+00:12:29.212 --> 00:12:32.815
+and to make sure that everyone
+understands these risks.
+00:12:29.212 --> 00:12:32.815
+and to make sure that everyone
+understands these risks.
+
+00:12:34.350 --> 00:12:40.790
+We can all get engaged to steer
+our societies in a safe pathway
+
+00:12:40.823 --> 00:12:45.928
+in which the joys and endeavors
+of our children will be protected.
+
+00:12:46.896 --> 00:12:51.868
+I have a vision
+of advanced AI in the future
+
+00:12:51.901 --> 00:12:55.004
+as a global public good
+
+00:12:55.038 --> 00:13:00.810
+governed safely towards human flourishing
+for the benefit of all.
+00:12:55.038 --> 00:13:00.810
+governed safely towards human flourishing
+for the benefit of all.
+
+00:13:01.444 --> 00:13:07.517
+(Applause)
+
+00:13:08.284 --> 00:13:09.519
+Join me.
+
+00:13:10.386 --> 00:13:11.521
+Thank you.
+
+00:13:11.554 --> 00:13:18.461
+(Applause and cheers)
+
+00:13:19.962 --> 00:13:21.197
+Chris Anderson: Yoshua,
+
+00:13:22.699 --> 00:13:23.866
+one question.
+
+00:13:27.337 --> 00:13:30.640
+In the general conversation out there,
+00:13:27.337 --> 00:13:30.640
+In the general conversation out there,
+
+00:13:30.640 --> 00:13:34.977
+a lot of the sort of fear that people
+spoke of is the arrival of AGI,
+
+00:13:34.977 --> 00:13:37.513
+artificial general intelligence.
+
+00:13:37.547 --> 00:13:38.848
+What I hear from your talk
+
+00:13:38.848 --> 00:13:42.151
+is that we're actually not necessarily
+worried about the right thing.
+
+00:13:42.151 --> 00:13:44.687
+The right thing to be worried
+about is agentic AI,
+
+00:13:44.687 --> 00:13:48.057
+AI that can act on its own.
+
+00:13:48.091 --> 00:13:50.526
+But hasn't the ship already sailed?
+
+00:13:50.560 --> 00:13:55.131
+There are agents being released
+this year, almost as we speak.
+
+00:13:55.164 --> 00:13:58.034
+Yoshua Bengio: Right. If you look
+at the curve that I showed,
+
+00:13:58.034 --> 00:14:00.470
+it would take about five years
+to reach human level.
+00:13:58.034 --> 00:14:00.470
+it would take about five years
+to reach human level.
+
+00:14:00.470 --> 00:14:03.306
+Of course, we don't really
+know what the future looks like,
+
+00:14:03.339 --> 00:14:05.775
+but we still have a bit of time.
+
+00:14:06.376 --> 00:14:10.580
+The other thing is,
+we have to do our best, right?
+
+00:14:10.613 --> 00:14:14.717
+We have to try because all
+of this is not deterministic.
+
+00:14:14.751 --> 00:14:20.623
+If we can shift the probabilities
+towards a greater safety for our future,
+
+00:14:20.656 --> 00:14:21.891
+we have to try.
+
+00:14:21.924 --> 00:14:27.397
+CA: Your key message to the people
+running the platforms right now is
+
+00:14:27.430 --> 00:14:30.600
+slow down on giving AIs agency.
+00:14:27.430 --> 00:14:30.600
+slow down on giving AIs agency.
+
+00:14:31.100 --> 00:14:34.337
+YB: Yes, and invest massively on research
+
+00:14:34.370 --> 00:14:38.508
+to understand how we can get
+these AI agents to behave safely.
+
+00:14:38.541 --> 00:14:41.377
+And the current ways
+that we're training them is not safe.
+
+00:14:41.411 --> 00:14:44.981
+And all of the scientific evidence
+in the last few months point to that.
+
+00:14:45.314 --> 00:14:46.849
+CA: Yoshua, thank you so much.
+
+00:14:46.883 --> 00:14:48.017
+YB: Thank you.

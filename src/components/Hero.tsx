@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
 import { formatSmartTimestampWithUTC } from '../utils/dateUtils';
-import ComplianceBanner from './ComplianceBanner';
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -466,7 +465,6 @@ export default function Hero() {
         </header>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <ComplianceBanner />
           <form onSubmit={(e) => { e.preventDefault(); handleAnalyze(); }} role="search" aria-label="Media URL Analysis">
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="flex-1">

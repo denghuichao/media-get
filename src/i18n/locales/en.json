@@ -152,7 +152,7 @@
     "backToHome": "Back to Home"
   },
   "dashboard": {
-    "welcome": "Welcome back, {{name}}!",
+    "welcome": "Welcome back!",
     "subtitle": "Manage your downloads and view download history",
     "stats": {
       "total": "Total Downloads",

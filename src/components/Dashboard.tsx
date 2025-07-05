@@ -1044,7 +1044,7 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('dashboard.welcome', { name: '用户' })}
+            {t('dashboard.welcome')}
           </h1>
           <div className="flex items-center space-x-4 text-sm text-gray-600">
             <p>{t('dashboard.subtitle')}</p>

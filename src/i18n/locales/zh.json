@@ -145,7 +145,7 @@
     "backToHome": "返回首页"
   },
   "dashboard": {
-    "welcome": "欢迎回来，{{name}}！",
+    "welcome": "欢迎回来！",
     "subtitle": "管理您的下载并查看下载历史",
     "stats": {
       "total": "总下载数",
