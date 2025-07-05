@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Heart, Clock, RefreshCw, Calendar, ExternalLink, List } from 'lucide-react';
+import { Search, Info, Download, Play, Image, Music, AlertCircle, CheckCircle, Heart, Clock, RefreshCw, Calendar, ExternalLink, List, ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
@@ -23,8 +23,19 @@ export default function Hero() {
   const [successTimer, setSuccessTimer] = useState<number | null>(null);
   const [taskTimer, setTaskTimer] = useState<number | null>(null);
 
+  // Track expanded categories for showing more formats
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
   const toolDisplayName = 'yt-dlp';
   const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
+
+  // Helper function to toggle category expansion
+  const toggleCategoryExpansion = (categoryKey: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryKey]: !prev[categoryKey]
+    }));
+  };
 
   // Helper function to detect if URL might be a playlist
   const isPlaylistUrl = (url: string): boolean => {
@@ -221,6 +232,19 @@ export default function Hero() {
           const link = document.createElement('a');
           link.href = apiService.getFileDownloadUrl(taskStatus.downloadUrl);
           link.download = taskStatus.filename || 'download';
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }
+        
+        // For multiple files (playlists), trigger download of a zip file if available
+        if (taskStatus.downloadUrl && fileCount > 1 && taskStatus.zipDownloadUrl) {
+          // Auto-download zip file for playlists
+          const link = document.createElement('a');
+          link.href = apiService.getFileDownloadUrl(taskStatus.zipDownloadUrl);
+          link.download = `playlist_${taskStatus.id || 'download'}.zip`;
+          link.style.display = 'none';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -380,62 +404,131 @@ export default function Hero() {
     return 'Unknown';
   };
 
+  // Format categorization and display logic
+  const categorizeFormats = (formats: any[]) => {
+    const categories = {
+      audio: [] as any[],
+      videoHLS: [] as any[],
+      directMP4: [] as any[],
+      combined: [] as any[]
+    };
+
+    formats.forEach(format => {
+      // Audio only formats
+      if (format.vcodec === 'none' || format.resolution === 'audio only' ||
+        (format.format_note && format.format_note.toLowerCase().includes('audio'))) {
+        categories.audio.push(format);
+      }
+      // Direct MP4 downloads (non-HLS)
+      else if (format.protocol === 'https' && format.ext === 'mp4' && !format.manifest_url) {
+        categories.directMP4.push(format);
+      }
+      // HLS video streams (video only, needs audio merge)
+      else if (format.protocol === 'm3u8_native' && format.vcodec !== 'none' &&
+        format.acodec === 'none' && format.width && format.height) {
+        categories.videoHLS.push(format);
+      }
+      // Combined formats (video + audio)
+      else if (format.vcodec !== 'none' && format.acodec !== 'none') {
+        categories.combined.push(format);
+      }
+    });
+
+    // Sort by quality
+    categories.audio.sort((a, b) => (b.abr || 0) - (a.abr || 0));
+    categories.videoHLS.sort((a, b) => (b.height || 0) - (a.height || 0));
+    categories.directMP4.sort((a, b) => (b.tbr || 0) - (a.tbr || 0));
+    categories.combined.sort((a, b) => (b.height || 0) - (a.height || 0));
+
+    return categories;
+  };
+
   const getFormatDisplayName = (format: any) => {
-    // Create a comprehensive display name for yt-dlp formats
     const parts = [];
 
-    // Add resolution/quality info
-    if (format.height && format.width) {
-      parts.push(`${format.width}x${format.height}`);
-    } else if (format.height) {
-      parts.push(`${format.height}p`);
-    } else if (format.resolution && format.resolution !== 'audio only') {
-      parts.push(format.resolution);
-    }
-
-    // Add format note (e.g., "premium", "high quality")
-    if (format.format_note && format.format_note !== 'Default') {
-      parts.push(format.format_note);
-    }
-
-    // Add audio info for audio-only formats
-    if (format.vcodec === 'none' && format.acodec !== 'none') {
+    // Audio only formats
+    if (format.vcodec === 'none' || format.resolution === 'audio only') {
+      parts.push('Audio Only');
+      if (format.format_note && format.format_note !== 'Default') {
+        parts.push(format.format_note);
+      }
       if (format.abr) {
         parts.push(`${format.abr}kbps`);
       }
       if (format.acodec && format.acodec !== 'none') {
-        parts.push(format.acodec);
+        parts.push(format.acodec.toUpperCase());
       }
-      if (parts.length === 0) {
-        parts.push('Audio only');
-      }
+      return parts.join(' • ');
     }
 
-    // Add video info for video-only formats  
+    // Video formats with resolution
+    if (format.height && format.width) {
+      parts.push(`${format.width}×${format.height}`);
+    } else if (format.height) {
+      parts.push(`${format.height}p`);
+    }
+
+    // Add quality indicator
+    if (format.height >= 1080) {
+      parts.push('Full HD');
+    } else if (format.height >= 720) {
+      parts.push('HD');
+    } else if (format.height >= 480) {
+      parts.push('SD');
+    }
+
+    // Add bitrate info
+    if (format.tbr) {
+      parts.push(`${Math.round(format.tbr)}kbps`);
+    } else if (format.vbr) {
+      parts.push(`${Math.round(format.vbr)}kbps`);
+    }
+
+    // Add codec info for technical users
+    if (format.vcodec && format.vcodec !== 'none') {
+      const codec = format.vcodec.includes('avc1') ? 'H.264' :
+        format.vcodec.includes('vp9') ? 'VP9' :
+          format.vcodec.includes('av01') ? 'AV1' :
+            format.vcodec.split('.')[0].toUpperCase();
+      parts.push(codec);
+    }
+
+    // Indicate if video-only (needs audio merge)
     if (format.acodec === 'none' && format.vcodec !== 'none') {
-      if (format.vbr) {
-        parts.push(`${format.vbr}kbps`);
-      }
-      if (format.fps) {
-        parts.push(`${format.fps}fps`);
-      }
-      if (parts.length === 1) { // Only resolution
-        parts.push('Video only');
-      }
+      parts.push('Video Only');
     }
 
-    // Fallback to format name or format_id
-    if (parts.length === 0) {
-      if (format.format) {
-        return format.format;
-      } else if (format.format_note) {
-        return format.format_note;
-      } else {
-        return `Format ${format.format_id}`;
-      }
-    }
+    return parts.join(' • ');
+  };
 
-    return parts.join(', ');
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'audio': return <Music className="h-4 w-4" />;
+      case 'directMP4': return <Download className="h-4 w-4" />;
+      case 'videoHLS': return <Play className="h-4 w-4" />;
+      case 'combined': return <Play className="h-4 w-4" />;
+      default: return <Play className="h-4 w-4" />;
+    }
+  };
+
+  const getCategoryTitle = (category: string) => {
+    switch (category) {
+      case 'audio': return 'Audio Only';
+      case 'directMP4': return 'Direct Download (MP4)';
+      case 'videoHLS': return 'High Quality Video';
+      case 'combined': return 'Video + Audio';
+      default: return 'Other Formats';
+    }
+  };
+
+  const getCategoryDescription = (category: string) => {
+    switch (category) {
+      case 'audio': return 'Extract audio only, perfect for music or podcasts';
+      case 'directMP4': return 'Single file download, works on all devices';
+      case 'videoHLS': return 'Best quality video (requires audio merge)';
+      case 'combined': return 'Video with audio included';
+      default: return '';
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -677,9 +770,10 @@ export default function Hero() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 mb-6">
+                <div className="grid gap-6 mb-6">
+                  {/* Quick Format Selector */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
                       {t('hero.selectFormat')}
                     </label>
                     <select
@@ -698,42 +792,110 @@ export default function Hero() {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {mediaInfo.formats.map((format) => (
-                      <div
-                        key={format.format_id}
-                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedFormat === format.format_id
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        onClick={() => setSelectedFormat(format.format_id)}
-                      >
-                        <div className="flex items-center space-x-2 mb-2">
-                          {getTypeIcon(format)}
-                          <span className="font-medium text-sm">{format.ext?.toUpperCase() || 'Unknown'}</span>
-                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                            {format.format_id}
-                          </span>
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-gray-700">{getFormatDisplayName(format)}</p>
-                          <p className="text-xs text-gray-500">{getFormatSize(format)}</p>
-                          {format.tbr && (
-                            <p className="text-xs text-gray-500">Bitrate: {format.tbr}k</p>
-                          )}
-                          {(format.vcodec && format.vcodec !== 'none') && (
-                            <p className="text-xs text-gray-500">Video: {format.vcodec}</p>
-                          )}
-                          {(format.acodec && format.acodec !== 'none') && (
-                            <p className="text-xs text-gray-500">Audio: {format.acodec}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                  {/* Categorized Format Cards */}
+                  <div className="space-y-6">
+                    <h4 className="text-lg font-semibold text-gray-900">Download Options</h4>
+
+                    {(() => {
+                      const categories = categorizeFormats(mediaInfo.formats);
+                      const categoryOrder = ['directMP4', 'combined', 'videoHLS', 'audio'];
+
+                      return categoryOrder.map(categoryKey => {
+                        const formats = categories[categoryKey as keyof typeof categories];
+                        if (formats.length === 0) return null;
+
+                        const isExpanded = expandedCategories[categoryKey] === true;
+
+                        return (
+                          <div key={categoryKey} className="bg-gray-50 rounded-lg p-4">
+                            <div className="flex items-center space-x-2 mb-3">
+                              {getCategoryIcon(categoryKey)}
+                              <h5 className="font-medium text-gray-800">{getCategoryTitle(categoryKey)}</h5>
+                              <span className="text-xs text-gray-500">({formats.length} options)</span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">{getCategoryDescription(categoryKey)}</p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {formats.slice(0, isExpanded ? formats.length : 6).map((format) => (
+                                <div
+                                  key={format.format_id}
+                                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedFormat === format.format_id
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                    }`}
+                                  onClick={() => setSelectedFormat(format.format_id)}
+                                >
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    {getTypeIcon(format)}
+                                    <span className="font-medium text-sm">{format.ext?.toUpperCase() || 'Unknown'}</span>
+                                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                      {format.format_id}
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-sm font-medium text-gray-700">{getFormatDisplayName(format)}</p>
+                                    <p className="text-xs text-gray-500">{getFormatSize(format)}</p>
+                                    {format.tbr && (
+                                      <p className="text-xs text-gray-500">Total: {Math.round(format.tbr)}kbps</p>
+                                    )}
+                                    {categoryKey === 'videoHLS' && (
+                                      <p className="text-xs text-orange-600 font-medium">Requires audio merge</p>
+                                    )}
+                                    {categoryKey === 'directMP4' && (
+                                      <p className="text-xs text-green-600 font-medium">Direct download</p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {formats.length > 6 && (
+                              <button
+                                type="button"
+                                onClick={() => toggleCategoryExpansion(categoryKey)}
+                                className="flex items-center space-x-1 mt-3 text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium"
+                              >
+                                {isExpanded ? (
+                                  <>
+                                    <ChevronUp className="h-4 w-4" />
+                                    <span>Show less</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <ChevronDown className="h-4 w-4" />
+                                    <span>Show {formats.length - 6} more options</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
+
+                  {/* Subtitles Information */}
+                  {mediaInfo.subtitles && Object.keys(mediaInfo.subtitles).length > 0 && (
+                    <div className="bg-blue-50 rounded-lg p-4">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <h5 className="font-medium text-blue-800">Available Subtitles</h5>
+                      </div>
+                      <p className="text-sm text-blue-700 mb-2">
+                        Subtitles will be automatically downloaded when available:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.keys(mediaInfo.subtitles).map(lang => (
+                          <span key={lang} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                            {lang.toUpperCase()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Download Section - Always visible */}
+                {/* Download Section */}
                 <div className="space-y-4">
                   <button
                     onClick={handleDownload}
@@ -752,17 +914,50 @@ export default function Hero() {
                       </>
                     )}
                   </button>
+
+                  {selectedFormat && (() => {
+                    const selectedFormatObj = mediaInfo.formats.find(f => f.format_id === selectedFormat);
+                    if (selectedFormatObj) {
+                      return (
+                        <div className="p-4 bg-gray-50 rounded-lg border">
+                          <h5 className="font-medium text-gray-800 mb-2">Selected Format Details</h5>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600">
+                            <div>
+                              <span className="font-medium text-gray-700">Format ID:</span> {selectedFormatObj.format_id}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Extension:</span> {selectedFormatObj.ext?.toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Quality:</span> {getFormatDisplayName(selectedFormatObj)}
+                            </div>
+                            <div>
+                              <span className="font-medium text-gray-700">Size:</span> {getFormatSize(selectedFormatObj)}
+                            </div>
+                            {selectedFormatObj.tbr && (
+                              <div>
+                                <span className="font-medium text-gray-700">Total Bitrate:</span> {Math.round(selectedFormatObj.tbr)} kbps
+                              </div>
+                            )}
+                            {selectedFormatObj.vcodec && (
+                              <div>
+                                <span className="font-medium text-gray-700">Video Codec:</span> {selectedFormatObj.vcodec}
+                              </div>
+                            )}
+                            {selectedFormatObj.acodec && (
+                              <div>
+                                <span className="font-medium text-gray-700">Audio Codec:</span> {selectedFormatObj.acodec}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
               </div>
             )}
-
-            {/* User Status Indicator */}
-            {/* <div className="mt-6 pt-4 border-t border-gray-100">
-            <div className="flex items-center space-x-2 text-sm text-green-600">
-              <CheckCircle className="h-4 w-4" />
-              <span>{t('hero.authStatus.signedIn', { name: userInfo?.name })}</span>
-            </div>
-          </div> */}
           </form>
         </div>
 
