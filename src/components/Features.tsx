@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 export default function Features() {
   const { t } = useTranslation();
 
+  const toolDisplayName = 'yt-dlp';
+
   const features = [
     {
       icon: <Download className="h-8 w-8" />,
@@ -14,7 +16,7 @@ export default function Features() {
     {
       icon: <Zap className="h-8 w-8" />,
       title: t('features.items.lightningFast.title'),
-      description: t('features.items.lightningFast.description')
+      description: t('features.items.lightningFast.description', { downloadTool: toolDisplayName })
     },
     {
       icon: <Shield className="h-8 w-8" />,
@@ -46,7 +48,7 @@ export default function Features() {
             {t('features.title')}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            {t('features.subtitle')}
+            {t('features.subtitle', { downloadTool: toolDisplayName })}
           </p>
         </div>
 

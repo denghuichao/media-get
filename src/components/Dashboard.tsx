@@ -12,7 +12,6 @@ import {
   Music,
   Image,
   RefreshCw,
-  Lock,
   AlertCircle,
   Pause,
   Volume2,
@@ -22,7 +21,6 @@ import {
   Calendar,
   MapPin,
   Info,
-  ExternalLink,
   AlertTriangle,
   List,
   FolderOpen,
@@ -33,7 +31,6 @@ import { apiService, DownloadRecord } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
 import {
   formatTimestampWithUTC,
-  formatSmartTimestampWithUTC,
   getUserTimezone,
   getTimezoneOffset
 } from '../utils/dateUtils';
@@ -55,10 +52,46 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const mediaRef = React.useRef<HTMLVideoElement | HTMLAudioElement>(null);
+  const imageTimeoutRef = React.useRef<number | null>(null);
+  const imageFailureTimeoutRef = React.useRef<number | null>(null);
+
+  // Ensure currentFileIndex is within bounds
+  const validFileIndex = Math.max(0, Math.min(currentFileIndex, (download.files?.length || 1) - 1));
+
+  // Only reset currentFileIndex if it's actually out of bounds (not when user is making valid selections)
+  useEffect(() => {
+    const maxIndex = (download.files?.length || 1) - 1;
+    if (currentFileIndex < 0 || currentFileIndex > maxIndex) {
+      console.log('Resetting out-of-bounds file index:', currentFileIndex, 'to', validFileIndex);
+      setCurrentFileIndex(validFileIndex);
+    }
+  }, [download.files?.length]); // Only depend on files length, not currentFileIndex
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
 
   // Get current file or use primary download
   const currentFile = download.files && download.files.length > 0
-    ? download.files[currentFileIndex]
+    ? download.files[validFileIndex]
     : {
       filename: download.filename || 'download',
       downloadPath: download.downloadPath || '',
@@ -71,21 +104,94 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   const isAudio = currentFile.type === 'audio';
   const isImage = currentFile.type === 'image';
 
+  // Reset states when file changes
+  useEffect(() => {
+    console.log('=== FILE CHANGE EFFECT ===');
+    console.log('currentFileIndex:', currentFileIndex);
+    console.log('validFileIndex:', validFileIndex);
+    console.log('mediaUrl:', mediaUrl);
+    console.log('currentFile.type:', currentFile.type);
+    console.log('isImage:', isImage);
+
+    // Don't set loading=true for images immediately, let the image load naturally
+    if (!isImage) {
+      setIsLoading(true);
+    }
+    setHasError(false);
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+
+    // Clear any existing timeouts
+    if (imageTimeoutRef.current) {
+      clearTimeout(imageTimeoutRef.current);
+      imageTimeoutRef.current = null;
+    }
+    if (imageFailureTimeoutRef.current) {
+      clearTimeout(imageFailureTimeoutRef.current);
+      imageFailureTimeoutRef.current = null;
+    }
+
+    // For images, set a delayed timeout to show loading if needed
+    if (isImage) {
+      console.log('Setting delayed image timeout for:', mediaUrl);
+
+      // Check if image is already cached and loaded
+      const img = document.createElement('img') as HTMLImageElement;
+      img.src = mediaUrl;
+
+      if (img.complete && img.naturalWidth > 0) {
+        console.log('Image already cached, no loading needed');
+        setIsLoading(false);
+        setHasError(false);
+      } else {
+        // Image not cached, set up timeout logic
+        imageTimeoutRef.current = setTimeout(() => {
+          console.log('Image taking too long, showing loading...');
+          setIsLoading(true);
+        }, 1000); // Show loading after 1 second if image hasn't loaded
+
+        // Set ultimate timeout for failure
+        imageFailureTimeoutRef.current = setTimeout(() => {
+          console.warn('Image load timeout for:', mediaUrl);
+          setIsLoading(false);
+          setHasError(true);
+        }, 10000); // 10 second ultimate timeout
+      }
+    }
+
+    return () => {
+      if (imageTimeoutRef.current) {
+        clearTimeout(imageTimeoutRef.current);
+        imageTimeoutRef.current = null;
+      }
+      if (imageFailureTimeoutRef.current) {
+        clearTimeout(imageFailureTimeoutRef.current);
+        imageFailureTimeoutRef.current = null;
+      }
+    };
+  }, [currentFileIndex, mediaUrl, currentFile.filename, isImage]);
+
+  // Setup media event listeners (only for video/audio)
   useEffect(() => {
     const media = mediaRef.current;
-    if (!media) return;
+    if (!media || isImage) return;
 
     const updateTime = () => setCurrentTime(media.currentTime);
     const updateDuration = () => setDuration(media.duration);
-    const handleLoadStart = () => setIsLoading(true);
+    const handleLoadStart = () => {
+      console.log('Media load started for:', mediaUrl);
+      setIsLoading(true);
+    };
     const handleCanPlay = () => {
+      console.log('Media can play:', mediaUrl);
       setIsLoading(false);
       setHasError(false);
     };
     const handleError = () => {
+      console.error('Media load error for:', mediaUrl);
       setIsLoading(false);
       setHasError(true);
-      console.error('Media load error for:', mediaUrl);
     };
     const handleEnded = () => setIsPlaying(false);
 
@@ -104,7 +210,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
       media.removeEventListener('error', handleError);
       media.removeEventListener('ended', handleEnded);
     };
-  }, [currentFileIndex, mediaUrl]);
+  }, [mediaUrl, isImage]);
 
   const togglePlay = async () => {
     const media = mediaRef.current;
@@ -193,18 +299,32 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        // Close modal when clicking on backdrop
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
             {download.type === 'video' && <Play className="h-5 w-5 text-blue-600" />}
             {download.type === 'audio' && <Music className="h-5 w-5 text-green-600" />}
             {download.type === 'image' && <Image className="h-5 w-5 text-purple-600" />}
-            <div>
+            <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-gray-900 truncate">{download.title}</h3>
-              <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <div className="flex items-center space-x-2 text-sm text-gray-500 flex-wrap">
                 <span>{download.site} • {currentFile.format.toUpperCase()}</span>
+                {download.mediaInfo?.format_id && (
+                  <>
+                    <span>•</span>
+                    <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">ID: {download.mediaInfo.format_id}</span>
+                  </>
+                )}
                 {download.files && download.files.length > 1 && (
                   <>
                     <span>•</span>
@@ -214,12 +334,42 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                     </div>
                   </>
                 )}
+                {download.mediaInfo?.uploader && (
+                  <>
+                    <span>•</span>
+                    <span>by {download.mediaInfo.uploader}</span>
+                  </>
+                )}
               </div>
+              {/* Additional metadata row */}
+              {(download.mediaInfo?.duration || download.mediaInfo?.view_count || download.mediaInfo?.upload_date) && (
+                <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1 flex-wrap">
+                  {download.mediaInfo.duration && (
+                    <>
+                      <Clock className="h-3 w-3" />
+                      <span>{Math.floor(download.mediaInfo.duration / 60)}:{(download.mediaInfo.duration % 60).toString().padStart(2, '0')}</span>
+                    </>
+                  )}
+                  {download.mediaInfo.view_count && (
+                    <>
+                      {download.mediaInfo.duration && <span>•</span>}
+                      <span>{download.mediaInfo.view_count.toLocaleString()} views</span>
+                    </>
+                  )}
+                  {download.mediaInfo.upload_date && (
+                    <>
+                      {(download.mediaInfo.duration || download.mediaInfo.view_count) && <span>•</span>}
+                      <span>Uploaded: {new Date(download.mediaInfo.upload_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).toLocaleDateString()}</span>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors flex-shrink-0 ml-2"
+            title="Close (ESC)"
           >
             <X className="h-5 w-5" />
           </button>
@@ -227,11 +377,11 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
 
         {/* File Navigation for Multi-file Downloads */}
         {download.files && download.files.length > 1 && (
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
+          <div className="p-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center space-x-2 mb-2">
               <List className="h-4 w-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">
-                File {currentFileIndex + 1} of {download.files.length}
+                File {validFileIndex + 1} of {download.files.length}
               </span>
             </div>
             <div className="flex space-x-2 overflow-x-auto">
@@ -239,7 +389,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
                 <button
                   key={index}
                   onClick={() => setCurrentFileIndex(index)}
-                  className={`flex-shrink-0 px-3 py-2 text-xs rounded-lg border transition-colors ${index === currentFileIndex
+                  className={`flex-shrink-0 px-3 py-2 text-xs rounded-lg border transition-colors ${index === validFileIndex
                     ? 'bg-blue-100 border-blue-300 text-blue-800'
                     : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                     }`}
@@ -256,179 +406,339 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
           </div>
         )}
 
-        {/* Media Content */}
-        <div className="p-6">
-          {isImage ? (
-            <div className="text-center">
-              <img
-                src={mediaUrl}
-                alt={download.title}
-                className="max-w-full max-h-96 mx-auto rounded-lg shadow-lg"
-                onError={(e) => {
-                  console.error('Image load error:', e);
-                  setHasError(true);
-                }}
-                onLoad={() => {
-                  setIsLoading(false);
-                  setHasError(false);
-                }}
-              />
-              {isLoading && (
-                <div className="flex items-center justify-center h-48">
-                  <RefreshCw className="h-8 w-8 text-blue-600 animate-spin" />
-                </div>
-              )}
-              {hasError && (
-                <div className="flex items-center justify-center h-48 text-red-600">
-                  <AlertCircle className="h-8 w-8 mr-2" />
-                  <span>Failed to load image</span>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* Video/Audio Element */}
-              <div className="relative">
-                {isVideo ? (
-                  <video
-                    ref={mediaRef as React.RefObject<HTMLVideoElement>}
-                    src={mediaUrl}
-                    className="w-full max-h-96 rounded-lg bg-black"
-                    controls={false} // We'll use custom controls
-                    preload="metadata"
-                    onError={(e) => {
-                      console.error('Video load error:', e);
-                      setHasError(true);
-                    }}
-                  />
-                ) : (
-                  <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center relative">
-                    <Music className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-                    <h4 className="text-lg font-medium text-gray-900 mb-2">{download.title}</h4>
-                    <p className="text-gray-600">{download.site}</p>
-                    <audio
-                      ref={mediaRef as React.RefObject<HTMLAudioElement>}
-                      src={mediaUrl}
-                      preload="metadata"
-                      onError={(e) => {
-                        console.error('Audio load error:', e);
-                        setHasError(true);
-                      }}
-                    />
-                  </div>
-                )}
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Media Content */}
+          <div className="p-6">
+            {isImage ? (
+              <div className="text-center">
+                {hasError ? (
+                  // Error state for images - replace the image area
+                  <div className="w-full min-h-80 flex items-center justify-center bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="text-center p-8 max-w-md max-h-full overflow-y-auto">
+                      {/* Error Icon */}
+                      <div className="relative mb-4">
+                        <div className="bg-red-100 rounded-full p-4 mx-auto w-fit">
+                          <AlertCircle className="h-8 w-8 text-red-500" />
+                        </div>
+                      </div>
 
-                {/* Loading Overlay */}
-                {isLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
-                    <RefreshCw className="h-8 w-8 text-white animate-spin" />
-                  </div>
-                )}
+                      {/* Main Error Message */}
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                        Image Loading Failed
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-4">
+                        Unable to display this image in your browser
+                      </p>
 
-                {/* Error Overlay */}
-                {hasError && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-red-50 rounded-lg">
-                    <div className="text-center text-red-600">
-                      <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                      <p>Failed to load media</p>
-                      <p className="text-sm">URL: {mediaUrl}</p>
+                      {/* Possible Causes */}
+                      <div className="mb-4 text-left">
+                        <p className="text-xs font-medium text-gray-700 mb-2 text-center">Possible causes:</p>
+                        <ul className="text-xs text-gray-600 space-y-1">
+                          <li className="flex items-start">
+                            <span className="text-red-400 mr-2">•</span>
+                            <span>Image format not supported by browser</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="text-red-400 mr-2">•</span>
+                            <span>Network connectivity issues</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="text-red-400 mr-2">•</span>
+                            <span>CORS or server configuration</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="text-red-400 mr-2">•</span>
+                            <span>File may be corrupted</span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      {/* Technical Details (Collapsible) */}
+                      <details className="mt-4 text-left">
+                        <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 select-none">
+                          Technical Details
+                        </summary>
+                        <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600 break-all font-mono max-h-32 overflow-y-auto">
+                          {mediaUrl}
+                        </div>
+                      </details>
                     </div>
                   </div>
-                )}
+                ) : (
+                  <div className="relative">
+                    <img
+                      key={`${validFileIndex}-${mediaUrl}`} // Force re-render on file change
+                      src={mediaUrl}
+                      alt={download.title}
+                      className="max-w-full max-h-80 mx-auto rounded-lg shadow-lg"
+                      onLoadStart={() => {
+                        console.log('=== IMAGE LOAD START ===');
+                        console.log('Image URL:', mediaUrl);
+                        // Don't set loading here, let the delayed timeout handle it
+                      }}
+                      onError={(e) => {
+                        console.error('=== IMAGE ERROR ===');
+                        console.error('Image URL:', mediaUrl);
+                        console.error('Error event:', e);
+                        console.error('Error type:', e.type);
+                        console.error('Image element:', e.target);
+                        console.error('Natural dimensions:', (e.target as HTMLImageElement).naturalWidth, 'x', (e.target as HTMLImageElement).naturalHeight);
 
-                {/* Custom Play Button Overlay for Video */}
-                {isVideo && !isPlaying && !isLoading && !hasError && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <button
-                      onClick={togglePlay}
-                      className="bg-black bg-opacity-70 hover:bg-opacity-80 text-white rounded-full p-4 transition-all transform hover:scale-110"
-                    >
-                      <Play className="h-12 w-12 ml-1" fill="currentColor" />
-                    </button>
+                        // Clear all timeouts on error
+                        if (imageTimeoutRef.current) {
+                          clearTimeout(imageTimeoutRef.current);
+                          imageTimeoutRef.current = null;
+                        }
+                        if (imageFailureTimeoutRef.current) {
+                          clearTimeout(imageFailureTimeoutRef.current);
+                          imageFailureTimeoutRef.current = null;
+                        }
+
+                        setHasError(true);
+                        setIsLoading(false);
+                      }}
+                      onLoad={(e) => {
+                        console.log('=== IMAGE LOADED ===');
+                        console.log('Image URL:', mediaUrl);
+                        console.log('Natural dimensions:', (e.target as HTMLImageElement).naturalWidth, 'x', (e.target as HTMLImageElement).naturalHeight);
+                        console.log('Image element:', e.target);
+
+                        // Clear all timeouts on successful load
+                        if (imageTimeoutRef.current) {
+                          clearTimeout(imageTimeoutRef.current);
+                          imageTimeoutRef.current = null;
+                        }
+                        if (imageFailureTimeoutRef.current) {
+                          clearTimeout(imageFailureTimeoutRef.current);
+                          imageFailureTimeoutRef.current = null;
+                        }
+
+                        setIsLoading(false);
+                        setHasError(false);
+                      }}
+                    />
+
+                    {/* Loading overlay - only show if still loading after a delay */}
+                    {isLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 rounded-lg">
+                        <div className="text-center p-4">
+                          <RefreshCw className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-2" />
+                          <p className="text-sm text-gray-600">Loading image...</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Video/Audio Element */}
+                <div className="relative">
+                  {hasError ? (
+                    // Error state - replace the entire video/audio area
+                    <div className="w-full min-h-80 flex items-center justify-center bg-gradient-to-br from-gray-50 via-gray-50 to-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                      <div className="text-center p-8 max-w-md max-h-full overflow-y-auto">
+                        {/* Error Icon */}
+                        <div className="relative mb-4">
+                          <div className="bg-red-100 rounded-full p-4 mx-auto w-fit">
+                            <AlertCircle className="h-8 w-8 text-red-500" />
+                          </div>
+                        </div>
 
-              {/* Media Controls */}
-              {(isVideo || isAudio) && !hasError && (
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                  {/* Progress Bar */}
-                  <div className="space-y-2">
-                    <input
-                      type="range"
-                      min="0"
-                      max={duration || 0}
-                      value={currentTime}
-                      onChange={handleSeek}
-                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                      style={{
-                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentTime / duration) * 100}%, #e5e7eb ${(currentTime / duration) * 100}%, #e5e7eb 100%)`
-                      }}
-                    />
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{formatTime(currentTime)}</span>
-                      <span>{formatTime(duration)}</span>
+                        {/* Main Error Message */}
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          Media Playback Failed
+                        </h3>
+                        <p className="text-gray-600 text-sm mb-4">
+                          Unable to play this media file in your browser
+                        </p>
+
+                        {/* Possible Causes */}
+                        <div className="mb-4 text-left">
+                          <p className="text-xs font-medium text-gray-700 mb-2 text-center">Possible causes:</p>
+                          <ul className="text-xs text-gray-600 space-y-1">
+                            <li className="flex items-start">
+                              <span className="text-red-400 mr-2">•</span>
+                              <span>Video format not supported by browser</span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="text-red-400 mr-2">•</span>
+                              <span>MPEG transport stream (requires conversion)</span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="text-red-400 mr-2">•</span>
+                              <span>Network connectivity issues</span>
+                            </li>
+                            <li className="flex items-start">
+                              <span className="text-red-400 mr-2">•</span>
+                              <span>CORS or server configuration</span>
+                            </li>
+                          </ul>
+                        </div>
+
+                        {/* Technical Details (Collapsible) */}
+                        <details className="mt-4 text-left">
+                          <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 select-none">
+                            Technical Details
+                          </summary>
+                          <div className="mt-2 p-2 bg-gray-100 rounded text-xs text-gray-600 break-all font-mono max-h-32 overflow-y-auto">
+                            {mediaUrl}
+                          </div>
+                        </details>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Control Buttons */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <button
-                        onClick={togglePlay}
-                        disabled={isLoading || hasError}
-                        className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        title={isPlaying ? t('mediaPlayer.controls.pause') : t('mediaPlayer.controls.play')}
-                      >
-                        {isLoading ? (
-                          <RefreshCw className="h-5 w-5 animate-spin" />
-                        ) : isPlaying ? (
-                          <Pause className="h-5 w-5" />
-                        ) : (
-                          <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
-                        )}
-                      </button>
-
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={toggleMute}
-                          className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
-                          title={isMuted ? t('mediaPlayer.controls.unmute') : t('mediaPlayer.controls.mute')}
-                        >
-                          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                        </button>
-                        <input
-                          type="range"
-                          min="0"
-                          max="1"
-                          step="0.1"
-                          value={isMuted ? 0 : volume}
-                          onChange={handleVolumeChange}
-                          className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                          title={t('mediaPlayer.controls.volume')}
+                  ) : (
+                    // Normal media display
+                    <>
+                      {isVideo ? (
+                        <video
+                          key={`${validFileIndex}-${mediaUrl}`} // Force re-render on file change
+                          ref={mediaRef as React.RefObject<HTMLVideoElement>}
+                          src={mediaUrl}
+                          className="w-full max-h-80 rounded-lg bg-black"
+                          controls={false} // We'll use custom controls
+                          preload="metadata"
+                          crossOrigin="anonymous"
+                          onError={(e) => {
+                            console.error('Video load error:', e);
+                            console.error('Video URL:', mediaUrl);
+                            const videoElement = e.target as HTMLVideoElement;
+                            console.error('Video error details:', videoElement.error);
+                            setHasError(true);
+                          }}
+                          onLoadStart={() => {
+                            console.log('Video load started for:', mediaUrl);
+                            setIsLoading(true);
+                          }}
+                          onCanPlay={() => {
+                            console.log('Video can play:', mediaUrl);
+                            setIsLoading(false);
+                            setHasError(false);
+                          }}
                         />
+                      ) : (
+                        <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-8 text-center relative">
+                          <Music className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+                          <h4 className="text-lg font-medium text-gray-900 mb-2">{download.title}</h4>
+                          <p className="text-gray-600">{download.site}</p>
+                          <audio
+                            key={`${validFileIndex}-${mediaUrl}`} // Force re-render on file change
+                            ref={mediaRef as React.RefObject<HTMLAudioElement>}
+                            src={mediaUrl}
+                            preload="metadata"
+                            crossOrigin="anonymous"
+                            onError={(e) => {
+                              console.error('Audio load error:', e);
+                              setHasError(true);
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Loading Overlay */}
+                      {isLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-lg">
+                          <RefreshCw className="h-8 w-8 text-white animate-spin" />
+                        </div>
+                      )}
+
+                      {/* Custom Play Button Overlay for Video */}
+                      {isVideo && !isPlaying && !isLoading && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <button
+                            onClick={togglePlay}
+                            className="bg-black bg-opacity-70 hover:bg-opacity-80 text-white rounded-full p-4 transition-all transform hover:scale-110"
+                          >
+                            <Play className="h-12 w-12 ml-1" fill="currentColor" />
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {/* Media Controls */}
+                {(isVideo || isAudio) && !hasError && (
+                  <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max={duration || 0}
+                        value={currentTime}
+                        onChange={handleSeek}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentTime / duration) * 100}%, #e5e7eb ${(currentTime / duration) * 100}%, #e5e7eb 100%)`
+                        }}
+                      />
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      {isVideo && (
+                    {/* Control Buttons */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
                         <button
-                          onClick={toggleFullscreen}
-                          className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
-                          title={t('mediaPlayer.controls.fullscreen')}
+                          onClick={togglePlay}
+                          disabled={isLoading || hasError}
+                          className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title={isPlaying ? t('mediaPlayer.controls.pause') : t('mediaPlayer.controls.play')}
                         >
-                          <Maximize className="h-4 w-4" />
+                          {isLoading ? (
+                            <RefreshCw className="h-5 w-5 animate-spin" />
+                          ) : isPlaying ? (
+                            <Pause className="h-5 w-5" />
+                          ) : (
+                            <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
+                          )}
                         </button>
-                      )}
+
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={toggleMute}
+                            className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                            title={isMuted ? t('mediaPlayer.controls.unmute') : t('mediaPlayer.controls.mute')}
+                          >
+                            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                          </button>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={isMuted ? 0 : volume}
+                            onChange={handleVolumeChange}
+                            className="w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                            title={t('mediaPlayer.controls.volume')}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        {isVideo && (
+                          <button
+                            onClick={toggleFullscreen}
+                            className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                            title={t('mediaPlayer.controls.fullscreen')}
+                          >
+                            <Maximize className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
 
-          {/* Download Buttons */}
-          <div className="mt-6 pt-4 border-t border-gray-200 space-y-3">
+          {/* Download Buttons - Fixed at bottom */}
+          <div className="p-6 pt-4 border-t border-gray-200 space-y-3 flex-shrink-0">
             {/* Download Current File */}
             <button
               onClick={downloadCurrentFile}
@@ -734,7 +1044,7 @@ function DashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {t('dashboard.welcome', { name: '用户' })}
+            {t('dashboard.welcome')}
           </h1>
           <div className="flex items-center space-x-4 text-sm text-gray-600">
             <p>{t('dashboard.subtitle')}</p>
@@ -964,6 +1274,12 @@ function DashboardContent() {
                             </span>
                             <span>•</span>
                             <span>{download.format.toUpperCase()}</span>
+                            {download.mediaInfo?.format_id && (
+                              <>
+                                <span>•</span>
+                                <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">ID: {download.mediaInfo.format_id}</span>
+                              </>
+                            )}
                             <span>•</span>
                             <span>{download.quality}</span>
                             <span>•</span>
@@ -976,6 +1292,30 @@ function DashboardContent() {
                               </span>
                             </div>
                           </div>
+
+                          {/* Additional metadata for yt-dlp info */}
+                          {(download.mediaInfo?.uploader || download.mediaInfo?.duration || download.mediaInfo?.view_count) && (
+                            <div className="flex items-center space-x-3 text-xs text-gray-400 mt-1 flex-wrap">
+                              {download.mediaInfo.uploader && (
+                                <span>by {download.mediaInfo.uploader}</span>
+                              )}
+                              {download.mediaInfo.duration && (
+                                <>
+                                  {download.mediaInfo.uploader && <span>•</span>}
+                                  <div className="flex items-center space-x-1">
+                                    <Clock className="h-3 w-3" />
+                                    <span>{Math.floor(download.mediaInfo.duration / 60)}:{(download.mediaInfo.duration % 60).toString().padStart(2, '0')}</span>
+                                  </div>
+                                </>
+                              )}
+                              {download.mediaInfo.view_count && (
+                                <>
+                                  {(download.mediaInfo.uploader || download.mediaInfo.duration) && <span>•</span>}
+                                  <span>{download.mediaInfo.view_count.toLocaleString()} views</span>
+                                </>
+                              )}
+                            </div>
+                          )}
 
                           {/* Progress bar for processing tasks */}
                           {download.status === 'processing' && download.progress !== undefined && (

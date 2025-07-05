@@ -6,6 +6,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 export default function Header() {
   const { t } = useTranslation();
 
+  const toolDisplayName = 'yt-dlp';
+  const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
+
   return (
     <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50" role="banner">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,13 +22,13 @@ export default function Header() {
               <p className="text-xs text-gray-500 flex items-center space-x-1">
                 <span>{t('header.subtitle.prefix')}</span>
                 <a
-                  href="https://github.com/soimort/you-get"
+                  href={toolUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-800 transition-colors underline"
-                  aria-label="you-get GitHub repository"
+                  aria-label={`${toolDisplayName} GitHub repository`}
                 >
-                  you-get
+                  {toolDisplayName}
                 </a>
                 <span>{t('header.subtitle.suffix')}</span>
                 <Heart className="h-3 w-3 text-red-500 fill-red-500" aria-hidden="true" />

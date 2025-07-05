@@ -85,7 +85,7 @@
   },
   "features": {
     "title": "Powerful Features for Every Need",
-    "subtitle": "Built on the robust you-get engine with additional web interface enhancements",
+    "subtitle": "Built on the robust {{downloadTool}} engine with additional web interface enhancements",
     "items": {
       "multipleFormats": {
         "title": "Multiple Formats",
@@ -93,7 +93,7 @@
       },
       "lightningFast": {
         "title": "Lightning Fast",
-        "description": "Powered by you-get's optimized extraction engine for quick analysis and high-speed downloads."
+        "description": "Powered by {{downloadTool}}'s optimized extraction engine for quick analysis and high-speed downloads."
       },
       "privacyFirst": {
         "title": "Privacy First",
@@ -115,11 +115,10 @@
     "status": "All features available now"
   },
   "supportedSites": {
-    "title": "100+ Supported Platforms",
+    "title": "Top Supported Platforms",
     "subtitle": "Download from the most popular video, audio, and image sharing platforms worldwide",
-    "showMore": "Show All Sites",
-    "showLess": "Show Less",
-    "moreCount": "+{{count}} more sites supported",
+    "showAllSites": "Show All Sites",
+    "viewAllDescription": "View all 100+ supported platforms with advanced search and filtering",
     "types": {
       "video": "Video Downloads",
       "audio": "Audio Downloads",
@@ -135,8 +134,25 @@
       ]
     }
   },
+  "allSupportedSites": {
+    "title": "All Supported Sites",
+    "subtitle": "Explore our complete list of 100+ supported platforms for downloading videos, audio, and images",
+    "searchPlaceholder": "Search sites...",
+    "resultsCount": "Showing {{count}} of {{total}} sites",
+    "sitesCount": "sites",
+    "filters": {
+      "allTypes": "All Types",
+      "allRegions": "All Regions"
+    },
+    "noResults": {
+      "title": "No sites found",
+      "description": "Try adjusting your search or filters to find what you're looking for.",
+      "clearFilters": "Clear Filters"
+    },
+    "backToHome": "Back to Home"
+  },
   "dashboard": {
-    "welcome": "Welcome back, {{name}}!",
+    "welcome": "Welcome back!",
     "subtitle": "Manage your downloads and view download history",
     "stats": {
       "total": "Total Downloads",
@@ -208,12 +224,12 @@
   },
   "systemStatus": {
     "checking": "Checking system status...",
-    "ready": "System ready - you-get {{version}} is installed and working",
+    "ready": "System ready - {{tool}} {{version}} is installed and working",
     "notMet": {
       "title": "System Requirements Not Met",
-      "description": "you-get is not installed or not accessible",
-      "install": "To use this service, please install you-get:",
-      "visitGithub": "Or visit github.com/soimort/you-get for installation instructions.",
+      "description": "{{tool}} is not installed or not accessible",
+      "install": "To use this service, please install {{tool}}:",
+      "visitGithub": "Or visit the official repository for installation instructions.",
       "recheck": "Recheck Status"
     }
   },

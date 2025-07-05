@@ -7,6 +7,9 @@ export default function Footer() {
   const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com';
   const twitterUrl = import.meta.env.VITE_TWITTER_URL || 'https://twitter.com';
 
+  const toolDisplayName = 'yt-dlp';
+  const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
+
   return (
     <footer className="bg-gray-900 text-white" role="contentinfo">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -20,13 +23,13 @@ export default function Footer() {
               <p className="text-xs text-gray-400 flex items-center space-x-1">
                 <span>{t('footer.builtWith.prefix')}</span>
                 <a
-                  href="https://github.com/soimort/you-get"
+                  href={toolUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:text-blue-300 transition-colors underline"
-                  aria-label="you-get GitHub repository"
+                  aria-label={`${toolDisplayName} GitHub repository`}
                 >
-                  you-get
+                  {toolDisplayName}
                 </a>
                 <span>{t('footer.builtWith.suffix')}</span>
                 <Heart className="h-3 w-3 text-red-500 fill-red-500" aria-hidden="true" />

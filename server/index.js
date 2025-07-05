@@ -19,13 +19,29 @@ const PORT = process.env.PORT || 3001;
 const DEFAULT_DATA_DIR = path.join(os.homedir(), 'data', 'media-get');
 const DATA_DIR = process.env.DATA_DIR || DEFAULT_DATA_DIR;
 
-// Configuration from environment
+// Configuration - fixed to yt-dlp only
 const DOWNLOADS_DIR = process.env.DOWNLOADS_DIR || path.join(DATA_DIR, 'downloads');
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use('/downloads', express.static(DOWNLOADS_DIR));
+
+// Enhanced static file serving for downloads with proper CORS and media headers
+app.use('/downloads', (req, res, next) => {
+  // Set CORS headers for media files
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Range');
+  res.header('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+
+  next();
+}, express.static(DOWNLOADS_DIR));
 
 // Ensure downloads directory exists
 if (!fs.existsSync(DOWNLOADS_DIR)) {
@@ -40,20 +56,20 @@ async function startWorkerSystem() {
   console.log('Starting MediaGet Download Worker System...');
   console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads directory: ${DOWNLOADS_DIR}`);
-  
+
   try {
     // Import worker system dynamically
     const { DownloadDispatcher } = await import('./workerSystem.js');
-    
+
     // Create and start dispatcher
     const dispatcher = new DownloadDispatcher();
     await dispatcher.start();
-    
+
     workerSystem = dispatcher;
     console.log('MediaGet Download Worker System is running...');
-    
+
     return dispatcher;
-    
+
   } catch (error) {
     console.error('Failed to start worker system:', error);
     // Don't exit the server if worker fails to start
@@ -66,32 +82,32 @@ async function initializeServer() {
   try {
     await initializeDatabase();
     console.log('Database initialized successfully');
-    
+
     // Start worker system
     await startWorkerSystem();
-    
+
   } catch (error) {
     console.error('Failed to initialize server:', error);
     process.exit(1);
   }
 }
 
-// Helper function to execute you-get commands
-function executeYouGet(args) {
+// Helper function to execute download tools commands
+function executeDownloadTool(args, tool = 'yt-dlp') {
   return new Promise((resolve, reject) => {
-    const youget = spawn('you-get', args);
+    const downloadTool = spawn(tool, args);
     let stdout = '';
     let stderr = '';
 
-    youget.stdout.on('data', (data) => {
+    downloadTool.stdout.on('data', (data) => {
       stdout += data.toString();
     });
 
-    youget.stderr.on('data', (data) => {
+    downloadTool.stderr.on('data', (data) => {
       stderr += data.toString();
     });
 
-    youget.on('close', (code) => {
+    downloadTool.on('close', (code) => {
       if (code === 0) {
         resolve(stdout);
       } else {
@@ -99,82 +115,40 @@ function executeYouGet(args) {
       }
     });
 
-    youget.on('error', (error) => {
+    downloadTool.on('error', (error) => {
       reject(error);
     });
   });
 }
 
-// Parse you-get JSON output
-function parseYouGetJson(output) {
+// Parse yt-dlp JSON output and return the raw yt-dlp format
+function parseYtDlpJson(output) {
   try {
-    const lines = output.split('\n');
-    let jsonStart = -1;
-    
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].trim().startsWith('{')) {
-        jsonStart = i;
-        break;
+    const lines = output.split('\n').filter(line => line.trim());
+    let jsonData = null;
+
+    // Find the JSON line
+    for (const line of lines) {
+      try {
+        const data = JSON.parse(line);
+        if (data.formats || data.title) {
+          jsonData = data;
+          break;
+        }
+      } catch (e) {
+        // Continue to next line
       }
     }
-    
-    if (jsonStart === -1) {
-      throw new Error('No JSON found in you-get output');
+
+    if (!jsonData) {
+      throw new Error('No valid JSON found in yt-dlp output');
     }
-    
-    const jsonString = lines.slice(jsonStart).join('\n');
-    const data = JSON.parse(jsonString);
-    
-    const info = {
-      site: data.site || '',
-      title: data.title || '',
-      formats: []
-    };
-    
-    if (data.streams && typeof data.streams === 'object') {
-      for (const [formatId, streamData] of Object.entries(data.streams)) {
-        let type = 'video';
-        const container = streamData.container || 'mp4';
-        const quality = streamData.quality || '';
-        
-        if (['mp3', 'm4a', 'aac', 'flac', 'ogg', 'wav'].includes(container.toLowerCase())) {
-          type = 'audio';
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(container.toLowerCase())) {
-          type = 'image';
-        } else if (quality.toLowerCase().includes('audio') || quality.toLowerCase().includes('kbps')) {
-          type = 'audio';
-        }
-        
-        let size = 'Unknown';
-        if (streamData.size && typeof streamData.size === 'number') {
-          const sizeInMB = streamData.size / (1024 * 1024);
-          if (sizeInMB >= 1) {
-            size = `${sizeInMB.toFixed(1)} MiB`;
-          } else {
-            const sizeInKB = streamData.size / 1024;
-            size = `${sizeInKB.toFixed(1)} KiB`;
-          }
-        }
-        
-        let qualityNote = quality;
-        if (formatId.includes('dash-') && streamData.src && Array.isArray(streamData.src) && streamData.src.length > 1) {
-          qualityNote += ' (Video+Audio will be merged)';
-        }
-        
-        info.formats.push({
-          itag: formatId,
-          container: container,
-          quality: qualityNote,
-          size: size,
-          type: type
-        });
-      }
-    }
-    
-    return info;
+
+    // Return the raw yt-dlp JSON data with minimal processing
+    return jsonData;
   } catch (error) {
-    console.error('Error parsing you-get JSON:', error);
-    throw new Error('Failed to parse you-get output');
+    console.error('Error parsing yt-dlp JSON:', error);
+    throw new Error('Failed to parse yt-dlp output');
   }
 }
 
@@ -185,28 +159,28 @@ function isPlaylistUrl(url) {
     const hostname = urlObj.hostname.toLowerCase();
     const pathname = urlObj.pathname.toLowerCase();
     const searchParams = urlObj.searchParams;
-    
+
     // YouTube playlist indicators
     if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
-      return searchParams.has('list') || 
-             pathname.includes('/playlist') ||
-             pathname.includes('/channel') ||
-             pathname.includes('/user');
+      return searchParams.has('list') ||
+        pathname.includes('/playlist') ||
+        pathname.includes('/channel') ||
+        pathname.includes('/user');
     }
-    
+
     // Bilibili playlist indicators
     if (hostname.includes('bilibili.com')) {
       return pathname.includes('/favlist') ||
-             pathname.includes('/medialist') ||
-             pathname.includes('/collection');
+        pathname.includes('/medialist') ||
+        pathname.includes('/collection');
     }
-    
+
     // Other common playlist patterns
     return pathname.includes('playlist') ||
-           pathname.includes('album') ||
-           pathname.includes('collection') ||
-           searchParams.has('playlist') ||
-           searchParams.has('album');
+      pathname.includes('album') ||
+      pathname.includes('collection') ||
+      searchParams.has('playlist') ||
+      searchParams.has('album');
   } catch {
     return false;
   }
@@ -218,7 +192,7 @@ function isPlaylistUrl(url) {
 app.post('/api/analyze', async (req, res) => {
   try {
     const { url } = req.body;
-    
+
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
     }
@@ -229,24 +203,24 @@ app.post('/api/analyze', async (req, res) => {
       return res.status(400).json({ error: 'Invalid URL format' });
     }
 
-    console.log(`Analyzing URL: ${url}`);
-    
-    const output = await executeYouGet(['--json', url]);
-    const mediaInfo = parseYouGetJson(output);
-    
+    console.log(`Analyzing URL with yt-dlp: ${url}`);
+
+    let output = await executeDownloadTool(['--dump-json', url], 'yt-dlp');
+    let mediaInfo = parseYtDlpJson(output);
+
     if (!mediaInfo.title) {
       return res.status(404).json({ error: 'No media found at this URL' });
     }
 
-    // Add playlist detection info
+    // Add playlist detection info to the response
     mediaInfo.isPlaylist = isPlaylistUrl(url);
 
     res.json(mediaInfo);
   } catch (error) {
     console.error('Analysis error:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to analyze URL. Please check if the URL is valid and supported.',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -254,8 +228,8 @@ app.post('/api/analyze', async (req, res) => {
 // Create download task endpoint
 app.post('/api/download', async (req, res) => {
   try {
-    const { url, itag, outputName, userId, cookies, downloadPlaylist = false } = req.body;
-    
+    const { url, format_id, outputName, userId, cookies, downloadPlaylist = false } = req.body;
+
     if (!url) {
       return res.status(400).json({ error: 'URL is required' });
     }
@@ -264,45 +238,56 @@ app.post('/api/download', async (req, res) => {
       return res.status(400).json({ error: 'User ID is required' });
     }
 
-    console.log(`Creating download task for user ${userId}: ${url} with format: ${itag}, playlist: ${downloadPlaylist}`);
-    
+    console.log(`Creating download task for user ${userId}: ${url} with format: ${format_id}, playlist: ${downloadPlaylist}`);
+
     // Get media info for the task
     let mediaInfo;
     try {
-      const analyzeOutput = await executeYouGet(['--json', url]);
-      mediaInfo = parseYouGetJson(analyzeOutput);
+      let analyzeOutput = await executeDownloadTool(['--dump-json', url], 'yt-dlp');
+      mediaInfo = parseYtDlpJson(analyzeOutput);
     } catch (error) {
       console.warn('Could not get media info:', error.message);
-      mediaInfo = { site: 'Unknown', title: 'Unknown', formats: [] };
+      mediaInfo = { extractor_key: 'Unknown', title: 'Unknown', formats: [] };
     }
 
     // Find selected format info
     let selectedFormat = null;
-    if (itag && mediaInfo.formats) {
-      selectedFormat = mediaInfo.formats.find(f => f.itag === itag);
+    if (format_id && mediaInfo.formats) {
+      selectedFormat = mediaInfo.formats.find(f => f.format_id === format_id);
     }
 
-    // Determine media type and platform
+    // Determine media type based on selected format
     let mediaType = 'video';
     if (selectedFormat) {
-      mediaType = selectedFormat.type;
+      if (selectedFormat.vcodec === 'none' && selectedFormat.acodec !== 'none') {
+        mediaType = 'audio';
+      } else if (selectedFormat.acodec === 'none' && selectedFormat.vcodec !== 'none') {
+        mediaType = 'video';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes((selectedFormat.ext || '').toLowerCase())) {
+        mediaType = 'image';
+      }
     } else if (mediaInfo.formats && mediaInfo.formats.length > 0) {
-      mediaType = mediaInfo.formats[0].type;
+      const firstFormat = mediaInfo.formats[0];
+      if (firstFormat.vcodec === 'none' && firstFormat.acodec !== 'none') {
+        mediaType = 'audio';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes((firstFormat.ext || '').toLowerCase())) {
+        mediaType = 'image';
+      }
     }
 
-    // Create download task
+    // Create download task with yt-dlp format
     const taskId = uuidv4();
     const taskData = {
       user_id: userId,
       task_id: taskId,
       media_type: mediaType,
-      platform_name: mediaInfo.site,
+      platform_name: mediaInfo.extractor_key || mediaInfo.extractor || 'Unknown',
       url: url,
       media_info: {
-        title: mediaInfo.title,
-        site: mediaInfo.site,
-        itag: itag,
+        // Store the complete yt-dlp media info
+        ...mediaInfo,
         selectedFormat: selectedFormat,
+        format_id: format_id,
         outputName: outputName,
         downloadPlaylist: downloadPlaylist
       },
@@ -311,30 +296,30 @@ app.post('/api/download', async (req, res) => {
     };
 
     const task = await DownloadTaskDB.createTask(taskData);
-    
+
     console.log(`Created download task: ${taskId} (playlist: ${downloadPlaylist})`);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       taskId: taskId,
-      message: downloadPlaylist 
+      message: downloadPlaylist
         ? 'Playlist download task created successfully. Processing will begin shortly.'
         : 'Download task created successfully. Processing will begin shortly.',
       task: {
         id: taskId,
         status: 'pending',
         title: mediaInfo.title,
-        site: mediaInfo.site,
+        site: mediaInfo.extractor_key || mediaInfo.extractor,
         url: url,
         isPlaylist: downloadPlaylist
       }
     });
-    
+
   } catch (error) {
     console.error('Download task creation error:', error.message);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Failed to create download task. Please try again.',
-      details: error.message 
+      details: error.message
     });
   }
 });
@@ -343,13 +328,13 @@ app.post('/api/download', async (req, res) => {
 app.get('/api/task/:taskId', async (req, res) => {
   try {
     const { taskId } = req.params;
-    
+
     const task = await DownloadTaskDB.getTask(taskId);
-    
+
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    
+
     // Transform task data for frontend
     const response = {
       id: task.task_id,
@@ -371,7 +356,7 @@ app.get('/api/task/:taskId', async (req, res) => {
       response.downloadUrl = task.result.files?.[0]?.downloadPath;
       response.filename = task.result.files?.[0]?.filename;
     }
-    
+
     res.json(response);
   } catch (error) {
     console.error('Error fetching task:', error);
@@ -383,19 +368,19 @@ app.get('/api/task/:taskId', async (req, res) => {
 app.get('/api/downloads/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { 
-      limit = 100, 
-      offset = 0, 
-      platform, 
-      media_type, 
-      status 
+    const {
+      limit = 100,
+      offset = 0,
+      platform,
+      media_type,
+      status
     } = req.query;
-    
+
     const params = {
       uid: userId,
-      page_info: { 
-        limit: parseInt(limit), 
-        offset: parseInt(offset) 
+      page_info: {
+        limit: parseInt(limit),
+        offset: parseInt(offset)
       }
     };
 
@@ -403,31 +388,83 @@ app.get('/api/downloads/:userId', async (req, res) => {
     if (platform) params.platform = platform;
     if (media_type) params.media_type = media_type;
     if (status) params.status = status;
-    
+
     const tasks = await DownloadTaskDB.getTasksByUid(params);
-    
-    // Transform tasks to match frontend expectations
-    const downloads = tasks.map(task => ({
-      id: task.task_id,
-      url: task.url,
-      title: task.media_info?.title || 'Unknown',
-      site: task.platform_name,
-      format: task.result?.files?.[0]?.format || 'unknown',
-      quality: task.media_info?.selectedFormat?.quality || 'default',
-      size: task.result?.files?.[0]?.size || '0 MB',
-      status: task.status,
-      type: task.media_type,
-      timestamp: task.created_at,
-      downloadPath: task.result?.files?.[0]?.downloadPath,
-      filename: task.result?.files?.[0]?.filename,
-      downloadDir: task.result?.downloadDir,
-      progress: task.progress,
-      error: task.error,
-      isPlaylist: task.is_playlist,
-      files: task.result?.files || null,
-      fileCount: task.result?.files?.length || (task.result?.files ? 1 : 0)
-    }));
-    
+
+    // Transform tasks to match frontend expectations with enhanced yt-dlp info
+    const downloads = tasks.map(task => {
+      const selectedFormat = task.media_info?.selectedFormat;
+
+      // Build comprehensive quality/format string from yt-dlp data
+      let qualityDisplay = 'default';
+      if (selectedFormat) {
+        const parts = [];
+
+        // Add resolution for video
+        if (selectedFormat.height && selectedFormat.width) {
+          parts.push(`${selectedFormat.width}x${selectedFormat.height}`);
+        } else if (selectedFormat.height) {
+          parts.push(`${selectedFormat.height}p`);
+        } else if (selectedFormat.resolution && selectedFormat.resolution !== 'audio only') {
+          parts.push(selectedFormat.resolution);
+        }
+
+        // Add format note if available
+        if (selectedFormat.format_note && selectedFormat.format_note !== 'Default') {
+          parts.push(selectedFormat.format_note);
+        }
+
+        // Add bitrate info
+        if (selectedFormat.tbr) {
+          parts.push(`${selectedFormat.tbr}k`);
+        } else if (selectedFormat.abr && selectedFormat.vcodec === 'none') {
+          parts.push(`${selectedFormat.abr}kbps`);
+        } else if (selectedFormat.vbr && selectedFormat.acodec === 'none') {
+          parts.push(`${selectedFormat.vbr}kbps`);
+        }
+
+        // Add codec info for clarity
+        if (selectedFormat.vcodec === 'none' && selectedFormat.acodec !== 'none') {
+          parts.push('Audio only');
+        } else if (selectedFormat.acodec === 'none' && selectedFormat.vcodec !== 'none') {
+          parts.push('Video only');
+        }
+
+        qualityDisplay = parts.length > 0 ? parts.join(', ') : selectedFormat.format || selectedFormat.format_id || 'default';
+      }
+
+      return {
+        id: task.task_id,
+        url: task.url,
+        title: task.media_info?.title || 'Unknown',
+        site: task.platform_name,
+        format: task.result?.files?.[0]?.format || selectedFormat?.ext || 'unknown',
+        quality: qualityDisplay,
+        size: task.result?.files?.[0]?.size || '0 MB',
+        status: task.status,
+        type: task.media_type,
+        timestamp: task.created_at,
+        downloadPath: task.result?.files?.[0]?.downloadPath,
+        filename: task.result?.files?.[0]?.filename,
+        downloadDir: task.result?.downloadDir,
+        progress: task.progress,
+        error: task.error,
+        isPlaylist: task.is_playlist,
+        files: task.result?.files || null,
+        fileCount: task.result?.files?.length || (task.result?.files ? 1 : 0),
+        // Add additional yt-dlp metadata for display
+        mediaInfo: {
+          uploader: task.media_info?.uploader,
+          duration: task.media_info?.duration,
+          view_count: task.media_info?.view_count,
+          upload_date: task.media_info?.upload_date,
+          format_id: selectedFormat?.format_id,
+          vcodec: selectedFormat?.vcodec,
+          acodec: selectedFormat?.acodec
+        }
+      };
+    });
+
     res.json(downloads);
   } catch (error) {
     console.error('Error fetching user downloads:', error);
@@ -439,18 +476,18 @@ app.get('/api/downloads/:userId', async (req, res) => {
 app.delete('/api/downloads/:userId/:taskId', async (req, res) => {
   try {
     const { userId, taskId } = req.params;
-    
+
     // Get task to find download directory
     const task = await DownloadTaskDB.getTask(taskId);
-    
+
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
     }
-    
+
     if (task.user_id !== userId) {
       return res.status(403).json({ error: 'Access denied' });
     }
-    
+
     // Remove files if they exist
     if (task.result && task.result.downloadDir) {
       const downloadDirPath = path.join(DOWNLOADS_DIR, task.result.downloadDir);
@@ -458,10 +495,10 @@ app.delete('/api/downloads/:userId/:taskId', async (req, res) => {
         fs.rmSync(downloadDirPath, { recursive: true, force: true });
       }
     }
-    
+
     // Delete task from database
     await DownloadTaskDB.deleteTask(taskId, userId);
-    
+
     res.json({ success: true });
   } catch (error) {
     console.error('Error deleting download:', error);
@@ -486,16 +523,16 @@ app.post('/api/cookies/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     const { platform, cookies } = req.body;
-    
+
     if (!platform || !cookies) {
       return res.status(400).json({ error: 'Platform and cookies are required' });
     }
-    
+
     await UserCookiesDB.saveCookies(userId, platform, cookies);
-    
-    res.json({ 
-      success: true, 
-      message: 'Cookies saved successfully' 
+
+    res.json({
+      success: true,
+      message: 'Cookies saved successfully'
     });
   } catch (error) {
     console.error('Error saving cookies:', error);
@@ -507,13 +544,13 @@ app.post('/api/cookies/:userId', async (req, res) => {
 app.get('/api/cookies/:userId/:platform', async (req, res) => {
   try {
     const { userId, platform } = req.params;
-    
+
     const cookies = await UserCookiesDB.getCookies(userId, platform);
-    
+
     if (!cookies) {
       return res.status(404).json({ error: 'No cookies found for this platform' });
     }
-    
+
     res.json({
       platform: cookies.platform_name,
       cookies: cookies.cookies_data,
@@ -529,9 +566,9 @@ app.get('/api/cookies/:userId/:platform', async (req, res) => {
 app.get('/api/cookies/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     const cookies = await UserCookiesDB.getUserCookies(userId);
-    
+
     res.json(cookies.map(cookie => ({
       platform: cookie.platform_name,
       updatedAt: cookie.updated_at
@@ -546,12 +583,12 @@ app.get('/api/cookies/:userId', async (req, res) => {
 app.delete('/api/cookies/:userId/:platform', async (req, res) => {
   try {
     const { userId, platform } = req.params;
-    
+
     await UserCookiesDB.deleteCookies(userId, platform);
-    
-    res.json({ 
-      success: true, 
-      message: 'Cookies deleted successfully' 
+
+    res.json({
+      success: true,
+      message: 'Cookies deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting cookies:', error);
@@ -599,24 +636,24 @@ app.get('/api/supported-sites', (req, res) => {
     { name: 'Dailymotion', url: 'dailymotion.com', types: ['video'] },
     { name: 'Bilibili', url: 'bilibili.com', types: ['video'] },
   ];
-  
+
   res.json(sites);
 });
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     timestamp: new Date().toISOString(),
     workerSystem: workerSystem ? 'running' : 'not running'
   });
 });
 
-// Check you-get installation
-app.get('/api/check-youget', async (req, res) => {
+// Check yt-dlp installation
+app.get('/api/check-yt-dlp', async (req, res) => {
   try {
-    const output = await executeYouGet(['--version']);
-    
+    const output = await executeDownloadTool(['--version'], 'yt-dlp');
+
     // Check FFmpeg availability
     let ffmpegAvailable = false;
     try {
@@ -632,19 +669,19 @@ app.get('/api/check-youget', async (req, res) => {
     } catch {
       ffmpegAvailable = false;
     }
-    
-    res.json({ 
-      installed: true, 
+
+    res.json({
+      installed: true,
       version: output.trim(),
       ffmpegAvailable: ffmpegAvailable,
       workerSystem: workerSystem ? 'running' : 'not running',
-      message: `you-get is properly installed${ffmpegAvailable ? ' with FFmpeg support for video/audio merging' : ' (install FFmpeg for automatic video/audio merging)'}`
+      message: `yt-dlp is properly installed${ffmpegAvailable ? ' with FFmpeg support for video/audio merging' : ' (install FFmpeg for automatic video/audio merging)'}`
     });
   } catch (error) {
-    res.status(500).json({ 
-      installed: false, 
-      error: 'you-get is not installed or not accessible',
-      details: error.message 
+    res.status(500).json({
+      installed: false,
+      error: 'yt-dlp is not installed or not accessible',
+      details: error.message
     });
   }
 });
@@ -652,12 +689,12 @@ app.get('/api/check-youget', async (req, res) => {
 // Handle graceful shutdown
 const shutdown = () => {
   console.log('Shutting down server...');
-  
+
   if (workerSystem) {
     console.log('Stopping worker system...');
     workerSystem.stop();
   }
-  
+
   process.exit(0);
 };
 
@@ -669,7 +706,7 @@ app.listen(PORT, async () => {
   console.log(`MediaGet API Server running on port ${PORT}`);
   console.log(`Data directory: ${DATA_DIR}`);
   console.log(`Downloads will be served from: ${DOWNLOADS_DIR}`);
-  
+
   // Initialize server components
   await initializeServer();
 });

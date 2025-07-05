@@ -10,7 +10,14 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "node server/index.js",
-    "worker": "node server/worker.js"
+    "worker": "node server/worker.js",
+    "start": "./start.sh",
+    "start:yt-dlp": "DOWNLOAD_TOOL=yt-dlp ./start.sh",
+    "test:tools": "./test-tools.sh",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
     "cors": "^2.8.5",

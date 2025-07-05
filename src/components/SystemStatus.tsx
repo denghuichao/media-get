@@ -15,11 +15,15 @@ export default function SystemStatus() {
     loading: true
   });
 
+  const toolDisplayName = 'yt-dlp';
+  const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
+  const installCommand = 'pip install yt-dlp';
+
   const checkStatus = async () => {
     setStatus(prev => ({ ...prev, loading: true }));
-    
+
     try {
-      const result = await apiService.checkYouGetInstallation();
+      const result = await apiService.checkYtDlpInstallation();
       setStatus({
         yougetInstalled: result.installed,
         version: result.version,
@@ -58,22 +62,22 @@ export default function SystemStatus() {
           <div className="flex-1">
             <h4 className="font-medium text-red-800">{t('systemStatus.notMet.title')}</h4>
             <p className="text-red-700 text-sm mt-1">
-              {status.error || t('systemStatus.notMet.description')}
+              {status.error || t('systemStatus.notMet.description', { tool: toolDisplayName })}
             </p>
             <div className="mt-3 text-sm text-red-600">
-              <p className="font-medium">{t('systemStatus.notMet.install')}</p>
+              <p className="font-medium">{t('systemStatus.notMet.install', { tool: toolDisplayName })}</p>
               <code className="block bg-red-100 p-2 rounded mt-2 text-xs">
-                pip install you-get
+                {installCommand}
               </code>
               <p className="mt-2">
                 {t('systemStatus.notMet.visitGithub')}{' '}
-                <a 
-                  href="https://github.com/soimort/you-get" 
-                  target="_blank" 
+                <a
+                  href={toolUrl}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:no-underline"
                 >
-                  github.com/soimort/you-get
+                  {toolUrl.replace('https://', '')}
                 </a>
               </p>
             </div>
@@ -94,7 +98,7 @@ export default function SystemStatus() {
       <div className="flex items-center space-x-2">
         <CheckCircle className="h-5 w-5 text-green-500" />
         <span className="text-green-700">
-          {t('systemStatus.ready', { version: status.version })}
+          {t('systemStatus.ready', { tool: toolDisplayName, version: status.version })}
         </span>
       </div>
     </div>

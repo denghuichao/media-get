@@ -1,15 +1,17 @@
 FROM node:18-alpine
 
-# Install Python, pip, and you-get
+# Install Python, pip, ffmpeg, and download tools
 RUN apk add --no-cache python3 py3-pip ffmpeg curl
 
-# Create virtual environment and install you-get
+# Create virtual environment and install download tools
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
-RUN pip install you-get
 
-# Verify you-get installation
-RUN you-get --version
+# Install yt-dlp only (removed you-get dependency)
+RUN pip install yt-dlp
+
+# Verify installation
+RUN yt-dlp --version && ffmpeg -version
 
 # Set working directory
 WORKDIR /app

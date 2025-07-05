@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
 import { formatSmartTimestampWithUTC } from '../utils/dateUtils';
-import ComplianceBanner from './ComplianceBanner';
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -23,6 +22,9 @@ export default function Hero() {
   // Auto-hide timers
   const [successTimer, setSuccessTimer] = useState<number | null>(null);
   const [taskTimer, setTaskTimer] = useState<number | null>(null);
+
+  const toolDisplayName = 'yt-dlp';
+  const toolUrl = 'https://github.com/yt-dlp/yt-dlp';
 
   // Helper function to detect if URL might be a playlist
   const isPlaylistUrl = (url: string): boolean => {
@@ -186,7 +188,7 @@ export default function Hero() {
 
       // Auto-select the first format
       if (info.formats.length > 0) {
-        setSelectedFormat(info.formats[0].itag);
+        setSelectedFormat(info.formats[0].format_id);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.analysisError'));
@@ -354,13 +356,86 @@ export default function Hero() {
     }
   }, [url]);
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video': return <Play className="h-4 w-4" />;
-      case 'audio': return <Music className="h-4 w-4" />;
-      case 'image': return <Image className="h-4 w-4" />;
-      default: return <Play className="h-4 w-4" />;
+  const getTypeIcon = (format: any) => {
+    // Determine type based on yt-dlp format info
+    if (format.vcodec === 'none' && format.acodec !== 'none') {
+      return <Music className="h-4 w-4" />;
+    } else if (format.acodec === 'none' && format.vcodec !== 'none') {
+      return <Play className="h-4 w-4" />;
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes((format.ext || '').toLowerCase())) {
+      return <Image className="h-4 w-4" />;
+    } else {
+      return <Play className="h-4 w-4" />;
     }
+  };
+
+  const getFormatSize = (format: any) => {
+    if (format.filesize && typeof format.filesize === 'number') {
+      const sizeInMB = format.filesize / (1024 * 1024);
+      return sizeInMB >= 1 ? `${sizeInMB.toFixed(1)} MB` : `${(format.filesize / 1024).toFixed(1)} KB`;
+    } else if (format.filesize_approx && typeof format.filesize_approx === 'number') {
+      const sizeInMB = format.filesize_approx / (1024 * 1024);
+      return sizeInMB >= 1 ? `~${sizeInMB.toFixed(1)} MB` : `~${(format.filesize_approx / 1024).toFixed(1)} KB`;
+    }
+    return 'Unknown';
+  };
+
+  const getFormatDisplayName = (format: any) => {
+    // Create a comprehensive display name for yt-dlp formats
+    const parts = [];
+
+    // Add resolution/quality info
+    if (format.height && format.width) {
+      parts.push(`${format.width}x${format.height}`);
+    } else if (format.height) {
+      parts.push(`${format.height}p`);
+    } else if (format.resolution && format.resolution !== 'audio only') {
+      parts.push(format.resolution);
+    }
+
+    // Add format note (e.g., "premium", "high quality")
+    if (format.format_note && format.format_note !== 'Default') {
+      parts.push(format.format_note);
+    }
+
+    // Add audio info for audio-only formats
+    if (format.vcodec === 'none' && format.acodec !== 'none') {
+      if (format.abr) {
+        parts.push(`${format.abr}kbps`);
+      }
+      if (format.acodec && format.acodec !== 'none') {
+        parts.push(format.acodec);
+      }
+      if (parts.length === 0) {
+        parts.push('Audio only');
+      }
+    }
+
+    // Add video info for video-only formats  
+    if (format.acodec === 'none' && format.vcodec !== 'none') {
+      if (format.vbr) {
+        parts.push(`${format.vbr}kbps`);
+      }
+      if (format.fps) {
+        parts.push(`${format.fps}fps`);
+      }
+      if (parts.length === 1) { // Only resolution
+        parts.push('Video only');
+      }
+    }
+
+    // Fallback to format name or format_id
+    if (parts.length === 0) {
+      if (format.format) {
+        return format.format;
+      } else if (format.format_note) {
+        return format.format_note;
+      } else {
+        return `Format ${format.format_id}`;
+      }
+    }
+
+    return parts.join(', ');
   };
 
   const getStatusIcon = (status: string) => {
@@ -390,7 +465,6 @@ export default function Hero() {
         </header>
 
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          <ComplianceBanner />
           <form onSubmit={(e) => { e.preventDefault(); handleAnalyze(); }} role="search" aria-label="Media URL Analysis">
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="flex-1">
@@ -568,9 +642,38 @@ export default function Hero() {
               <div className="border-t pt-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <Info className="h-5 w-5 text-blue-600" />
-                  <div>
+                  <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">{mediaInfo.title}</h3>
-                    <p className="text-sm text-gray-500">{t('common.source')}: {mediaInfo.site}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600 mt-1">
+                      <p>
+                        <span className="font-medium">{t('common.source')}:</span> {mediaInfo.extractor_key || mediaInfo.extractor || 'Unknown'}
+                      </p>
+                      {mediaInfo.uploader && (
+                        <p>
+                          <span className="font-medium">Uploader:</span> {mediaInfo.uploader}
+                        </p>
+                      )}
+                      {mediaInfo.duration && (
+                        <p>
+                          <span className="font-medium">Duration:</span> {Math.floor(mediaInfo.duration / 60)}:{(mediaInfo.duration % 60).toString().padStart(2, '0')}
+                        </p>
+                      )}
+                      {mediaInfo.view_count && (
+                        <p>
+                          <span className="font-medium">Views:</span> {mediaInfo.view_count.toLocaleString()}
+                        </p>
+                      )}
+                      {mediaInfo.upload_date && (
+                        <p>
+                          <span className="font-medium">Upload Date:</span> {new Date(mediaInfo.upload_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).toLocaleDateString()}
+                        </p>
+                      )}
+                      {mediaInfo.formats && (
+                        <p>
+                          <span className="font-medium">Available Formats:</span> {mediaInfo.formats.length}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -584,30 +687,47 @@ export default function Hero() {
                       onChange={(e) => setSelectedFormat(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                     >
+                      <option value="">Select a format...</option>
                       {mediaInfo.formats.map((format) => (
-                        <option key={format.itag} value={format.itag}>
-                          {format.container.toUpperCase()} - {format.quality} ({format.size})
+                        <option key={format.format_id} value={format.format_id}>
+                          {format.ext?.toUpperCase()} - {getFormatDisplayName(format)}
+                          {format.filesize_approx ? ` (~${(format.filesize_approx / 1024 / 1024).toFixed(1)} MB)` :
+                            format.filesize ? ` (${(format.filesize / 1024 / 1024).toFixed(1)} MB)` : ''}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {mediaInfo.formats.map((format) => (
                       <div
-                        key={format.itag}
-                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedFormat === format.itag
+                        key={format.format_id}
+                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedFormat === format.format_id
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-200 hover:border-gray-300'
                           }`}
-                        onClick={() => setSelectedFormat(format.itag)}
+                        onClick={() => setSelectedFormat(format.format_id)}
                       >
-                        <div className="flex items-center space-x-2 mb-1">
-                          {getTypeIcon(format.type)}
-                          <span className="font-medium text-sm">{format.container.toUpperCase()}</span>
+                        <div className="flex items-center space-x-2 mb-2">
+                          {getTypeIcon(format)}
+                          <span className="font-medium text-sm">{format.ext?.toUpperCase() || 'Unknown'}</span>
+                          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            {format.format_id}
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-600">{format.quality}</p>
-                        <p className="text-xs text-gray-500">{format.size}</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-gray-700">{getFormatDisplayName(format)}</p>
+                          <p className="text-xs text-gray-500">{getFormatSize(format)}</p>
+                          {format.tbr && (
+                            <p className="text-xs text-gray-500">Bitrate: {format.tbr}k</p>
+                          )}
+                          {(format.vcodec && format.vcodec !== 'none') && (
+                            <p className="text-xs text-gray-500">Video: {format.vcodec}</p>
+                          )}
+                          {(format.acodec && format.acodec !== 'none') && (
+                            <p className="text-xs text-gray-500">Audio: {format.acodec}</p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -650,12 +770,12 @@ export default function Hero() {
           <p className="text-gray-600 mb-4 flex items-center justify-center space-x-1">
             <span>{t('hero.poweredBy.prefix')}</span>
             <a
-              href="https://github.com/soimort/you-get"
+              href={toolUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-800 transition-colors underline"
             >
-              you-get
+              {toolDisplayName}
             </a>
             <span>-</span>
             <span>{t('hero.poweredBy.suffix')}</span>
