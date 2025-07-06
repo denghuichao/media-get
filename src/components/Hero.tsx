@@ -264,6 +264,41 @@ export default function Hero() {
     });
   };
 
+  // Helper function to determine mediaType based on selected format
+  const determineMediaTypeFromFormat = (formatId: string, mediaInfo: MediaInfo): string => {
+    if (!formatId || !mediaInfo?.formats) return 'video';
+
+    // Handle combined format ID (e.g., "137+140")
+    const formatIds = formatId.includes('+') ? formatId.split('+') : [formatId];
+    const selectedFormats = formatIds.map(id =>
+      mediaInfo.formats.find(f => f.format_id === id)
+    ).filter(Boolean);
+
+    if (selectedFormats.length === 0) return 'video';
+
+    // If any format has video codec, consider it video
+    const hasVideo = selectedFormats.some(format =>
+      format?.vcodec && format.vcodec !== 'none'
+    );
+
+    // Check if it's audio only (all formats have no video codec)
+    const isAudioOnly = selectedFormats.every(format =>
+      format?.vcodec === 'none' || format?.resolution === 'audio only'
+    );
+
+    // Check if it's image format
+    const isImage = selectedFormats.some(format => {
+      const ext = format?.ext?.toLowerCase();
+      return ext && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+    });
+
+    if (isImage) return 'image';
+    if (isAudioOnly) return 'audio';
+    if (hasVideo) return 'video';
+
+    return 'video'; // Default fallback
+  };
+
   const pollTaskStatus = async (taskId: string) => {
     try {
       const taskStatus = await apiService.getTaskStatus(taskId);
@@ -382,6 +417,9 @@ export default function Hero() {
     }
 
     try {
+      // Determine mediaType based on selected format
+      const mediaType = mediaInfo ? determineMediaTypeFromFormat(selectedFormat, mediaInfo) : 'video';
+
       const result = await apiService.downloadMedia(url, userInfo.id, selectedFormat, undefined, undefined, downloadPlaylist);
 
       if (result.success && result.taskId) {
@@ -409,7 +447,7 @@ export default function Hero() {
           title: result.task?.title || 'Unknown',
           site: result.task?.site || 'Unknown',
           url: result.task?.url || url,
-          mediaType: 'video',
+          mediaType: mediaType,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           isPlaylist: downloadPlaylist

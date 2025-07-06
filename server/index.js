@@ -250,28 +250,62 @@ app.post('/api/download', async (req, res) => {
       mediaInfo = { extractor_key: 'Unknown', title: 'Unknown', formats: [] };
     }
 
-    // Find selected format info
+    // Find selected format info - handle combined format IDs (e.g., "137+140")
     let selectedFormat = null;
+    let selectedFormats = [];
     if (format_id && mediaInfo.formats) {
-      selectedFormat = mediaInfo.formats.find(f => f.format_id === format_id);
+      if (format_id.includes('+')) {
+        // Handle combined format ID
+        const formatIds = format_id.split('+');
+        selectedFormats = formatIds.map(id =>
+          mediaInfo.formats.find(f => f.format_id === id)
+        ).filter(Boolean);
+        // Use the first found format as primary for backward compatibility
+        selectedFormat = selectedFormats[0] || null;
+      } else {
+        // Single format ID
+        selectedFormat = mediaInfo.formats.find(f => f.format_id === format_id);
+        if (selectedFormat) {
+          selectedFormats = [selectedFormat];
+        }
+      }
     }
 
-    // Determine media type based on selected format
+    // Determine media type based on selected format(s)
     let mediaType = 'video';
-    if (selectedFormat) {
-      if (selectedFormat.vcodec === 'none' && selectedFormat.acodec !== 'none') {
-        mediaType = 'audio';
-      } else if (selectedFormat.acodec === 'none' && selectedFormat.vcodec !== 'none') {
-        mediaType = 'video';
-      } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes((selectedFormat.ext || '').toLowerCase())) {
+    if (selectedFormats.length > 0) {
+      // If any format has video codec, consider it video
+      const hasVideo = selectedFormats.some(format =>
+        format?.vcodec && format.vcodec !== 'none'
+      );
+
+      // Check if it's audio only (all formats have no video codec)
+      const isAudioOnly = selectedFormats.every(format =>
+        format?.vcodec === 'none' || format?.resolution === 'audio only'
+      );
+
+      // Check if it's image format
+      const isImage = selectedFormats.some(format => {
+        const ext = format?.ext?.toLowerCase();
+        return ext && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
+      });
+
+      if (isImage) {
         mediaType = 'image';
+      } else if (isAudioOnly) {
+        mediaType = 'audio';
+      } else if (hasVideo) {
+        mediaType = 'video';
       }
     } else if (mediaInfo.formats && mediaInfo.formats.length > 0) {
+      // Fallback to first format if no selected format found
       const firstFormat = mediaInfo.formats[0];
       if (firstFormat.vcodec === 'none' && firstFormat.acodec !== 'none') {
         mediaType = 'audio';
       } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes((firstFormat.ext || '').toLowerCase())) {
         mediaType = 'image';
+      } else {
+        mediaType = 'video'; // Default to video if first format has video or unknown
       }
     }
 
@@ -287,6 +321,7 @@ app.post('/api/download', async (req, res) => {
         // Store the complete yt-dlp media info
         ...mediaInfo,
         selectedFormat: selectedFormat,
+        selectedFormats: selectedFormats, // Store all selected formats for combined IDs
         format_id: format_id,
         outputName: outputName,
         downloadPlaylist: downloadPlaylist
