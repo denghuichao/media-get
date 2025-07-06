@@ -278,10 +278,10 @@ export default function TermsOfService() {
                                     <Mail className="h-4 w-4 text-blue-600" />
                                     <span className="text-gray-700">By email: </span>
                                     <a
-                                        href="mailto:support@media-get.com"
+                                        href="mailto:denghuichao90@gmail.com"
                                         className="text-blue-600 hover:text-blue-800 font-medium"
                                     >
-                                        support@media-get.com
+                                        denghuichao90@gmail.com
                                     </a>
                                 </div>
                                 <p className="text-gray-700">• By visiting the contact section on our website</p>
