@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
   const { t } = useTranslation();
-  const contactEmail = 'support@media-get.com';
+  const contactEmail = 'denghuichao90@gmail.com';
   const githubUrl = import.meta.env.VITE_GITHUB_URL || 'https://github.com';
   const twitterUrl = import.meta.env.VITE_TWITTER_URL || 'https://twitter.com';
 

@@ -607,7 +607,7 @@ This project is open source. The yt-dlp utility is licensed under the Unlicense.
 
 ## 📞 Support
 
-- **Email**: support@media-get.com
+- **Email**: denghuichao90@gmail.com
 - **GitHub Issues**: [Create an issue](https://github.com/denghuichao/media-get/issues)
 - **Documentation**: This README and inline code comments
 

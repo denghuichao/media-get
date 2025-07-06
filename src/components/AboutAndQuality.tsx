@@ -161,7 +161,7 @@ export default function AboutAndQuality() {
                                     Our support team is available around the clock to help with technical issues and questions.
                                 </p>
                                 <p className="text-blue-700 text-sm">
-                                    <strong>Contact:</strong> support@media-get.com |
+                                    <strong>Contact:</strong> denghuichao90@gmail.com |
                                     <strong> Response Time:</strong> Within 24 hours
                                 </p>
                             </div>

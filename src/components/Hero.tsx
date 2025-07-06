@@ -13,6 +13,8 @@ export default function Hero() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [selectedFormat, setSelectedFormat] = useState('');
+  const [selectedVideoFormat, setSelectedVideoFormat] = useState('');
+  const [selectedAudioFormat, setSelectedAudioFormat] = useState('');
   const [downloadPlaylist, setDownloadPlaylist] = useState(false);
   const [error, setError] = useState('');
   const [downloadSuccess, setDownloadSuccess] = useState('');
@@ -197,9 +199,10 @@ export default function Hero() {
       const info = await apiService.analyzeUrl(url);
       setMediaInfo(info);
 
-      // Auto-select the first format
+      // Auto-select optimal format using smart selection
       if (info.formats.length > 0) {
-        setSelectedFormat(info.formats[0].format_id);
+        const optimalFormat = autoSelectOptimalFormat(info.formats);
+        setSelectedFormat(optimalFormat);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.analysisError'));
@@ -208,16 +211,76 @@ export default function Hero() {
     }
   };
 
+  // Helper function to handle format selection
+  const handleFormatSelection = (formatId: string, category: string) => {
+    if (category === 'directDownload' || category === 'combined' || category === 'audio') {
+      // For direct download, combined, or audio: single selection only
+      setSelectedFormat(formatId);
+      setSelectedVideoFormat('');
+      setSelectedAudioFormat('');
+    } else if (category === 'videoOnly') {
+      // For video only: can combine with audio
+      setSelectedVideoFormat(formatId);
+      if (selectedAudioFormat) {
+        setSelectedFormat(`${formatId}+${selectedAudioFormat}`);
+      } else {
+        setSelectedFormat(formatId);
+      }
+    }
+  };
+
+  // Helper function to handle audio selection for video-only formats
+  const handleAudioSelection = (formatId: string) => {
+    setSelectedAudioFormat(formatId);
+    if (selectedVideoFormat) {
+      setSelectedFormat(`${selectedVideoFormat}+${formatId}`);
+    } else {
+      setSelectedFormat(formatId);
+    }
+  };
+
+  // Helper function to check if format is selected
+  const isFormatSelected = (formatId: string, category: string) => {
+    if (category === 'videoOnly') {
+      return selectedVideoFormat === formatId;
+    } else if (category === 'audio' && selectedVideoFormat) {
+      return selectedAudioFormat === formatId;
+    } else {
+      return selectedFormat === formatId || selectedFormat.includes(formatId);
+    }
+  };
+  const getFilteredFiles = (taskStatus: TaskStatus) => {
+    if (!taskStatus.result?.files) return [];
+
+    // Filter files based on mediaType logic:
+    // - audio: show both audio and video files (video might be audio-only)
+    // - video: show both audio and video files
+    // - image: show only image files
+    return taskStatus.result.files.filter(file => {
+      if (taskStatus.mediaType === 'audio' || taskStatus.mediaType === 'video') {
+        return file.type === 'audio' || file.type === 'video';
+      }
+      return file.type === taskStatus.mediaType;
+    });
+  };
+
   const pollTaskStatus = async (taskId: string) => {
     try {
       const taskStatus = await apiService.getTaskStatus(taskId);
       setCurrentTask(taskStatus);
 
       if (taskStatus.status === 'completed') {
-        const fileCount = taskStatus.result?.files?.length || 1;
+        // Get filtered files using the same logic as Dashboard
+        const filteredFiles = getFilteredFiles(taskStatus);
+        const fileCount = filteredFiles.length;
+
+        // Get first file for display name
+        const firstFile = filteredFiles[0] || taskStatus.result?.files?.[0];
+        const displayName = firstFile?.filename || taskStatus.title || 'file';
+
         const message = fileCount > 1
           ? t('success.downloadCompletedMultiple', { count: fileCount })
-          : t('success.downloadCompleted', { filename: taskStatus.filename || 'file' });
+          : t('success.downloadCompleted', { filename: displayName });
 
         setDownloadSuccess(message);
 
@@ -227,24 +290,39 @@ export default function Hero() {
         }, 5000);
         setSuccessTimer(timer);
 
-        // Trigger file download for single files
-        if (taskStatus.downloadUrl && fileCount === 1) {
+        // Automatically download all filtered files
+        if (filteredFiles.length > 0) {
+          if (filteredFiles.length > 1) {
+            // For multi-file downloads, download all filtered files with staggered timing
+            filteredFiles.forEach((file, index) => {
+              setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = apiService.getFileDownloadUrl(file.downloadPath);
+                link.download = file.filename;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }, index * 500); // Stagger downloads by 500ms
+            });
+          } else {
+            // Single file download
+            const file = filteredFiles[0];
+            const link = document.createElement('a');
+            link.href = apiService.getFileDownloadUrl(file.downloadPath);
+            link.download = file.filename;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        } else if (taskStatus.result?.files?.[0]) {
+          // Fallback to first available file if no filtered files
+          const file = taskStatus.result.files[0];
           const link = document.createElement('a');
-          link.href = apiService.getFileDownloadUrl(taskStatus.downloadUrl);
-          link.download = taskStatus.filename || 'download';
-          link.style.display = 'none';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-        
-        // For multiple files (playlists), trigger download of a zip file if available
-        if (taskStatus.downloadUrl && fileCount > 1 && taskStatus.zipDownloadUrl) {
-          // Auto-download zip file for playlists
-          const link = document.createElement('a');
-          link.href = apiService.getFileDownloadUrl(taskStatus.zipDownloadUrl);
-          link.download = `playlist_${taskStatus.id || 'download'}.zip`;
-          link.style.display = 'none';
+          link.href = apiService.getFileDownloadUrl(file.downloadPath);
+          link.download = file.filename;
+          link.target = '_blank';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -319,6 +397,8 @@ export default function Hero() {
         // Reset form fields
         setUrl('');
         setSelectedFormat('');
+        setSelectedVideoFormat('');
+        setSelectedAudioFormat('');
         setMediaInfo(null);
         setDownloadPlaylist(false);
 
@@ -408,8 +488,8 @@ export default function Hero() {
   const categorizeFormats = (formats: any[]) => {
     const categories = {
       audio: [] as any[],
-      videoHLS: [] as any[],
-      directMP4: [] as any[],
+      videoOnly: [] as any[],
+      directDownload: [] as any[],
       combined: [] as any[]
     };
 
@@ -419,16 +499,16 @@ export default function Hero() {
         (format.format_note && format.format_note.toLowerCase().includes('audio'))) {
         categories.audio.push(format);
       }
-      // Direct MP4 downloads (non-HLS)
-      else if (format.protocol === 'https' && format.ext === 'mp4' && !format.manifest_url) {
-        categories.directMP4.push(format);
+      // Video only formats (no audio codec or audio codec is 'none')
+      else if (format.vcodec !== 'none' && format.acodec === 'none') {
+        categories.videoOnly.push(format);
       }
-      // HLS video streams (video only, needs audio merge)
-      else if (format.protocol === 'm3u8_native' && format.vcodec !== 'none' &&
-        format.acodec === 'none' && format.width && format.height) {
-        categories.videoHLS.push(format);
+      // Direct download formats (video + audio combined, typically MP4 with both codecs)
+      else if (format.vcodec !== 'none' && format.acodec !== 'none' &&
+        format.protocol === 'https' && !format.manifest_url) {
+        categories.directDownload.push(format);
       }
-      // Combined formats (video + audio)
+      // Combined formats (video + audio, might include HLS)
       else if (format.vcodec !== 'none' && format.acodec !== 'none') {
         categories.combined.push(format);
       }
@@ -436,11 +516,38 @@ export default function Hero() {
 
     // Sort by quality
     categories.audio.sort((a, b) => (b.abr || 0) - (a.abr || 0));
-    categories.videoHLS.sort((a, b) => (b.height || 0) - (a.height || 0));
-    categories.directMP4.sort((a, b) => (b.tbr || 0) - (a.tbr || 0));
+    categories.videoOnly.sort((a, b) => (b.height || 0) - (a.height || 0));
+    categories.directDownload.sort((a, b) => (b.height || 0) - (a.height || 0));
     categories.combined.sort((a, b) => (b.height || 0) - (a.height || 0));
 
     return categories;
+  };
+
+  // Helper function to auto-select optimal format
+  const autoSelectOptimalFormat = (formats: any[]) => {
+    const categories = categorizeFormats(formats);
+
+    // Priority 1: Combined formats (video + audio in one file)
+    if (categories.combined.length > 0) {
+      return categories.combined[0].format_id;
+    }
+
+    // Priority 2: Direct download formats
+    if (categories.directDownload.length > 0) {
+      return categories.directDownload[0].format_id;
+    }
+
+    // Priority 3: Best video only + best audio (will be combined with +)
+    if (categories.videoOnly.length > 0 && categories.audio.length > 0) {
+      const bestVideo = categories.videoOnly[0];
+      const bestAudio = categories.audio[0];
+      setSelectedVideoFormat(bestVideo.format_id);
+      setSelectedAudioFormat(bestAudio.format_id);
+      return `${bestVideo.format_id}+${bestAudio.format_id}`;
+    }
+
+    // Fallback: first available format
+    return formats[0]?.format_id || '';
   };
 
   const getFormatDisplayName = (format: any) => {
@@ -504,8 +611,8 @@ export default function Hero() {
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'audio': return <Music className="h-4 w-4" />;
-      case 'directMP4': return <Download className="h-4 w-4" />;
-      case 'videoHLS': return <Play className="h-4 w-4" />;
+      case 'directDownload': return <Download className="h-4 w-4" />;
+      case 'videoOnly': return <Play className="h-4 w-4" />;
       case 'combined': return <Play className="h-4 w-4" />;
       default: return <Play className="h-4 w-4" />;
     }
@@ -514,9 +621,9 @@ export default function Hero() {
   const getCategoryTitle = (category: string) => {
     switch (category) {
       case 'audio': return 'Audio Only';
-      case 'directMP4': return 'Direct Download (MP4)';
-      case 'videoHLS': return 'High Quality Video';
-      case 'combined': return 'Video + Audio';
+      case 'directDownload': return 'Direct Download';
+      case 'videoOnly': return 'Video Only';
+      case 'combined': return 'Video + Audio Combined';
       default: return 'Other Formats';
     }
   };
@@ -524,9 +631,9 @@ export default function Hero() {
   const getCategoryDescription = (category: string) => {
     switch (category) {
       case 'audio': return 'Extract audio only, perfect for music or podcasts';
-      case 'directMP4': return 'Single file download, works on all devices';
-      case 'videoHLS': return 'Best quality video (requires audio merge)';
-      case 'combined': return 'Video with audio included';
+      case 'directDownload': return 'Single file download with video and audio, works on all devices';
+      case 'videoOnly': return 'High quality video (requires audio selection for merge)';
+      case 'combined': return 'Video with audio included, may require processing';
       default: return '';
     }
   };
@@ -595,7 +702,7 @@ export default function Hero() {
             </div>
 
             {/* Playlist Download Option */}
-            {url && (
+            {/* {url && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <label className="flex items-center space-x-3 cursor-pointer">
                   <input
@@ -618,7 +725,7 @@ export default function Hero() {
                   }
                 </p>
               </div>
-            )}
+            )} */}
 
             {/* Enhanced Error Message */}
             {errorInfo && (
@@ -771,34 +878,13 @@ export default function Hero() {
                 </div>
 
                 <div className="grid gap-6 mb-6">
-                  {/* Quick Format Selector */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      {t('hero.selectFormat')}
-                    </label>
-                    <select
-                      value={selectedFormat}
-                      onChange={(e) => setSelectedFormat(e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                    >
-                      <option value="">Select a format...</option>
-                      {mediaInfo.formats.map((format) => (
-                        <option key={format.format_id} value={format.format_id}>
-                          {format.ext?.toUpperCase()} - {getFormatDisplayName(format)}
-                          {format.filesize_approx ? ` (~${(format.filesize_approx / 1024 / 1024).toFixed(1)} MB)` :
-                            format.filesize ? ` (${(format.filesize / 1024 / 1024).toFixed(1)} MB)` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   {/* Categorized Format Cards */}
                   <div className="space-y-6">
                     <h4 className="text-lg font-semibold text-gray-900">Download Options</h4>
 
                     {(() => {
                       const categories = categorizeFormats(mediaInfo.formats);
-                      const categoryOrder = ['directMP4', 'combined', 'videoHLS', 'audio'];
+                      const categoryOrder = ['directDownload', 'combined', 'videoOnly', 'audio'];
 
                       return categoryOrder.map(categoryKey => {
                         const formats = categories[categoryKey as keyof typeof categories];
@@ -815,15 +901,40 @@ export default function Hero() {
                             </div>
                             <p className="text-sm text-gray-600 mb-3">{getCategoryDescription(categoryKey)}</p>
 
+                            {/* Special handling for videoOnly + audio combination */}
+                            {categoryKey === 'videoOnly' && categories.audio.length > 0 && (
+                              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <Info className="h-4 w-4 text-blue-600" />
+                                  <span className="text-sm font-medium text-blue-800">Smart Combination</span>
+                                </div>
+                                <p className="text-xs text-blue-700 mb-3">
+                                  Select one video format + one audio format for automatic merging, or select video only.
+                                </p>
+                                {selectedVideoFormat && (
+                                  <div className="text-xs text-blue-800 font-medium">
+                                    Selected Video: {selectedVideoFormat}
+                                    {selectedAudioFormat && ` + Audio: ${selectedAudioFormat}`}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                               {formats.slice(0, isExpanded ? formats.length : 6).map((format) => (
                                 <div
                                   key={format.format_id}
-                                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedFormat === format.format_id
+                                  className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${isFormatSelected(format.format_id, categoryKey)
                                     ? 'border-blue-500 bg-blue-50'
                                     : 'border-gray-200 hover:border-gray-300 bg-white'
                                     }`}
-                                  onClick={() => setSelectedFormat(format.format_id)}
+                                  onClick={() => {
+                                    if (categoryKey === 'audio' && selectedVideoFormat) {
+                                      handleAudioSelection(format.format_id);
+                                    } else {
+                                      handleFormatSelection(format.format_id, categoryKey);
+                                    }
+                                  }}
                                 >
                                   <div className="flex items-center space-x-2 mb-2">
                                     {getTypeIcon(format)}
@@ -831,6 +942,9 @@ export default function Hero() {
                                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                                       {format.format_id}
                                     </span>
+                                    {isFormatSelected(format.format_id, categoryKey) && (
+                                      <CheckCircle className="h-4 w-4 text-blue-500" />
+                                    )}
                                   </div>
                                   <div className="space-y-1">
                                     <p className="text-sm font-medium text-gray-700">{getFormatDisplayName(format)}</p>
@@ -838,11 +952,14 @@ export default function Hero() {
                                     {format.tbr && (
                                       <p className="text-xs text-gray-500">Total: {Math.round(format.tbr)}kbps</p>
                                     )}
-                                    {categoryKey === 'videoHLS' && (
-                                      <p className="text-xs text-orange-600 font-medium">Requires audio merge</p>
+                                    {categoryKey === 'videoOnly' && (
+                                      <p className="text-xs text-orange-600 font-medium">Video only - needs audio</p>
                                     )}
-                                    {categoryKey === 'directMP4' && (
-                                      <p className="text-xs text-green-600 font-medium">Direct download</p>
+                                    {categoryKey === 'directDownload' && (
+                                      <p className="text-xs text-green-600 font-medium">Ready to download</p>
+                                    )}
+                                    {categoryKey === 'combined' && (
+                                      <p className="text-xs text-blue-600 font-medium">Video + audio included</p>
                                     )}
                                   </div>
                                 </div>
@@ -873,26 +990,6 @@ export default function Hero() {
                       });
                     })()}
                   </div>
-
-                  {/* Subtitles Information */}
-                  {mediaInfo.subtitles && Object.keys(mediaInfo.subtitles).length > 0 && (
-                    <div className="bg-blue-50 rounded-lg p-4">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <Info className="h-4 w-4 text-blue-600" />
-                        <h5 className="font-medium text-blue-800">Available Subtitles</h5>
-                      </div>
-                      <p className="text-sm text-blue-700 mb-2">
-                        Subtitles will be automatically downloaded when available:
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.keys(mediaInfo.subtitles).map(lang => (
-                          <span key={lang} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                            {lang.toUpperCase()}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Download Section */}

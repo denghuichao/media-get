@@ -353,8 +353,8 @@ app.get('/api/task/:taskId', async (req, res) => {
     // Add result data if completed
     if (task.status === 'completed' && task.result) {
       response.result = task.result;
-      response.downloadUrl = task.result.files?.[0]?.downloadPath;
-      response.filename = task.result.files?.[0]?.filename;
+      // response.downloadUrl = task.result.files?.[0]?.downloadPath;
+      // response.filename = task.result.files?.[0]?.filename;
     }
 
     res.json(response);
@@ -391,78 +391,28 @@ app.get('/api/downloads/:userId', async (req, res) => {
 
     const tasks = await DownloadTaskDB.getTasksByUid(params);
 
-    // Transform tasks to match frontend expectations with enhanced yt-dlp info
+    // Transform tasks to match /api/task/:taskId format with convenience properties
     const downloads = tasks.map(task => {
-      const selectedFormat = task.media_info?.selectedFormat;
-
-      // Build comprehensive quality/format string from yt-dlp data
-      let qualityDisplay = 'default';
-      if (selectedFormat) {
-        const parts = [];
-
-        // Add resolution for video
-        if (selectedFormat.height && selectedFormat.width) {
-          parts.push(`${selectedFormat.width}x${selectedFormat.height}`);
-        } else if (selectedFormat.height) {
-          parts.push(`${selectedFormat.height}p`);
-        } else if (selectedFormat.resolution && selectedFormat.resolution !== 'audio only') {
-          parts.push(selectedFormat.resolution);
-        }
-
-        // Add format note if available
-        if (selectedFormat.format_note && selectedFormat.format_note !== 'Default') {
-          parts.push(selectedFormat.format_note);
-        }
-
-        // Add bitrate info
-        if (selectedFormat.tbr) {
-          parts.push(`${selectedFormat.tbr}k`);
-        } else if (selectedFormat.abr && selectedFormat.vcodec === 'none') {
-          parts.push(`${selectedFormat.abr}kbps`);
-        } else if (selectedFormat.vbr && selectedFormat.acodec === 'none') {
-          parts.push(`${selectedFormat.vbr}kbps`);
-        }
-
-        // Add codec info for clarity
-        if (selectedFormat.vcodec === 'none' && selectedFormat.acodec !== 'none') {
-          parts.push('Audio only');
-        } else if (selectedFormat.acodec === 'none' && selectedFormat.vcodec !== 'none') {
-          parts.push('Video only');
-        }
-
-        qualityDisplay = parts.length > 0 ? parts.join(', ') : selectedFormat.format || selectedFormat.format_id || 'default';
-      }
-
-      return {
+      const response = {
         id: task.task_id,
-        url: task.url,
+        status: task.status,
+        progress: task.progress,
         title: task.media_info?.title || 'Unknown',
         site: task.platform_name,
-        format: task.result?.files?.[0]?.format || selectedFormat?.ext || 'unknown',
-        quality: qualityDisplay,
-        size: task.result?.files?.[0]?.size || '0 MB',
-        status: task.status,
-        type: task.media_type,
-        timestamp: task.created_at,
-        downloadPath: task.result?.files?.[0]?.downloadPath,
-        filename: task.result?.files?.[0]?.filename,
-        downloadDir: task.result?.downloadDir,
-        progress: task.progress,
-        error: task.error,
+        url: task.url,
+        mediaType: task.media_type,
         isPlaylist: task.is_playlist,
-        files: task.result?.files || null,
-        fileCount: task.result?.files?.length || (task.result?.files ? 1 : 0),
-        // Add additional yt-dlp metadata for display
-        mediaInfo: {
-          uploader: task.media_info?.uploader,
-          duration: task.media_info?.duration,
-          view_count: task.media_info?.view_count,
-          upload_date: task.media_info?.upload_date,
-          format_id: selectedFormat?.format_id,
-          vcodec: selectedFormat?.vcodec,
-          acodec: selectedFormat?.acodec
-        }
+        createdAt: task.created_at,
+        updatedAt: task.updated_at,
+        error: task.error
       };
+
+      // Add result data if completed
+      if (task.status === 'completed' && task.result) {
+        response.result = task.result;
+      }
+
+      return response;
     });
 
     res.json(downloads);

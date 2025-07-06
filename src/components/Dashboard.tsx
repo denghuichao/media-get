@@ -27,7 +27,7 @@ import {
   Files
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { apiService, DownloadRecord } from '../services/api';
+import { apiService, TaskStatus } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
 import {
   formatTimestampWithUTC,
@@ -36,7 +36,7 @@ import {
 } from '../utils/dateUtils';
 
 interface MediaPlayerProps {
-  download: DownloadRecord;
+  download: TaskStatus;
   onClose: () => void;
 }
 
@@ -55,17 +55,25 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   const imageTimeoutRef = React.useRef<number | null>(null);
   const imageFailureTimeoutRef = React.useRef<number | null>(null);
 
-  // Ensure currentFileIndex is within bounds
-  const validFileIndex = Math.max(0, Math.min(currentFileIndex, (download.files?.length || 1) - 1));
+  // Get filtered files that match the mediaType
+  const filteredFiles = download.result?.files?.filter(file => {
+    if (download.mediaType === 'audio' || download.mediaType === 'video') {
+      return file.type === 'audio' || file.type === 'video';
+    }
+    return file.type === download.mediaType;
+  }) || [];
+
+  // Ensure currentFileIndex is within bounds of filtered files
+  const validFileIndex = Math.max(0, Math.min(currentFileIndex, Math.max(0, filteredFiles.length - 1)));
 
   // Only reset currentFileIndex if it's actually out of bounds (not when user is making valid selections)
   useEffect(() => {
-    const maxIndex = (download.files?.length || 1) - 1;
+    const maxIndex = Math.max(0, filteredFiles.length - 1);
     if (currentFileIndex < 0 || currentFileIndex > maxIndex) {
       console.log('Resetting out-of-bounds file index:', currentFileIndex, 'to', validFileIndex);
       setCurrentFileIndex(validFileIndex);
     }
-  }, [download.files?.length]); // Only depend on files length, not currentFileIndex
+  }, [filteredFiles.length]); // Only depend on filtered files length, not currentFileIndex
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -90,13 +98,13 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   }, []);
 
   // Get current file or use primary download
-  const currentFile = download.files && download.files.length > 0
-    ? download.files[validFileIndex]
+  const currentFile = filteredFiles.length > 0
+    ? filteredFiles[validFileIndex]
     : {
-      filename: download.filename || 'download',
-      downloadPath: download.downloadPath || '',
-      type: download.type,
-      format: download.format
+      filename: filteredFiles[0]?.filename || 'download',
+      downloadPath: filteredFiles[0]?.downloadPath || '',
+      type: download.mediaType,
+      format: filteredFiles[0]?.format || 'unknown'
     };
 
   const mediaUrl = apiService.getFileDownloadUrl(currentFile.downloadPath);
@@ -282,8 +290,8 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   };
 
   const downloadAllFiles = () => {
-    if (download.files && download.files.length > 1) {
-      download.files.forEach((file, index) => {
+    if (filteredFiles.length > 1) {
+      filteredFiles.forEach((file, index) => {
         setTimeout(() => {
           const link = document.createElement('a');
           link.href = apiService.getFileDownloadUrl(file.downloadPath);
@@ -312,58 +320,23 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
-            {download.type === 'video' && <Play className="h-5 w-5 text-blue-600" />}
-            {download.type === 'audio' && <Music className="h-5 w-5 text-green-600" />}
-            {download.type === 'image' && <Image className="h-5 w-5 text-purple-600" />}
+            {download.mediaType === 'video' && <Play className="h-5 w-5 text-blue-600" />}
+            {download.mediaType === 'audio' && <Music className="h-5 w-5 text-green-600" />}
+            {download.mediaType === 'image' && <Image className="h-5 w-5 text-purple-600" />}
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-gray-900 truncate">{download.title}</h3>
               <div className="flex items-center space-x-2 text-sm text-gray-500 flex-wrap">
                 <span>{download.site} • {currentFile.format.toUpperCase()}</span>
-                {download.mediaInfo?.format_id && (
-                  <>
-                    <span>•</span>
-                    <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">ID: {download.mediaInfo.format_id}</span>
-                  </>
-                )}
-                {download.files && download.files.length > 1 && (
+                {filteredFiles.length > 1 && (
                   <>
                     <span>•</span>
                     <div className="flex items-center space-x-1">
                       <Files className="h-3 w-3" />
-                      <span>{download.files.length} files</span>
+                      <span>{filteredFiles.length} files</span>
                     </div>
                   </>
                 )}
-                {download.mediaInfo?.uploader && (
-                  <>
-                    <span>•</span>
-                    <span>by {download.mediaInfo.uploader}</span>
-                  </>
-                )}
               </div>
-              {/* Additional metadata row */}
-              {(download.mediaInfo?.duration || download.mediaInfo?.view_count || download.mediaInfo?.upload_date) && (
-                <div className="flex items-center space-x-2 text-xs text-gray-400 mt-1 flex-wrap">
-                  {download.mediaInfo.duration && (
-                    <>
-                      <Clock className="h-3 w-3" />
-                      <span>{Math.floor(download.mediaInfo.duration / 60)}:{(download.mediaInfo.duration % 60).toString().padStart(2, '0')}</span>
-                    </>
-                  )}
-                  {download.mediaInfo.view_count && (
-                    <>
-                      {download.mediaInfo.duration && <span>•</span>}
-                      <span>{download.mediaInfo.view_count.toLocaleString()} views</span>
-                    </>
-                  )}
-                  {download.mediaInfo.upload_date && (
-                    <>
-                      {(download.mediaInfo.duration || download.mediaInfo.view_count) && <span>•</span>}
-                      <span>Uploaded: {new Date(download.mediaInfo.upload_date.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')).toLocaleDateString()}</span>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
           </div>
           <button
@@ -376,16 +349,16 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
         </div>
 
         {/* File Navigation for Multi-file Downloads */}
-        {download.files && download.files.length > 1 && (
+        {filteredFiles.length > 1 && (
           <div className="p-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
             <div className="flex items-center space-x-2 mb-2">
               <List className="h-4 w-4 text-gray-600" />
               <span className="text-sm font-medium text-gray-700">
-                File {validFileIndex + 1} of {download.files.length}
+                File {validFileIndex + 1} of {filteredFiles.length}
               </span>
             </div>
             <div className="flex space-x-2 overflow-x-auto">
-              {download.files.map((file, index) => (
+              {filteredFiles.map((file, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentFileIndex(index)}
@@ -746,7 +719,7 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             >
               <Download className="h-4 w-4" />
               <span>
-                {download.files && download.files.length > 1
+                {filteredFiles.length > 1
                   ? `Download Current File (${currentFile.filename})`
                   : t('mediaPlayer.downloadFile')
                 }
@@ -754,13 +727,13 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
             </button>
 
             {/* Download All Files (for multi-file downloads) */}
-            {download.files && download.files.length > 1 && (
+            {filteredFiles.length > 1 && (
               <button
                 onClick={downloadAllFiles}
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <Files className="h-4 w-4" />
-                <span>Download All Files ({download.files.length})</span>
+                <span>Download All Files ({filteredFiles.length})</span>
               </button>
             )}
           </div>
@@ -773,13 +746,13 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
 function DashboardContent() {
   const { t } = useTranslation();
   const userInfo = getUserDisplayInfo();
-  const [downloads, setDownloads] = useState<DownloadRecord[]>([]);
+  const [downloads, setDownloads] = useState<TaskStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState<'all' | 'completed' | 'failed' | 'processing' | 'pending' | 'invalid'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'size' | 'title'>('newest');
-  const [selectedDownload, setSelectedDownload] = useState<DownloadRecord | null>(null);
+  const [selectedDownload, setSelectedDownload] = useState<TaskStatus | null>(null);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -794,7 +767,7 @@ function DashboardContent() {
   const timezoneOffset = getTimezoneOffset();
 
   // Helper function to get clean status message for status tags - ONLY STATUS
-  const getCleanStatusMessage = (download: DownloadRecord): string => {
+  const getCleanStatusMessage = (download: TaskStatus): string => {
     switch (download.status) {
       case 'completed':
         return t('dashboard.status.completed');
@@ -904,7 +877,7 @@ function DashboardContent() {
     try {
       setLoading(true);
       setError('');
-      const userDownloads = await apiService.getUserDownloads(userInfo.id);
+      const userDownloads = await apiService.getUserDownloadTasks(userInfo.id);
       setDownloads(userDownloads);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.networkError'));
@@ -965,6 +938,20 @@ function DashboardContent() {
       case 'invalid': return 'bg-orange-100 text-orange-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };  // Helper function to filter files based on mediaType
+  const getFilteredFiles = (download: TaskStatus) => {
+    if (!download.result?.files) return [];
+
+    // Filter files based on mediaType logic:
+    // - audio: show both audio and video files (video might be audio-only)
+    // - video: show both audio and video files
+    // - image: show only image files
+    return download.result.files.filter(file => {
+      if (download.mediaType === 'audio' || download.mediaType === 'video') {
+        return file.type === 'audio' || file.type === 'video';
+      }
+      return file.type === download.mediaType;
+    });
   };
 
   const filteredDownloads = downloads
@@ -976,32 +963,40 @@ function DashboardContent() {
     })
     .sort((a, b) => {
       switch (sortBy) {
-        case 'newest': return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-        case 'oldest': return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        case 'newest': return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         case 'title': return a.title.localeCompare(b.title);
-        case 'size': return parseFloat(b.size) - parseFloat(a.size);
+        case 'size':
+          const sizeA = a.result?.files?.[0]?.size || '0 MB';
+          const sizeB = b.result?.files?.[0]?.size || '0 MB';
+          return parseFloat(sizeB) - parseFloat(sizeA);
         default: return 0;
       }
     });
 
-  const handleDownloadFile = (download: DownloadRecord) => {
-    if (download.files && download.files.length > 1) {
-      // For multi-file downloads, download all files
-      download.files.forEach((file, index) => {
+  const handleDownloadFile = (download: TaskStatus) => {
+    const filteredFiles = getFilteredFiles(download);
+
+    if (filteredFiles.length > 1) {
+      // For multi-file downloads, download all filtered files
+      filteredFiles.forEach((file, index) => {
         setTimeout(() => {
           const link = document.createElement('a');
           link.href = apiService.getFileDownloadUrl(file.downloadPath);
           link.download = file.filename;
+          link.target = '_blank';
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
         }, index * 500); // Stagger downloads by 500ms
       });
-    } else if (download.downloadPath && download.filename) {
+    } else if (filteredFiles[0]) {
       // Single file download
+      const file = filteredFiles[0];
       const link = document.createElement('a');
-      link.href = apiService.getFileDownloadUrl(download.downloadPath);
-      link.download = download.filename;
+      link.href = apiService.getFileDownloadUrl(file.downloadPath);
+      link.download = file.filename;
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1009,22 +1004,22 @@ function DashboardContent() {
   };
 
   // Fixed canPlay function to properly detect playable downloads
-  const canPlay = (download: DownloadRecord) => {
+  const canPlay = (download: TaskStatus) => {
     // Must be completed status
     if (download.status !== 'completed') {
       return false;
     }
 
     // Must be video, audio, or image type
-    if (!['video', 'audio', 'image'].includes(download.type)) {
+    if (!['video', 'audio', 'image'].includes(download.mediaType)) {
       return false;
     }
 
-    // Must have either downloadPath OR files array with at least one file
-    const hasDownloadPath = download.downloadPath && download.filename;
-    const hasFiles = download.files && download.files.length > 0;
+    // Must have filtered files with at least one file
+    const filteredFiles = getFilteredFiles(download);
+    const hasFiles = filteredFiles.length > 0;
 
-    return hasDownloadPath || hasFiles;
+    return hasFiles;
   };
 
   if (loading) {
@@ -1259,63 +1254,31 @@ function DashboardContent() {
                               <span className="ml-1 capitalize">{getCleanStatusMessage(download)}</span>
                             </span>
                             {/* Multi-file indicator */}
-                            {download.files && download.files.length > 1 && (
+                            {getFilteredFiles(download).length > 1 && (
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 <Files className="h-3 w-3 mr-1" />
-                                <span>{download.files.length} files</span>
+                                <span>{getFilteredFiles(download).length} files</span>
                               </span>
                             )}
                           </div>
 
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <span className="flex items-center space-x-1">
-                              {getTypeIcon(download.type)}
+                              {getTypeIcon(download.mediaType)}
                               <span>{download.site}</span>
                             </span>
                             <span>•</span>
-                            <span>{download.format.toUpperCase()}</span>
-                            {download.mediaInfo?.format_id && (
-                              <>
-                                <span>•</span>
-                                <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">ID: {download.mediaInfo.format_id}</span>
-                              </>
-                            )}
+                            <span>{getFilteredFiles(download)[0]?.format?.toUpperCase() || 'Unknown'}</span>
                             <span>•</span>
-                            <span>{download.quality}</span>
-                            <span>•</span>
-                            <span>{download.size}</span>
+                            <span>{getFilteredFiles(download)[0]?.size || '0 MB'}</span>
                             <span>•</span>
                             <div className="flex items-center space-x-1">
                               <Calendar className="h-3 w-3" />
-                              <span title={formatTimestampWithUTC(download.timestamp, { format: 'absolute' })}>
-                                {formatTimestampWithUTC(download.timestamp, { format: 'relative' })}
+                              <span title={formatTimestampWithUTC(download.createdAt, { format: 'absolute' })}>
+                                {formatTimestampWithUTC(download.createdAt, { format: 'relative' })}
                               </span>
                             </div>
                           </div>
-
-                          {/* Additional metadata for yt-dlp info */}
-                          {(download.mediaInfo?.uploader || download.mediaInfo?.duration || download.mediaInfo?.view_count) && (
-                            <div className="flex items-center space-x-3 text-xs text-gray-400 mt-1 flex-wrap">
-                              {download.mediaInfo.uploader && (
-                                <span>by {download.mediaInfo.uploader}</span>
-                              )}
-                              {download.mediaInfo.duration && (
-                                <>
-                                  {download.mediaInfo.uploader && <span>•</span>}
-                                  <div className="flex items-center space-x-1">
-                                    <Clock className="h-3 w-3" />
-                                    <span>{Math.floor(download.mediaInfo.duration / 60)}:{(download.mediaInfo.duration % 60).toString().padStart(2, '0')}</span>
-                                  </div>
-                                </>
-                              )}
-                              {download.mediaInfo.view_count && (
-                                <>
-                                  {(download.mediaInfo.uploader || download.mediaInfo.duration) && <span>•</span>}
-                                  <span>{download.mediaInfo.view_count.toLocaleString()} views</span>
-                                </>
-                              )}
-                            </div>
-                          )}
 
                           {/* Progress bar for processing tasks */}
                           {download.status === 'processing' && download.progress !== undefined && (
@@ -1349,11 +1312,11 @@ function DashboardContent() {
                         )}
 
                         {/* Download Button */}
-                        {download.status === 'completed' && (download.downloadPath || (download.files && download.files.length > 0)) && (
+                        {download.status === 'completed' && getFilteredFiles(download).length > 0 && (
                           <button
                             onClick={() => handleDownloadFile(download)}
                             className="p-2 text-gray-400 hover:text-green-600 transition-colors"
-                            title={download.files && download.files.length > 1 ? `Download all ${download.files.length} files` : t('dashboard.actions.download')}
+                            title={getFilteredFiles(download).length > 1 ? `Download all ${getFilteredFiles(download).length} files` : t('dashboard.actions.download')}
                           >
                             <Download className="h-4 w-4" />
                           </button>
@@ -1371,7 +1334,7 @@ function DashboardContent() {
                     </div>
 
                     {/* Multi-file details - Full Width, Left Aligned */}
-                    {download.files && download.files.length > 1 && download.status === 'completed' && (
+                    {getFilteredFiles(download).length > 1 && download.status === 'completed' && (
                       <div className="mt-3 w-full">
                         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs">
                           <div className="flex items-center space-x-1 text-blue-800 mb-2">
@@ -1379,7 +1342,7 @@ function DashboardContent() {
                             <span className="font-medium">Multiple Files Downloaded</span>
                           </div>
                           <div className="space-y-1">
-                            {download.files.slice(0, 3).map((file, index) => (
+                            {getFilteredFiles(download).slice(0, 3).map((file, index) => (
                               <div key={index} className="flex items-center space-x-2 text-blue-700">
                                 {file.type === 'video' && <Play className="h-2 w-2" />}
                                 {file.type === 'audio' && <Music className="h-2 w-2" />}
@@ -1388,9 +1351,9 @@ function DashboardContent() {
                                 <span className="text-blue-600">({file.size})</span>
                               </div>
                             ))}
-                            {download.files.length > 3 && (
+                            {getFilteredFiles(download).length > 3 && (
                               <div className="text-blue-600">
-                                +{download.files.length - 3} more files...
+                                +{getFilteredFiles(download).length - 3} more files...
                               </div>
                             )}
                           </div>

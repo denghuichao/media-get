@@ -89,44 +89,6 @@ export interface TaskStatus {
     message: string;
     isPlaylist?: boolean;
   };
-  downloadUrl?: string;
-  filename?: string;
-}
-
-export interface DownloadRecord {
-  id: string;
-  url: string;
-  title: string;
-  site: string;
-  format: string;
-  quality: string;
-  size: string;
-  status: 'completed' | 'failed' | 'processing' | 'pending' | 'invalid';
-  timestamp: string;
-  downloadPath?: string;
-  type: 'video' | 'audio' | 'image';
-  filename?: string;
-  downloadDir?: string;
-  progress?: number;
-  error?: string;
-  isPlaylist?: boolean;
-  fileCount?: number;
-  files?: Array<{
-    filename: string;
-    downloadPath: string;
-    size: string;
-    type: string;
-    format: string;
-  }>;
-  mediaInfo?: {
-    uploader?: string;
-    duration?: number;
-    view_count?: number;
-    upload_date?: string;
-    format_id?: string;
-    vcodec?: string;
-    acodec?: string;
-  };
 }
 
 export interface SupportedSite {
@@ -221,7 +183,7 @@ class ApiService {
     return response.json();
   }
 
-  async getUserDownloads(userId: string): Promise<DownloadRecord[]> {
+  async getUserDownloads(userId: string): Promise<TaskStatus[]> {
     const response = await fetch(this.getApiUrl(`/downloads/${userId}`));
 
     if (!response.ok) {
@@ -229,6 +191,11 @@ class ApiService {
     }
 
     return response.json();
+  }
+
+  // Alias method for backward compatibility
+  async getUserDownloadTasks(userId: string): Promise<TaskStatus[]> {
+    return this.getUserDownloads(userId);
   }
 
   async getUserStats(userId: string): Promise<UserStats> {
