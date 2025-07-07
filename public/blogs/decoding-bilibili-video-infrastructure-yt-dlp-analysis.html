@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decoding Bilibili's Video Infrastructure: yt-dlp's Chinese Platform Strategy - Technical Analysis</title>
+    <meta name="description"
+        content="Technical deep-dive into yt-dlp's Bilibili extractor, covering DASH streaming, user authentication, geographic restrictions, and Chinese video platform challenges.">
+    <meta name="keywords"
+        content="yt-dlp, Bilibili downloader, Chinese video platforms, DASH streaming, geographic restrictions, authentication systems, reverse engineering">
+    <style>
+        body {
+            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fafafa;
+            color: #333;
+        }
+
+        article {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+            margin-top: 30px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #00aeec;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-top: 40px;
+            color: #00aeec;
+        }
+
+        h3 {
+            font-size: 1.4rem;
+            color: #34495e;
+        }
+
+        .meta {
+            color: #7f8c8d;
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+
+        code {
+            font-family: 'Fira Code', 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+
+        pre {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #00aeec;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+            font-size: 0.95em;
+        }
+
+        .hljs-comment {
+            color: #68d391;
+        }
+
+        .hljs-string {
+            color: #fbb6ce;
+        }
+
+        .hljs-keyword {
+            color: #63b3ed;
+        }
+
+        .hljs-function {
+            color: #f6e05e;
+        }
+
+        .hljs-variable {
+            color: #fc8181;
+        }
+
+        .hljs-number {
+            color: #9f7aea;
+        }
+
+        ul,
+        ol {
+            padding-left: 30px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        blockquote {
+            border-left: 4px solid #00aeec;
+            margin: 20px 0;
+            padding: 15px 20px;
+            background-color: #f0faff;
+            font-style: italic;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        a {
+            color: #00aeec;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .chinese-chars {
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        }
+    
+.blog-navigation {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.blog-index-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #85C341;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.blog-index-link:hover {
+    background-color: #6c9a33;
+}
+</style>
+</head>
+
+<body>
+    <article>
+        <header>
+            <h1>Decoding Bilibili's Video Infrastructure: yt-dlp's Chinese Platform Strategy</h1>
+<div class="blog-navigation">
+    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+</div>
+
+            <p class="meta">Published: <time datetime="2025-07-07">July 7, 2025</time></p>
+        </header>
+
+        <section>
+            <h2>Introduction</h2>
+            <p>Bilibili (<span class="chinese-chars">哔哩哔哩</span>), China's premier video sharing platform, presents
+                unique challenges for international extraction tools. Originally focused on anime, comics, and games
+                (ACG), Bilibili has evolved into a comprehensive video platform with sophisticated anti-crawling
+                mechanisms, geographic restrictions, and complex user authentication systems. The yt-dlp Bilibili
+                extractor showcases advanced techniques for navigating Chinese internet infrastructure while respecting
+                platform policies.</p>
+
+            <p>This technical analysis explores the intricate implementation strategies required to extract content from
+                Bilibili, examining everything from DASH manifest parsing to user credential management, revealing the
+                complexities of building extraction tools for China's unique digital ecosystem.</p>
+
+            <div class="info-box">
+                <strong>Cultural Context:</strong> Bilibili's community-driven features, including bullet comments (弹幕),
+                coin tipping, and user-generated subtitles, create additional layers of complexity beyond simple video
+                extraction that influence the platform's technical architecture.
+            </div>
+        </section>
+
+        <section>
+            <h2>Platform Architecture and API Structure</h2>
+
+            <h3>Bilibili's Multi-Layered Infrastructure</h3>
+            <p>Unlike Western video platforms, Bilibili employs a complex multi-service architecture with distinct APIs
+                for different content types and user authentication levels:</p>
+
+            <pre><code class="language-python"># From bilibili.py - Core platform configuration
+class BilibiliBaseIE(InfoExtractor):
+    _HEADERS = {'Referer': 'https://www.bilibili.com/'}
+    
+    # API endpoints for different content types
+    _API_ENDPOINTS = {
+        'video_info': 'https://api.bilibili.com/x/web-interface/view',
+        'playurl': 'https://api.bilibili.com/x/player/playurl',
+        'season_info': 'https://api.bilibili.com/pgc/view/web/season',
+        'episode_info': 'https://api.bilibili.com/pgc/web/season/ep',
+        'user_space': 'https://api.bilibili.com/x/space/arc/search',
+        'live_info': 'https://api.live.bilibili.com/room/v1/Room/get_info',
+    }
+    
+    # Quality mappings for Bilibili's format system
+    _QUALITY_MAP = {
+        '120': {'height': 4320, 'format_note': '4K超清'},
+        '116': {'height': 1080, 'format_note': '1080P高清'},
+        '80': {'height': 1080, 'format_note': '1080P高码率'},
+        '74': {'height': 720, 'format_note': '720P高清'},
+        '64': {'height': 720, 'format_note': '720P'},
+        '32': {'height': 480, 'format_note': '480P清晰'},
+        '16': {'height': 360, 'format_note': '360P流畅'},
+    }</code></pre>
+
+            <h3>Content Classification System</h3>
+            <p>Bilibili's content is organized into distinct categories that affect extraction approaches:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Content Type</th>
+                        <th>URL Pattern</th>
+                        <th>API Endpoint</th>
+                        <th>Auth Requirements</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>User Videos (UGC)</td>
+                        <td>/video/BV*</td>
+                        <td>/x/web-interface/view</td>
+                        <td>Optional</td>
+                    </tr>
+                    <tr>
+                        <td>Bangumi (Anime)</td>
+                        <td>/bangumi/play/ss*</td>
+                        <td>/pgc/view/web/season</td>
+                        <td>Required for premium</td>
+                    </tr>
+                    <tr>
+                        <td>Episodes</td>
+                        <td>/bangumi/play/ep*</td>
+                        <td>/pgc/web/season/ep</td>
+                        <td>Varies by content</td>
+                    </tr>
+                    <tr>
+                        <td>Live Streams</td>
+                        <td>/live/*</td>
+                        <td>/room/v1/Room/get_info</td>
+                        <td>Optional</td>
+                    </tr>
+                    <tr>
+                        <td>Cheese Courses</td>
+                        <td>/cheese/play/ss*</td>
+                        <td>/pugv/view/web/season</td>
+                        <td>Purchase required</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="warning-box">
+                <strong>ID System Complexity:</strong> Bilibili uses multiple ID systems (AV numbers, BV strings, season
+                IDs, episode IDs) with complex conversion algorithms. The extractor must handle legacy AV numbers,
+                modern BV strings, and their bidirectional conversion for proper API access.
+            </div>
+        </section>
+
+        <section>
+            <h2>Authentication and Session Management</h2>
+
+            <h3>Multi-Tier Authentication System</h3>
+            <p>Bilibili implements sophisticated authentication with different access levels affecting content
+                availability:</p>
+
+            <pre><code class="language-python">def _perform_login(self, username, password):
+    """Handle Bilibili's complex login process"""
+    
+    # Phase 1: Get login parameters
+    login_info = self._download_json(
+        'https://passport.bilibili.com/api/oauth2/getKey',
+        None, note='Getting login key')
+    
+    pub_key = rsa.importKey(login_info['data']['key'])
+    password_hash = base64.b64encode(
+        pub_key.encrypt(
+            f'{login_info["data"]["hash"]}{password}'.encode(),
+            random.randint(0, 255)
+        )[0]
+    ).decode()
+    
+    # Phase 2: Submit credentials
+    login_response = self._download_json(
+        'https://passport.bilibili.com/api/v2/oauth2/login',
+        None,
+        data=urlencode_postdata({
+            'username': username,
+            'password': password_hash,
+            'keep': 'true',
+            'key': login_info['data']['key'],
+            'challenge': '',
+            'validate': '',
+            'seccode': '',
+        }),
+        note='Logging in'
+    )
+    
+    if login_response.get('code') != 0:
+        if login_response.get('code') == -105:
+            # Captcha required
+            return self._handle_captcha_login(username, password_hash)
+        else:
+            raise ExtractorError(f'Login failed: {login_response.get("message")}')
+    
+    # Phase 3: Extract authentication tokens
+    self._extract_cookies_from_response(login_response)
+    return True
+
+def _handle_captcha_login(self, username, password_hash):
+    """Handle captcha verification for suspicious logins"""
+    
+    # Get captcha challenge
+    captcha_url = 'https://passport.bilibili.com/captcha'
+    captcha_response = self._request_webpage(
+        captcha_url, None, note='Getting captcha')
+    
+    # In real implementation, this would require user interaction
+    # or integration with captcha solving services
+    self.report_warning(
+        'Login requires captcha verification. Please log in manually '
+        'and use cookies extraction method instead.')
+    
+    return False</code></pre>
+
+            <h3>Cookie-Based Authentication</h3>
+            <p>For practical usage, yt-dlp supports cookie-based authentication which is more reliable than
+                credential-based login:</p>
+
+            <pre><code class="language-python">def _extract_bilibili_cookies(self):
+    """Extract and validate Bilibili authentication cookies"""
+    
+    required_cookies = ['DedeUserID', 'DedeUserID__ckMd5', 'SESSDATA', 'bili_jct']
+    cookies = {}
+    
+    for cookie_name in required_cookies:
+        cookie_value = self._get_cookies('https://www.bilibili.com').get(cookie_name)
+        if cookie_value:
+            cookies[cookie_name] = cookie_value.value
+        else:
+            self.write_debug(f'Missing required cookie: {cookie_name}')
+            return None
+    
+    # Validate cookie freshness
+    if self._validate_session(cookies):
+        return cookies
+    else:
+        self.write_debug('Cookies appear to be expired or invalid')
+        return None
+
+def _validate_session(self, cookies):
+    """Verify that authentication cookies are valid"""
+    
+    nav_response = self._download_json(
+        'https://api.bilibili.com/x/web-interface/nav',
+        None,
+        headers={**self._HEADERS, 'Cookie': self._cookie_dict_to_string(cookies)},
+        note='Validating session',
+        fatal=False
+    )
+    
+    return (nav_response and 
+            nav_response.get('code') == 0 and 
+            nav_response.get('data', {}).get('isLogin', False))</code></pre>
+        </section>
+
+        <section>
+            <h2>Video ID Resolution and Format Extraction</h2>
+
+            <h3>BV/AV ID Conversion System</h3>
+            <p>Bilibili's transition from AV numbers to BV strings requires sophisticated ID conversion:</p>
+
+            <pre><code class="language-python">def bv2av(bv_id):
+    """Convert BV ID to AV number using Bilibili's algorithm"""
+    
+    # Bilibili's BV conversion constants
+    table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+    tr = {table[i]: i for i in range(58)}
+    s = [11, 10, 3, 8, 4, 6]
+    xor = 177451812
+    add = 8728348608
+    
+    r = 0
+    for i in range(6):
+        r += tr[bv_id[s[i]]] * 58 ** i
+    
+    return (r - add) ^ xor
+
+def av2bv(av_id):
+    """Convert AV number to BV string"""
+    
+    table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+    s = [11, 10, 3, 8, 4, 6]
+    xor = 177451812
+    add = 8728348608
+    
+    av_id = (av_id ^ xor) + add
+    r = list('BV1  4 1 7  ')
+    
+    for i in range(6):
+        r[s[i]] = table[av_id // 58 ** i % 58]
+    
+    return ''.join(r)
+
+def _extract_video_info(self, video_id):
+    """Extract comprehensive video information"""
+    
+    # Handle both BV and AV formats
+    if video_id.startswith('BV'):
+        bv_id = video_id
+        av_id = bv2av(video_id)
+    elif video_id.startswith('av') or video_id.isdigit():
+        av_id = int(video_id.replace('av', ''))
+        bv_id = av2bv(av_id)
+    else:
+        raise ExtractorError(f'Invalid Bilibili video ID: {video_id}')
+    
+    # Use BV ID for modern API calls
+    video_info = self._download_json(
+        'https://api.bilibili.com/x/web-interface/view',
+        video_id,
+        query={'bvid': bv_id},
+        headers=self._get_authenticated_headers(),
+        note='Downloading video info'
+    )
+    
+    return video_info</code></pre>
+
+            <h3>Multi-Part Video Handling</h3>
+            <p>Bilibili videos often contain multiple parts (分P), requiring specialized extraction logic:</p>
+
+            <pre><code class="language-python">def _extract_multi_part_video(self, video_info, video_id):
+    """Handle Bilibili's multi-part video system"""
+    
+    pages = video_info.get('data', {}).get('pages', [])
+    
+    if len(pages) == 1:
+        # Single part video
+        return self._extract_single_video(video_info, video_id, pages[0])
+    
+    # Multi-part video - create playlist
+    entries = []
+    for page in pages:
+        page_info = {
+            'id': f"{video_id}_p{page['page']}",
+            'title': f"{video_info['data']['title']} - P{page['page']}: {page['part']}",
+            'duration': page.get('duration'),
+            '_type': 'url_transparent',
+            'url': f"https://www.bilibili.com/video/{video_id}?p={page['page']}",
+            'ie_key': 'Bilibili',
+        }
+        entries.append(page_info)
+    
+    return {
+        '_type': 'playlist',
+        'id': video_id,
+        'title': video_info['data']['title'],
+        'description': video_info['data'].get('desc'),
+        'uploader': video_info['data']['owner']['name'],
+        'uploader_id': str(video_info['data']['owner']['mid']),
+        'entries': entries,
+    }</code></pre>
+        </section>
+
+        <section>
+            <h2>DASH Streaming and Quality Selection</h2>
+
+            <h3>Bilibili's Advanced Streaming Infrastructure</h3>
+            <p>Bilibili uses sophisticated DASH streaming with multiple CDN endpoints and quality tiers:</p>
+
+            <pre><code class="language-python">def _extract_formats(self, video_id, cid, qn=None):
+    """Extract video formats from Bilibili's DASH streams"""
+    
+    # Request play URLs with authentication
+    play_info = self._download_json(
+        'https://api.bilibili.com/x/player/playurl',
+        video_id,
+        query={
+            'bvid': video_id if video_id.startswith('BV') else None,
+            'cid': cid,
+            'qn': qn or 80,  # Default to 1080P
+            'fnval': 16 | 64 | 128 | 256 | 512 | 1024,  # DASH flags
+            'fnver': 0,
+            'fourk': 1,
+        },
+        headers=self._get_authenticated_headers(),
+        note=f'Downloading play info for quality {qn or "default"}'
+    )
+    
+    dash_data = play_info.get('data', {}).get('dash')
+    if not dash_data:
+        # Fallback to legacy formats
+        return self._extract_legacy_formats(play_info, video_id)
+    
+    formats = []
+    
+    # Extract video streams
+    for video_stream in dash_data.get('video', []):
+        formats.append({
+            'url': video_stream['baseUrl'],
+            'format_id': f"dash-video-{video_stream['id']}",
+            'ext': mimetype2ext(video_stream.get('mimeType', 'video/mp4')),
+            'width': video_stream.get('width'),
+            'height': video_stream.get('height'),
+            'fps': video_stream.get('frameRate'),
+            'vcodec': self._extract_codec(video_stream.get('codecs', '')),
+            'acodec': 'none',
+            'filesize': video_stream.get('size'),
+            'quality': self._get_quality_order(video_stream['id']),
+        })
+    
+    # Extract audio streams
+    for audio_stream in dash_data.get('audio', []):
+        formats.append({
+            'url': audio_stream['baseUrl'],
+            'format_id': f"dash-audio-{audio_stream['id']}",
+            'ext': mimetype2ext(audio_stream.get('mimeType', 'audio/mp4')),
+            'acodec': self._extract_codec(audio_stream.get('codecs', '')),
+            'vcodec': 'none',
+            'abr': audio_stream.get('bandwidth', 0) // 1000,
+            'filesize': audio_stream.get('size'),
+        })
+    
+    # Handle backup URLs for reliability
+    for fmt in formats:
+        backup_urls = self._extract_backup_urls(fmt, dash_data)
+        if backup_urls:
+            fmt['url'] = [fmt['url']] + backup_urls
+    
+    return formats</code></pre>
+
+            <h3>Quality Tier Management</h3>
+            <p>Bilibili's quality system includes premium tiers that require specific user privileges:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Quality ID</th>
+                        <th>Resolution</th>
+                        <th>Description (Chinese)</th>
+                        <th>User Requirements</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>120</td>
+                        <td>4K (3840×2160)</td>
+                        <td class="chinese-chars">4K超清</td>
+                        <td>Premium membership</td>
+                    </tr>
+                    <tr>
+                        <td>116</td>
+                        <td>1080P+ (1920×1080)</td>
+                        <td class="chinese-chars">1080P高清</td>
+                        <td>Level 6+ or Premium</td>
+                    </tr>
+                    <tr>
+                        <td>80</td>
+                        <td>1080P (1920×1080)</td>
+                        <td class="chinese-chars">1080P高码率</td>
+                        <td>Login required</td>
+                    </tr>
+                    <tr>
+                        <td>74</td>
+                        <td>720P+ (1280×720)</td>
+                        <td class="chinese-chars">720P高清</td>
+                        <td>Basic account</td>
+                    </tr>
+                    <tr>
+                        <td>64</td>
+                        <td>720P (1280×720)</td>
+                        <td class="chinese-chars">720P</td>
+                        <td>No requirements</td>
+                    </tr>
+                    <tr>
+                        <td>32</td>
+                        <td>480P (854×480)</td>
+                        <td class="chinese-chars">480P清晰</td>
+                        <td>No requirements</td>
+                    </tr>
+                    <tr>
+                        <td>16</td>
+                        <td>360P (640×360)</td>
+                        <td class="chinese-chars">360P流畅</td>
+                        <td>No requirements</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <pre><code class="language-python">def _get_available_qualities(self, video_id, cid, is_premium=False, user_level=0):
+    """Determine available quality levels based on user privileges"""
+    
+    base_qualities = [16, 32, 64]  # Always available
+    login_qualities = [74, 80]      # Require login
+    premium_qualities = [116, 120]  # Require premium/high level
+    
+    available_qualities = base_qualities.copy()
+    
+    if self._is_logged_in():
+        available_qualities.extend(login_qualities)
+        
+        if user_level >= 6 or is_premium:
+            available_qualities.extend(premium_qualities)
+    
+    # Test actual availability by making API calls
+    verified_qualities = []
+    for qn in available_qualities:
+        if self._test_quality_availability(video_id, cid, qn):
+            verified_qualities.append(qn)
+    
+    return sorted(verified_qualities, reverse=True)</code></pre>
+        </section>
+
+        <section>
+            <h2>Geographic Restrictions and CDN Management</h2>
+
+            <h3>China-Specific Content Delivery</h3>
+            <p>Bilibili's infrastructure is optimized for Chinese users, creating challenges for international access:
+            </p>
+
+            <pre><code class="language-python">def _handle_geo_restrictions(self, video_id, error_response):
+    """Handle Bilibili's geographic and regional restrictions"""
+    
+    error_code = error_response.get('code')
+    
+    if error_code == -10403:
+        # Geographic restriction
+        self.raise_geo_restricted(
+            'This video is restricted to users in mainland China',
+            countries=['CN']
+        )
+    
+    elif error_code == -404:
+        # Content may be region-locked or deleted
+        self.raise_no_formats(
+            'Video not found or not available in your region',
+            expected=True
+        )
+    
+    elif error_code == -403:
+        # Authentication or permission issue
+        if not self._is_logged_in():
+            self.raise_login_required('This video requires login')
+        else:
+            self.raise_no_formats(
+                'Access denied. This video may require premium membership '
+                'or specific user level',
+                expected=True
+            )
+
+def _select_optimal_cdn(self, format_urls):
+    """Select the best CDN endpoint for current network conditions"""
+    
+    if not isinstance(format_urls, list):
+        return format_urls
+    
+    # CDN preference order (for international users)
+    cdn_priorities = [
+        'upos-sz-mirror',      # International mirror
+        'upos-sz-mirrorhw',    # Huawei cloud international
+        'cn-hk-eq-bcache',     # Hong Kong cache
+        'upos-sz-estgoss',     # Standard CDN
+    ]
+    
+    # Test CDN responsiveness
+    best_url = format_urls[0]  # Default fallback
+    best_response_time = float('inf')
+    
+    for url in format_urls[:3]:  # Test up to 3 URLs
+        try:
+            cdn_name = self._extract_cdn_name(url)
+            if any(priority in cdn_name for priority in cdn_priorities[:2]):
+                # Prefer international CDNs
+                response_time = self._test_cdn_speed(url)
+                if response_time < best_response_time:
+                    best_url = url
+                    best_response_time = response_time
+        except Exception:
+            continue
+    
+    return best_url</code></pre>
+
+            <div class="warning-box">
+                <strong>Network Considerations:</strong> Bilibili's CDN infrastructure is heavily optimized for Chinese
+                networks. International users may experience slower speeds or intermittent connectivity issues that
+                require intelligent CDN selection and retry logic.
+            </div>
+        </section>
+
+        <section>
+            <h2>Subtitle and Comment Extraction</h2>
+
+            <h3>Advanced Subtitle Systems</h3>
+            <p>Bilibili supports multiple subtitle formats including AI-generated, user-contributed, and official
+                subtitles:</p>
+
+            <pre><code class="language-python">def _extract_subtitles(self, video_id, cid):
+    """Extract all available subtitle formats from Bilibili"""
+    
+    subtitles = {}
+    
+    # AI-generated subtitles
+    ai_subtitle_info = self._download_json(
+        'https://api.bilibili.com/x/player/v2',
+        video_id,
+        query={'cid': cid, 'bvid': video_id},
+        headers=self._get_authenticated_headers(),
+        note='Checking for AI subtitles',
+        fatal=False
+    )
+    
+    subtitle_data = traverse_obj(ai_subtitle_info, ('data', 'subtitle'))
+    if subtitle_data and subtitle_data.get('subtitles'):
+        for subtitle in subtitle_data['subtitles']:
+            lang_code = subtitle.get('lan', 'zh-CN')
+            subtitle_url = subtitle.get('subtitle_url')
+            
+            if subtitle_url:
+                if not subtitle_url.startswith('http'):
+                    subtitle_url = 'https:' + subtitle_url
+                
+                subtitles.setdefault(lang_code, []).append({
+                    'url': subtitle_url,
+                    'ext': 'json',  # Bilibili uses JSON format
+                    'name': subtitle.get('lan_doc', lang_code),
+                })
+    
+    # User-contributed subtitle community (CC subtitles)
+    cc_subtitle_info = self._download_json(
+        'https://api.bilibili.com/x/player/wbi/v2',
+        video_id,
+        query={
+            'cid': cid,
+            'bvid': video_id,
+            'subtitle': 1,
+        },
+        headers=self._get_authenticated_headers(),
+        note='Checking for community subtitles',
+        fatal=False
+    )
+    
+    # Parse and convert Bilibili JSON subtitles to SRT
+    for lang_code, subtitle_list in subtitles.items():
+        for subtitle in subtitle_list:
+            if subtitle['ext'] == 'json':
+                subtitle['data'] = self._convert_bilibili_subtitles(
+                    subtitle['url'], video_id
+                )
+    
+    return subtitles
+
+def _convert_bilibili_subtitles(self, subtitle_url, video_id):
+    """Convert Bilibili's JSON subtitle format to SRT"""
+    
+    subtitle_data = self._download_json(
+        subtitle_url, video_id,
+        note='Downloading subtitle data',
+        fatal=False
+    )
+    
+    if not subtitle_data or 'body' not in subtitle_data:
+        return None
+    
+    srt_content = []
+    for i, subtitle_item in enumerate(subtitle_data['body'], 1):
+        start_time = subtitle_item.get('from', 0)
+        end_time = subtitle_item.get('to', start_time + 2)
+        text = subtitle_item.get('content', '').strip()
+        
+        if text:
+            srt_content.append(f"{i}\n")
+            srt_content.append(f"{srt_subtitles_timecode(start_time)} --> "
+                             f"{srt_subtitles_timecode(end_time)}\n")
+            srt_content.append(f"{text}\n\n")
+    
+    return ''.join(srt_content)</code></pre>
+
+            <h3>Bullet Comment (Danmaku) Extraction</h3>
+            <p>Bilibili's signature bullet comments represent a unique cultural feature requiring specialized
+                extraction:</p>
+
+            <pre><code class="language-python">def _extract_danmaku(self, video_id, cid):
+    """Extract Bilibili's bullet comments (弹幕)"""
+    
+    # Get danmaku XML data
+    danmaku_response = self._download_webpage(
+        f'https://comment.bilibili.com/{cid}.xml',
+        video_id,
+        note='Downloading bullet comments',
+        fatal=False
+    )
+    
+    if not danmaku_response:
+        return None
+    
+    # Parse XML and convert to structured format
+    import xml.etree.ElementTree as ET
+    
+    try:
+        root = ET.fromstring(danmaku_response)
+        danmaku_list = []
+        
+        for d_element in root.findall('d'):
+            p_attr = d_element.get('p', '').split(',')
+            if len(p_attr) >= 8:
+                danmaku_item = {
+                    'time': float(p_attr[0]),
+                    'type': int(p_attr[1]),  # 1=normal, 4=bottom, 5=top
+                    'font_size': int(p_attr[2]),
+                    'color': int(p_attr[3]),
+                    'timestamp': int(p_attr[4]),
+                    'pool': int(p_attr[5]),
+                    'user_hash': p_attr[6],
+                    'row_id': int(p_attr[7]),
+                    'text': d_element.text or '',
+                }
+                danmaku_list.append(danmaku_item)
+        
+        # Convert to ASS subtitle format for better player support
+        return self._convert_danmaku_to_ass(danmaku_list, video_id)
+        
+    except ET.ParseError:
+        self.report_warning('Failed to parse bullet comments')
+        return None</code></pre>
+        </section>
+
+        <section>
+            <h2>Premium Content and Monetization</h2>
+
+            <h3>Bilibili's Multi-Tier Content System</h3>
+            <p>Bilibili operates several premium content categories with different access controls:</p>
+
+            <pre><code class="language-python">def _handle_premium_content(self, content_type, content_id):
+    """Handle different types of premium/paid content"""
+    
+    content_handlers = {
+        'bangumi': self._extract_bangumi_episode,
+        'cheese': self._extract_cheese_course,
+        'pugv': self._extract_professional_content,
+        'live_paid': self._extract_paid_live_stream,
+    }
+    
+    handler = content_handlers.get(content_type)
+    if not handler:
+        raise ExtractorError(f'Unsupported premium content type: {content_type}')
+    
+    # Check user privileges
+    user_status = self._check_user_privileges()
+    
+    if content_type in ['cheese', 'pugv'] and not user_status.get('has_purchased'):
+        self.raise_no_formats(
+            'This is paid content. Purchase required to access.',
+            expected=True
+        )
+    
+    return handler(content_id, user_status)
+
+def _extract_bangumi_episode(self, episode_id, user_status):
+    """Extract bangumi (anime) episodes with VIP handling"""
+    
+    episode_info = self._download_json(
+        'https://api.bilibili.com/pgc/view/web/season',
+        episode_id,
+        query={'ep_id': episode_id},
+        headers=self._get_authenticated_headers(),
+        note='Downloading episode info'
+    )
+    
+    episode_data = episode_info.get('result', {})
+    
+    # Check VIP requirements
+    if episode_data.get('payment', {}).get('price') and not user_status.get('is_vip'):
+        # Try to find free episodes or previews
+        free_episodes = [ep for ep in episode_data.get('episodes', [])
+                        if not ep.get('badge_info', {}).get('text')]
+        
+        if free_episodes:
+            self.report_warning(
+                'This episode requires VIP membership. '
+                'Falling back to free episodes.'
+            )
+            return self._extract_episode_list(free_episodes)
+        else:
+            self.raise_no_formats(
+                'This anime requires Bilibili VIP membership',
+                expected=True
+            )
+    
+    return self._extract_episode_formats(episode_data)</code></pre>
+
+            <h3>Payment Verification and Course Access</h3>
+            <p>Bilibili's educational content (Cheese courses) requires purchase verification:</p>
+
+            <div class="info-box">
+                <strong>Ethical Considerations:</strong> The yt-dlp Bilibili extractor respects content creators'
+                monetization by properly checking purchase status for paid content and only extracting content that
+                users have legitimately purchased or have access to through their subscription.
+            </div>
+        </section>
+
+        <section>
+            <h2>Live Stream Extraction and Real-Time Features</h2>
+
+            <h3>Dynamic Live Stream Handling</h3>
+            <p>Bilibili Live presents unique challenges with multiple stream qualities and interactive features:</p>
+
+            <pre><code class="language-python">class BilibiliBVIE(BilibiliBaseIE):
+    """Specialized extractor for Bilibili live streams"""
+    
+    def _extract_live_stream(self, room_id):
+        """Extract live stream with quality options"""
+        
+        # Get room information
+        room_info = self._download_json(
+            'https://api.live.bilibili.com/room/v1/Room/get_info',
+            room_id,
+            query={'room_id': room_id},
+            note='Getting live room info'
+        )
+        
+        if room_info.get('data', {}).get('live_status') != 1:
+            raise UserNotLive(f'User in room {room_id} is not currently live')
+        
+        # Get stream URLs
+        stream_info = self._download_json(
+            'https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo',
+            room_id,
+            query={
+                'room_id': room_id,
+                'protocol': '0,1',  # HTTP and HTTPS
+                'format': '0,1,2',  # FLV, HLS, DASH
+                'codec': '0,1',     # avc, hevc
+                'qn': 10000,        # Original quality
+                'platform': 'web',
+                'ptype': 8,
+            },
+            headers=self._get_authenticated_headers(),
+            note='Getting stream URLs'
+        )
+        
+        formats = []
+        stream_data = stream_info.get('data', {}).get('playurl_info', {})
+        
+        # Extract different protocol streams
+        for protocol_info in stream_data.get('playurl', {}).get('stream', []):
+            protocol_name = protocol_info.get('protocol_name')
+            
+            for format_info in protocol_info.get('format', []):
+                format_name = format_info.get('format_name')
+                
+                for codec_info in format_info.get('codec', []):
+                    codec_name = codec_info.get('codec_name')
+                    
+                    for url_info in codec_info.get('url_info', []):
+                        base_url = url_info.get('host', '') + codec_info.get('base_url', '')
+                        query_params = '&'.join([f"{k}={v}" for k, v in url_info.get('extra', {}).items()])
+                        full_url = f"{base_url}?{query_params}"
+                        
+                        formats.append({
+                            'url': full_url,
+                            'format_id': f"{protocol_name}-{format_name}-{codec_name}",
+                            'protocol': protocol_name.lower(),
+                            'ext': 'flv' if format_name == 'flv' else 'mp4',
+                            'quality': self._get_live_quality_order(codec_info),
+                            'preference': self._get_protocol_preference(protocol_name),
+                        })
+        
+        return {
+            'id': room_id,
+            'title': room_info['data']['title'],
+            'uploader': room_info['data']['uname'],
+            'uploader_id': str(room_info['data']['uid']),
+            'thumbnail': room_info['data']['user_cover'],
+            'is_live': True,
+            'formats': formats,
+        }</code></pre>
+        </section>
+
+        <section>
+            <h2>Performance Optimization and Anti-Detection</h2>
+
+            <h3>Intelligent Request Management</h3>
+            <p>Bilibili implements sophisticated anti-crawler measures requiring careful request timing and header
+                management:</p>
+
+            <pre><code class="language-python">class BilibiliRateLimiter:
+    """Manage request rates to avoid Bilibili's anti-crawler detection"""
+    
+    def __init__(self):
+        self.last_request_time = {}
+        self.request_count = 0
+        self.session_start = time.time()
+    
+    def should_wait(self, endpoint_type):
+        """Determine if rate limiting is needed"""
+        
+        current_time = time.time()
+        
+        # Endpoint-specific rate limits
+        limits = {
+            'video_info': 0.5,      # 2 requests per second
+            'playurl': 1.0,         # 1 request per second
+            'user_space': 2.0,      # 0.5 requests per second
+            'search': 3.0,          # 0.33 requests per second
+        }
+        
+        min_interval = limits.get(endpoint_type, 1.0)
+        last_request = self.last_request_time.get(endpoint_type, 0)
+        
+        time_since_last = current_time - last_request
+        return time_since_last < min_interval
+    
+    def wait_if_needed(self, endpoint_type):
+        """Apply intelligent rate limiting"""
+        
+        if self.should_wait(endpoint_type):
+            wait_time = random.uniform(0.5, 1.5)
+            time.sleep(wait_time)
+        
+        self.last_request_time[endpoint_type] = time.time()
+        self.request_count += 1
+
+def _get_authenticated_headers(self):
+    """Generate headers that mimic legitimate browser requests"""
+    
+    headers = self._HEADERS.copy()
+    
+    if self._is_logged_in():
+        # Add authentication-specific headers
+        headers.update({
+            'Origin': 'https://www.bilibili.com',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        })
+    
+    # Rotate User-Agent occasionally
+    if random.random() < 0.1:  # 10% chance
+        headers['User-Agent'] = self._get_alternative_user_agent()
+    
+    return headers</code></pre>
+
+            <h3>CDN Optimization and Fallback Strategies</h3>
+            <p>Optimizing for Bilibili's complex CDN infrastructure improves reliability and performance:</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>CDN Provider</th>
+                        <th>Geographic Focus</th>
+                        <th>Performance (CN)</th>
+                        <th>Performance (Intl)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>upos-sz-estgoss</td>
+                        <td>East China</td>
+                        <td>Excellent</td>
+                        <td>Poor</td>
+                    </tr>
+                    <tr>
+                        <td>upos-sz-mirror</td>
+                        <td>International</td>
+                        <td>Good</td>
+                        <td>Good</td>
+                    </tr>
+                    <tr>
+                        <td>cn-hk-eq-bcache</td>
+                        <td>Hong Kong</td>
+                        <td>Good</td>
+                        <td>Excellent</td>
+                    </tr>
+                    <tr>
+                        <td>upos-sz-mirrorhw</td>
+                        <td>Huawei International</td>
+                        <td>Fair</td>
+                        <td>Very Good</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <h2>Cultural and Platform-Specific Considerations</h2>
+
+            <h3>Handling Chinese Content Standards</h3>
+            <p>Bilibili operates under Chinese internet regulations, affecting content availability and access patterns:
+            </p>
+
+            <blockquote>
+                <p>"Understanding Bilibili requires appreciation for its unique position in Chinese internet culture.
+                    The platform serves not just as a video site but as a cultural hub where community interaction,
+                    educational content, and entertainment converge under specific regulatory frameworks."</p>
+            </blockquote>
+
+            <div class="warning-box">
+                <strong>Regulatory Awareness:</strong> Content on Bilibili is subject to Chinese content regulations.
+                Some videos may be region-locked, temporarily unavailable, or require specific user verification that
+                affects extraction strategies.
+            </div>
+
+            <h3>Community Features Integration</h3>
+            <p>Bilibili's community-centric features influence the extraction approach:</p>
+
+            <ul>
+                <li><strong>User Levels and Privileges:</strong> Content access tied to user engagement and site
+                    contribution</li>
+                <li><strong>Coin System:</strong> Virtual currency affecting content creator monetization</li>
+                <li><strong>Interactive Elements:</strong> Polls, quizzes, and real-time interaction features</li>
+                <li><strong>User-Generated Subtitles:</strong> Community-contributed translation and subtitle systems
+                </li>
+            </ul>
+        </section>
+
+        <footer>
+            <h2>Conclusion</h2>
+            <p>The yt-dlp Bilibili extractor demonstrates the complexity required to navigate China's largest video
+                platform successfully. Its implementation showcases advanced techniques for handling authentication
+                systems, geographic restrictions, premium content verification, and cultural platform features unique to
+                the Chinese internet ecosystem.</p>
+
+            <p>As Bilibili continues to expand internationally while maintaining its distinct cultural identity, the
+                extraction challenges will evolve to balance global accessibility with platform-specific requirements,
+                making it a fascinating case study in cross-cultural video platform engineering.</p>
+
+            <h2>Further Reading</h2>
+            <ul>
+                <li><a href="https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/extractor/bilibili.py">Bilibili
+                        Extractor Source Code</a></li>
+                <li><a href="chinese-video-platforms-technical-analysis.html">Chinese Video Platforms: Technical
+                        Analysis</a></li>
+                <li><a href="dash-streaming-implementation-guide.html">DASH Streaming Implementation Guide</a></li>
+                <li><a href="geographic-restrictions-circumvention.html">Geographic Restrictions and Circumvention
+                        Techniques</a></li>
+                <li><a href="reverse-engineering-tiktok-video-extraction-yt-dlp.html">TikTok Extractor Analysis</a></li>
+            </ul>
+        </footer>
+    </article>
+</body>
+
+</html>

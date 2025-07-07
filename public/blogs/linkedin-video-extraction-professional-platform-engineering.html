@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Video Extraction Engineering: Professional Content & Learning Platform Deep Dive</title>
+
+    <!-- Prism.js CSS for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/line-numbers/prism-line-numbers.min.css"
+        rel="stylesheet" />
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0077b5 0%, #00a0dc 100%);
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #0077b5, #00a0dc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            color: #34495e;
+            border-bottom: 3px solid #0077b5;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            color: #16a085;
+            margin-top: 25px;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 0;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow-x: auto;
+            border-left: 4px solid #0077b5;
+        }
+
+        pre[class*="language-"] {
+            margin: 0;
+            border-radius: 8px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #0077b5;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #27ae60;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #0077b5;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+        .architecture-diagram {
+            background: #f8f9fa;
+            border: 2px solid #0077b5;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .flow-step {
+            background: #0077b5;
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .arrow {
+            font-size: 20px;
+            color: #0077b5;
+            margin: 0 10px;
+        }
+
+        ul li {
+            margin: 8px 0;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .tech-item {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #0077b5;
+        }
+
+        .professional-badge {
+            background: #0077b5;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        /* Custom styles for code blocks */
+        .code-header {
+            background: #1e1e1e;
+            color: #ccc;
+            padding: 8px 15px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .code-language {
+            color: #569cd6;
+        }
+    
+.blog-navigation {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.blog-index-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #85C341;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.blog-index-link:hover {
+    background-color: #6c9a33;
+}
+</style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>💼 LinkedIn Video Extraction Engineering: Professional Content & Learning Platform Deep Dive</h1>
+<div class="blog-navigation">
+    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+</div>
+
+
+        <div class="highlight">
+            <strong>Overview:</strong> This comprehensive analysis explores LinkedIn's sophisticated video extraction
+            ecosystem in yt-dlp, covering professional posts, LinkedIn Learning courses, and live events. LinkedIn
+            presents unique challenges with session-based authentication, premium learning content, and corporate-grade
+            security measures.
+        </div>
+
+        <div class="professional-badge">Professional Network</div>
+        <div class="professional-badge">Learning Platform</div>
+        <div class="professional-badge">Live Events</div>
+        <div class="professional-badge">Enterprise Security</div>
+
+        <h2>🏗️ LinkedIn Architecture Overview</h2>
+
+        <div class="architecture-diagram">
+            <h3>yt-dlp LinkedIn Multi-Platform Processing Pipeline</h3>
+            <div class="flow-step">URL Pattern Detection</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Authentication & Session</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Content Type Classification</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">API/Webpage Parsing</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Format & Quality Selection</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Metadata Enrichment</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Stream Delivery</div>
+        </div>
+
+        <h2>🔧 Core Implementation Analysis</h2>
+
+        <h3>1. Base Authentication System</h3>
+        <p>LinkedIn implements a sophisticated session-based authentication system across all its video platforms:</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - LinkedInBaseIE class</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">class LinkedInBaseIE(InfoExtractor):
+    _NETRC_MACHINE = 'linkedin'
+    _logged_in = False
+
+    def _perform_login(self, username, password):
+        if self._logged_in:
+            return
+
+        login_page = self._download_webpage(
+            self._LOGIN_URL, None, 'Downloading login page')
+        action_url = urljoin(self._LOGIN_URL, self._search_regex(
+            r'&lt;form[^&gt;]+action=(["\'])(?P&lt;url&gt;.+?)\1', login_page, 'post url',
+            default='https://www.linkedin.com/uas/login-submit', group='url'))
+        data = self._hidden_inputs(login_page)
+        data.update({
+            'session_key': username,
+            'session_password': password,
+        })
+        login_submit_page = self._download_webpage(
+            action_url, None, 'Logging in',
+            data=urlencode_postdata(data))
+        error = self._search_regex(
+            r'&lt;span[^&gt;]+class="error"[^&gt;]*&gt;\s*(.+?)\s*&lt;/span&gt;',
+            login_submit_page, 'error', default=None)
+        if error:
+            raise ExtractorError(error, expected=True)
+        LinkedInBaseIE._logged_in = True</code></pre>
+        </div>
+
+        <div class="info-box">
+            <strong>Security Architecture:</strong> The login system extracts CSRF tokens from hidden form inputs,
+            maintains session state across extractors, and implements proper error handling for authentication failures.
+        </div>
+
+        <h3>2. LinkedIn Learning API Integration</h3>
+        <p>The LinkedIn Learning platform requires sophisticated API interaction with CSRF token management:</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - API call implementation</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">def _call_api(self, course_slug, fields, video_slug=None, resolution=None):
+    query = {
+        'courseSlug': course_slug,
+        'fields': fields,
+        'q': 'slugs',
+    }
+    sub = ''
+    if video_slug:
+        query.update({
+            'videoSlug': video_slug,
+            'resolution': f'_{resolution}',
+        })
+        sub = ' %dp' % resolution
+    api_url = 'https://www.linkedin.com/learning-api/detailedCourses'
+    if not self._get_cookies(api_url).get('JSESSIONID'):
+        self.raise_login_required()
+    return self._download_json(
+        api_url, video_slug, f'Downloading{sub} JSON metadata', headers={
+            'Csrf-Token': self._get_cookies(api_url)['JSESSIONID'].value,
+        }, query=query)['elements'][0]</code></pre>
+        </div>
+
+        <h3>3. Multi-Resolution Video Processing</h3>
+        <p>LinkedIn Learning supports multiple video qualities with intelligent format selection:</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Format selection</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">formats = []
+for width, height in ((640, 360), (960, 540), (1280, 720)):
+    video_data = self._call_api(
+        course_slug, 'selectedVideo', video_slug, height)['selectedVideo']
+
+    video_url_data = video_data.get('url') or {}
+    progressive_url = video_url_data.get('progressiveUrl')
+    if progressive_url:
+        formats.append({
+            'format_id': f'progressive-{height}p',
+            'url': progressive_url,
+            'ext': 'mp4',
+            'height': height,
+            'width': width,
+            'source_preference': 1,
+        })
+
+    # Audio-only format support
+    audio_url = video_data.get('audio', {}).get('progressiveUrl')
+    if audio_url:
+        formats.append({
+            'abr': 64,
+            'ext': 'm4a',
+            'format_id': 'audio',
+            'url': audio_url,
+            'vcodec': 'none',
+        })</code></pre>
+        </div>
+
+        <h2>📱 LinkedIn Posts Video Extraction</h2>
+
+        <h3>URL Pattern Recognition & Processing</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>URL Type</th>
+                    <th>Pattern</th>
+                    <th>Example</th>
+                    <th>Processing Method</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>User Posts</td>
+                    <td>/posts/username-postid-hash</td>
+                    <td>linkedin.com/posts/user-123456-abcd</td>
+                    <td>Video attributes extraction</td>
+                </tr>
+                <tr>
+                    <td>Activity Feed</td>
+                    <td>/feed/update/urn:li:activity:id</td>
+                    <td>Activity URN processing</td>
+                    <td>JSON-LD parsing</td>
+                </tr>
+                <tr>
+                    <td>Learning Videos</td>
+                    <td>/learning/course/video</td>
+                    <td>API-based extraction</td>
+                    <td>Multi-resolution support</td>
+                </tr>
+                <tr>
+                    <td>Live Events</td>
+                    <td>/events/event-id</td>
+                    <td>Real-time stream handling</td>
+                    <td>HLS/Progressive streams</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Video Data Extraction from Posts</h3>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Post extraction</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">def _real_extract(self, url):
+    video_id = self._match_id(url)
+    webpage = self._download_webpage(url, video_id)
+
+    video_attrs = extract_attributes(self._search_regex(r'(&lt;video[^&gt;]+&gt;)', webpage, 'video'))
+    sources = self._parse_json(video_attrs['data-sources'], video_id)
+    formats = [{
+        'url': source['src'],
+        'ext': mimetype2ext(source.get('type')),
+        'tbr': float_or_none(source.get('data-bitrate'), scale=1000),
+    } for source in sources]
+
+    subtitles = {'en': [{
+        'url': video_attrs['data-captions-url'],
+        'ext': 'vtt',
+    }]} if url_or_none(video_attrs.get('data-captions-url')) else {}
+
+    return {
+        'id': video_id,
+        'formats': formats,
+        'title': self._og_search_title(webpage, default=None) or self._html_extract_title(webpage),
+        'like_count': int_or_none(self._search_regex(
+            r'\bdata-num-reactions="(\d+)"', webpage, 'reactions', default=None)),
+        'uploader': traverse_obj(
+            self._yield_json_ld(webpage, video_id),
+            (lambda _, v: v['@type'] == 'SocialMediaPosting', 'author', 'name', {str}), get_all=False),
+        'thumbnail': self._og_search_thumbnail(webpage),
+        'description': self._og_search_description(webpage, default=None),
+        'subtitles': subtitles,
+    }</code></pre>
+        </div>
+
+        <h2>🎓 LinkedIn Learning Advanced Features</h2>
+
+        <h3>1. Transcript Processing System</h3>
+        <p>LinkedIn Learning provides detailed transcripts that are converted to SRT format:</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Transcript conversion</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">def json2srt(self, transcript_lines, duration=None):
+    srt_data = ''
+    for line, (line_dict, next_dict) in enumerate(itertools.zip_longest(transcript_lines,
+                                                                      transcript_lines[1:])):
+        start_time, caption = line_dict['transcriptStartAt'] / 1000, line_dict['caption']
+        end_time = next_dict['transcriptStartAt'] / 1000 if next_dict else duration or start_time + 1
+        srt_data += (
+            f'{line + 1}\n'
+            f'{srt_subtitles_timecode(start_time)} --&gt; {srt_subtitles_timecode(end_time)}\n'
+            f'{caption}\n\n')
+    return srt_data
+
+# Usage in extraction
+transcript_lines = try_get(video_data, lambda x: x['transcript']['lines'], expected_type=list)
+if transcript_lines:
+    subtitles['en'] = [{
+        'ext': 'srt',
+        'data': self.json2srt(transcript_lines, duration),
+    }]</code></pre>
+        </div>
+
+        <h3>2. Course Structure Management</h3>
+        <p>LinkedIn Learning courses are organized hierarchically with chapters and videos:</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Course structure</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">def _real_extract(self, url):
+    course_slug = self._match_id(url)
+    course_data = self._call_api(course_slug, 'chapters,description,title')
+
+    entries = []
+    for chapter_number, chapter in enumerate(course_data.get('chapters', []), 1):
+        chapter_title = chapter.get('title')
+        chapter_id = self._get_urn_id(chapter)
+        for video in chapter.get('videos', []):
+            video_slug = video.get('slug')
+            if not video_slug:
+                continue
+            entries.append({
+                '_type': 'url_transparent',
+                'id': self._get_video_id(video, course_slug, video_slug),
+                'title': video.get('title'),
+                'url': f'https://www.linkedin.com/learning/{course_slug}/{video_slug}',
+                'chapter': chapter_title,
+                'chapter_number': chapter_number,
+                'chapter_id': chapter_id,
+                'ie_key': LinkedInLearningIE.ie_key(),
+            })
+
+    return self.playlist_result(
+        entries, course_slug,
+        course_data.get('title'),
+        course_data.get('description'))</code></pre>
+        </div>
+
+        <h2>🎥 LinkedIn Events Live Streaming</h2>
+
+        <h3>Live Event State Management</h3>
+        <p>LinkedIn Events supports different live states with appropriate handling:</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Live status handling</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">live_status = {
+    'PAST': 'was_live',
+    'ONGOING': 'is_live',
+    'FUTURE': 'is_upcoming',
+}.get(meta_data.get('lifecycleState'))
+
+if live_status == 'is_upcoming':
+    if event_time := traverse_obj(meta_data, ('displayEventTime', {str})):
+        message = f'This live event is scheduled for {event_time}'
+    else:
+        message = 'This live event has not yet started'
+    self.raise_no_formats(message, expected=True, video_id=event_id)</code></pre>
+        </div>
+
+        <h3>Multi-Format Stream Processing</h3>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Stream processing</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">formats, subtitles = [], {}
+# Progressive stream handling
+for prog_fmts in traverse_obj(player_data, ('progressiveStreams', ..., {dict})):
+    for fmt_url in traverse_obj(prog_fmts, ('streamingLocations', ..., 'url', {url_or_none})):
+        formats.append({
+            'url': fmt_url,
+            **traverse_obj(prog_fmts, {
+                'width': ('width', {int_or_none}),
+                'height': ('height', {int_or_none}),
+                'tbr': ('bitRate', {int_or_none(scale=1000)}),
+                'filesize': ('size', {int_or_none}),
+                'ext': ('mediaType', {mimetype2ext}),
+            }),
+        })
+
+# HLS stream processing
+for m3u8_url in traverse_obj(player_data, (
+        'adaptiveStreams', lambda _, v: v['protocol'] == 'HLS', 'masterPlaylists', ..., 'url', {url_or_none},
+)):
+    fmts, subs = self._extract_m3u8_formats_and_subtitles(
+        m3u8_url, event_id, 'mp4', m3u8_id='hls', fatal=False)
+    formats.extend(fmts)
+    self._merge_subtitles(subs, target=subtitles)</code></pre>
+        </div>
+
+        <h2>🛡️ Authentication & Security Features</h2>
+
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h4>🔐 Session Management</h4>
+                <p>Persistent login state across multiple extractor instances</p>
+            </div>
+            <div class="tech-item">
+                <h4>🎫 CSRF Protection</h4>
+                <p>Automatic CSRF token extraction and header management</p>
+            </div>
+            <div class="tech-item">
+                <h4>🍪 Cookie Authentication</h4>
+                <p>Support for both manual login and cookie-based auth</p>
+            </div>
+            <div class="tech-item">
+                <h4>🔒 Premium Content</h4>
+                <p>Proper handling of LinkedIn Learning subscription requirements</p>
+            </div>
+        </div>
+
+        <h3>Enterprise-Grade Security Implementation</h3>
+
+        <div class="warning-box">
+            <strong>Authentication Requirements:</strong> LinkedIn Events specifically requires li_at cookie
+            authentication, making it essential for users to be properly logged in through their browser.
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Authentication check</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers">def _real_initialize(self):
+    if not self._get_cookies('https://www.linkedin.com/').get('li_at'):
+        self.raise_login_required()</code></pre>
+        </div>
+
+        <h2>📊 Content Type Classification</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Content Type</th>
+                    <th>Authentication Level</th>
+                    <th>API Access</th>
+                    <th>Format Support</th>
+                    <th>Special Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Public Posts</td>
+                    <td>Optional</td>
+                    <td>Webpage scraping</td>
+                    <td>MP4, WebM</td>
+                    <td>Captions, reactions</td>
+                </tr>
+                <tr>
+                    <td>Learning Videos</td>
+                    <td>Required</td>
+                    <td>Learning API</td>
+                    <td>MP4, M4A, HLS</td>
+                    <td>Transcripts, chapters</td>
+                </tr>
+                <tr>
+                    <td>Learning Courses</td>
+                    <td>Required</td>
+                    <td>Learning API</td>
+                    <td>Playlist</td>
+                    <td>Course structure</td>
+                </tr>
+                <tr>
+                    <td>Live Events</td>
+                    <td>Required</td>
+                    <td>Events API</td>
+                    <td>HLS, Progressive</td>
+                    <td>Live status, timestamps</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>⚡ Performance Optimizations</h2>
+
+        <h3>1. Intelligent Format Selection</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Format sorting</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers"># Custom format sorting for Learning content
+'_format_sort_fields': ('res', 'source_preference'),</code></pre>
+        </div>
+
+        <h3>2. Efficient API Usage</h3>
+        <p>The system minimizes API calls by requesting multiple fields in single requests:</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - API optimization</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers"># Single API call for course structure
+course_data = self._call_api(course_slug, 'chapters,description,title')
+
+# Resolution-specific video data requests
+video_data = self._call_api(course_slug, 'selectedVideo', video_slug, height)</code></pre>
+        </div>
+
+        <h2>🔍 Error Handling & Edge Cases</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Error Scenario</th>
+                    <th>Detection Method</th>
+                    <th>Handling Strategy</th>
+                    <th>User Experience</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Authentication Failure</td>
+                    <td>Error message parsing</td>
+                    <td>Clear error reporting</td>
+                    <td>Login guidance</td>
+                </tr>
+                <tr>
+                    <td>Premium Content</td>
+                    <td>JSESSIONID validation</td>
+                    <td>Login requirement</td>
+                    <td>Subscription notice</td>
+                </tr>
+                <tr>
+                    <td>Upcoming Events</td>
+                    <td>Lifecycle state check</td>
+                    <td>Schedule information</td>
+                    <td>Event timing details</td>
+                </tr>
+                <tr>
+                    <td>Private Content</td>
+                    <td>Access restriction</td>
+                    <td>Permission error</td>
+                    <td>Privacy notice</td>
+                </tr>
+                <tr>
+                    <td>Invalid URLs</td>
+                    <td>Pattern validation</td>
+                    <td>Format suggestion</td>
+                    <td>URL correction help</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>📈 Advanced Metadata Processing</h2>
+
+        <h3>Rich Metadata Extraction</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span>Python - Metadata extraction</span>
+                <span class="code-language">Python</span>
+            </div>
+            <pre><code class="language-python line-numbers"># LinkedIn Learning metadata
+return {
+    'id': self._get_video_id(video_data, course_slug, video_slug),
+    'title': title,
+    'formats': formats,
+    'thumbnail': video_data.get('defaultThumbnail'),
+    'timestamp': float_or_none(video_data.get('publishedOn'), 1000),
+    'duration': duration,
+    'subtitles': subtitles,
+}
+
+# LinkedIn Events metadata
+**traverse_obj(meta_data, {
+    'title': ('name', {str}),
+    'description': ('description', 'text', {str}),
+    'timestamp': ('createdAt', {int_or_none(scale=1000)}),
+    'release_timestamp': ('timeRange', 'start', {int_or_none(scale=1000)}),
+}),
+**traverse_obj(player_data, {
+    'duration': ('duration', {int_or_none(scale=1000)}),
+    'release_timestamp': ('liveStreamCreatedAt', {int_or_none(scale=1000)}),
+}),</code></pre>
+        </div>
+
+        <h2>🎯 Best Practices & Recommendations</h2>
+
+        <div class="info-box">
+            <h4>For Developers:</h4>
+            <ul>
+                <li><strong>Session Persistence:</strong> Implement proper session management across extractor instances
+                </li>
+                <li><strong>CSRF Handling:</strong> Always extract and include CSRF tokens for API requests</li>
+                <li><strong>Content Classification:</strong> Properly detect and handle different LinkedIn content types
+                </li>
+                <li><strong>Authentication Flow:</strong> Support multiple authentication methods (cookies, manual
+                    login)</li>
+                <li><strong>Error Context:</strong> Provide clear error messages for different failure scenarios</li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h4>Performance Tips:</h4>
+            <ul>
+                <li>Cache authentication state across multiple video extractions</li>
+                <li>Use batch API requests for course content when possible</li>
+                <li>Implement proper format preference based on content type</li>
+                <li>Handle live event states appropriately to avoid unnecessary requests</li>
+                <li>Optimize transcript processing for large educational content</li>
+            </ul>
+        </div>
+
+        <h2>🔮 Future Considerations</h2>
+
+        <p>LinkedIn's professional video platform continues to evolve with several emerging trends:</p>
+
+        <ul>
+            <li><strong>Enhanced Security:</strong> Increasing sophistication in anti-bot measures and authentication
+            </li>
+            <li><strong>Live Features:</strong> Expansion of live streaming capabilities for professional events</li>
+            <li><strong>Mobile Optimization:</strong> Better support for mobile-specific video formats</li>
+            <li><strong>AI Integration:</strong> Automated transcript generation and content analysis</li>
+            <li><strong>Enterprise Features:</strong> Advanced content protection for corporate learning materials</li>
+        </ul>
+
+        <div class="highlight">
+            <strong>Conclusion:</strong> LinkedIn's video extraction system in yt-dlp demonstrates sophisticated
+            engineering for handling professional-grade content platforms. The implementation showcases enterprise-level
+            authentication, multi-format support, and intelligent content classification that serves as a model for
+            other business-focused video platforms.
+        </div>
+    </div>
+
+    <!-- Prism.js scripts for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+</body>
+
+</html>

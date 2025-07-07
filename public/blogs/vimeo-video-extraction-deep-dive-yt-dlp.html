@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vimeo Video Extraction Deep Dive: yt-dlp's Engineering and Reverse Engineering</title>
+    <meta name="description"
+        content="In-depth technical analysis of yt-dlp's Vimeo extractor, covering config discovery, authentication, DASH/HLS, password protection, and anti-bot strategies.">
+    <meta name="keywords"
+        content="yt-dlp, Vimeo, video extraction, DASH, HLS, password protection, reverse engineering, technical analysis">
+    <meta name="author" content="yt-dlp Technical Analysis">
+    <meta property="og:title" content="Vimeo Video Extraction Deep Dive: yt-dlp's Engineering and Reverse Engineering">
+    <meta property="og:description"
+        content="Technical deep-dive into yt-dlp's Vimeo extractor, including config discovery, authentication, DASH/HLS, password protection, and anti-bot strategies.">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Vimeo Video Extraction Deep Dive: yt-dlp's Engineering and Reverse Engineering">
+    <meta name="twitter:description" content="yt-dlp Vimeo extractor implementation details and technical analysis.">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.7;
+            color: #222;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1ab7ea, #162221 90%);
+            color: #fff;
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .header p {
+            margin: 1.2rem 0 0 0;
+            font-size: 1.15rem;
+            opacity: 0.95;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #1ab7ea;
+            color: #fff;
+            padding: 0.3rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 0.2rem;
+            font-weight: 600;
+        }
+
+        .content {
+            background: #fff;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+            margin-bottom: 2rem;
+        }
+
+        h2 {
+            color: #1ab7ea;
+            border-bottom: 3px solid #1ab7ea;
+            padding-bottom: 0.5rem;
+            margin-top: 2.5rem;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        h3 {
+            color: #162221;
+            margin-top: 2rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .code-block {
+            background: #23272e;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.97rem;
+            line-height: 1.5;
+        }
+
+        .explanation {
+            background: #e3f7fa;
+            border-left: 4px solid #1ab7ea;
+            border-radius: 6px;
+            padding: 1.2rem;
+            margin: 1.2rem 0;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: #fff;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .table th {
+            background: #e3f7fa;
+            font-weight: 700;
+        }
+
+        .table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            border-left: 4px solid #ffe066;
+            border-radius: 6px;
+            padding: 1.2rem;
+            margin: 1.2rem 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            background: #162221;
+            color: #fff;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+
+        a {
+            color: #1ab7ea;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    
+.blog-navigation {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.blog-index-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #85C341;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.blog-index-link:hover {
+    background-color: #6c9a33;
+}
+</style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Vimeo Video Extraction Deep Dive</h1>
+<div class="blog-navigation">
+    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+</div>
+
+        <p>yt-dlp's Engineering, Reverse Engineering, and Platform Adaptation</p>
+        <div>
+            <span class="badge">Config Discovery</span>
+            <span class="badge">DASH/HLS Streaming</span>
+            <span class="badge">Password Protection</span>
+            <span class="badge">Anti-Bot Evasion</span>
+            <span class="badge">Authentication</span>
+        </div>
+    </div>
+    <div class="content">
+        <h2>Introduction: Vimeo's Extraction Landscape</h2>
+        <p>Vimeo is a leading video hosting platform with a strong focus on privacy, creative content, and advanced
+            streaming technologies. Its infrastructure presents unique challenges for video extraction, including
+            dynamic config URLs, password-protected content, multiple streaming protocols (DASH, HLS), and anti-bot
+            mechanisms. yt-dlp's Vimeo extractor is a robust, multi-layered solution that adapts to these challenges
+            through a combination of web scraping, API emulation, and protocol analysis.</p>
+        <div class="explanation">
+            <strong>Key Technical Challenges:</strong>
+            <ul>
+                <li>Dynamic config discovery and parsing</li>
+                <li>Authentication and session management</li>
+                <li>Password-protected and private video handling</li>
+                <li>DASH/HLS manifest parsing and adaptive streaming</li>
+                <li>Anti-bot and rate-limiting countermeasures</li>
+            </ul>
+        </div>
+        <h2>Architecture Overview: Modular Extraction Pipeline</h2>
+        <h3>1. URL Pattern Recognition</h3>
+        <p>Vimeo supports a wide range of URL formats, including direct, embedded, channel, and showcase links. The
+            extractor uses a highly flexible regex to match all supported patterns, ensuring compatibility with both
+            public and private content.</p>
+        <div class="code-block">
+            # Simplified _VALID_URL pattern
+            _VALID_URL = r"""(?x)
+            https?://
+            (?:www|player)?\.vimeo\.com/
+            (?:user|channels|album|showcase)?/?
+            (?:videos?/)?(?P<id>[0-9]+)
+                (?:/(?P<unlisted_hash>[\da-f]{10}))?
+                    """
+        </div>
+        <div class="explanation">
+            <strong>Pattern Analysis:</strong> The regex supports user, channel, album, showcase, and embedded video
+            URLs, as well as unlisted hash support for private sharing.
+        </div>
+        <h3>2. Config Discovery and Parsing</h3>
+        <p>Vimeo stores video metadata and streaming URLs in a JSON config object, which is dynamically embedded in the
+            page or fetched via a config URL. The extractor implements multiple strategies to locate and parse this
+            config:</p>
+        <div class="code-block">
+            def _extract_vimeo_config(self, webpage, video_id):
+            # Try to find config JSON in the page
+            vimeo_config = self._search_regex(
+            r'vimeo\.config\s*=\s*({.+?})',
+            webpage, 'vimeo config', default=None)
+            if vimeo_config:
+            return self._parse_json(vimeo_config, video_id)
+            # Fallback: look for data-config-url attribute
+            config_url = self._html_search_regex(
+            r'\bdata-config-url="([^"]+)"',
+            webpage, 'config URL', default=None)
+            if config_url:
+            return self._download_json(config_url, video_id)
+        </div>
+        <div class="explanation">
+            <strong>Config Discovery:</strong> The extractor first tries to parse the config directly from the page. If
+            not found, it falls back to fetching the config from a dedicated endpoint, ensuring resilience against
+            frontend changes.
+        </div>
+        <h3>3. Authentication and Password Protection</h3>
+        <p>Vimeo supports both account-based authentication and per-video password protection. The extractor handles
+            both cases:</p>
+        <div class="code-block">
+            def _perform_login(self, username, password):
+            viewer = self._fetch_viewer_info()
+            data = {
+            'action': 'login',
+            'email': username,
+            'password': password,
+            'service': 'vimeo',
+            'token': viewer['xsrft'],
+            }
+            self._set_vimeo_cookie('vuid', viewer['vuid'])
+            self._download_webpage(self._LOGIN_URL, None, data=urlencode_postdata(data))
+
+            def _verify_video_password(self, video_id):
+            video_password = self._get_video_password()
+            token = self._fetch_viewer_info(video_id)['xsrft']
+            url = f'https://vimeo.com/{video_id}/password'
+            self._request_webpage(url, video_id, data=json.dumps({'password': video_password, 'token': token}))
+        </div>
+        <div class="explanation">
+            <strong>Authentication Flow:</strong> The extractor manages session cookies, CSRF tokens, and password
+            submission, mimicking browser behavior to bypass access restrictions.
+        </div>
+        <h3>4. DASH and HLS Streaming Extraction</h3>
+        <p>Vimeo delivers high-quality video using adaptive streaming protocols. The extractor parses both DASH and HLS
+            manifests, supporting a wide range of devices and network conditions:</p>
+        <div class="code-block">
+            def _parse_streams(self, config, video_id):
+            formats = []
+            # DASH
+            dash_url = try_get(config, lambda x:
+            x['request']['files']['dash']['cdns']['akfire_interconnect_quic']['url'])
+            if dash_url:
+            formats.extend(self._extract_mpd_formats(dash_url, video_id))
+            # HLS
+            hls_url = try_get(config, lambda x: x['request']['files']['hls']['cdns']['akfire_interconnect_quic']['url'])
+            if hls_url:
+            formats.extend(self._extract_m3u8_formats(hls_url, video_id, 'mp4'))
+            # Progressive
+            for f in try_get(config, lambda x: x['request']['files']['progressive'], list) or []:
+            formats.append({
+            'url': f['url'],
+            'format_id': f.get('quality'),
+            'height': int_or_none(f.get('height')),
+            'width': int_or_none(f.get('width')),
+            })
+            return formats
+        </div>
+        <div class="explanation">
+            <strong>Streaming Protocols:</strong> The extractor supports all major streaming types, prioritizing DASH
+            and HLS for adaptive playback, and falling back to progressive MP4 when necessary.
+        </div>
+        <h3>5. Anti-Bot and Rate Limiting Countermeasures</h3>
+        <p>Vimeo employs anti-bot techniques such as TLS fingerprinting and rate limiting. The extractor adapts by
+            mimicking browser headers, handling HTTP errors, and providing actionable error messages:</p>
+        <div class="highlight">
+            <strong>Anti-Bot Strategies:</strong>
+            <ul>
+                <li>Custom User-Agent and Referer headers</li>
+                <li>Session cookie management</li>
+                <li>Fallback to HTTP if HTTPS is blocked by TLS fingerprinting</li>
+                <li>Clear error reporting for privacy and access issues</li>
+            </ul>
+        </div>
+        <h2>Technical Table: Extraction Pipeline Overview</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Stage</th>
+                    <th>Purpose</th>
+                    <th>Key Implementation</th>
+                    <th>Resilience</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>URL Matching</td>
+                    <td>Identify all supported Vimeo URLs</td>
+                    <td>Regex with verbose mode</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td>Config Discovery</td>
+                    <td>Find video metadata and stream URLs</td>
+                    <td>Regex, HTML attribute, fallback endpoint</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td>Authentication</td>
+                    <td>Bypass login and password protection</td>
+                    <td>Session cookies, CSRF tokens, password POST</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td>Streaming Extraction</td>
+                    <td>Parse DASH, HLS, and MP4 formats</td>
+                    <td>Manifest parsing, format prioritization</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td>Anti-Bot Handling</td>
+                    <td>Evade rate limits and TLS blocks</td>
+                    <td>Header spoofing, error handling, HTTP fallback</td>
+                    <td>Medium</td>
+                </tr>
+            </tbody>
+        </table>
+        <h2>Conclusion: Engineering Lessons</h2>
+        <p>yt-dlp's Vimeo extractor demonstrates the power of modular, adaptive engineering in the face of a rapidly
+            evolving video platform. By combining robust config discovery, advanced authentication handling, and
+            comprehensive streaming protocol support, it remains effective against Vimeo's technical and policy-based
+            defenses. The implementation serves as a blueprint for resilient video extraction in the modern web era.</p>
+    </div>
+    <div class="footer">
+        <p><strong>yt-dlp Vimeo Extractor Technical Analysis</strong></p>
+        <p>Deep dive into config discovery, streaming protocols, and anti-bot strategies</p>
+        <p><em>Supporting the open-source community with technical insights and educational content</em></p>
+    </div>
+</body>
+
+</html>

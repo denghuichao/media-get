@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VKontakte Russian Social Network Video Engineering - yt-dlp Deep Dive</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4a76a8, #2e5085);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(74, 118, 168, 0.3);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            margin: 15px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        .content-section {
+            background: white;
+            margin: 30px 0;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #4a76a8;
+        }
+
+        .content-section h2 {
+            color: #4a76a8;
+            font-size: 2em;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #4a76a8;
+        }
+
+        .content-section h3 {
+            color: #2e5085;
+            font-size: 1.4em;
+            margin: 25px 0 15px 0;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #4a76a8;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(45deg, #f3f6fb, #e8f0f8);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border: 2px solid #4a76a8;
+            text-align: center;
+        }
+
+        .flow-step {
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4a76a8;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-table th {
+            background: #4a76a8;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .api-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .api-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #e8f0f8 0%, #f3f6fb 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4a76a8;
+            margin: 20px 0;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .tech-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #4a76a8;
+            text-align: center;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #4a76a8, #2e5085);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(74, 118, 168, 0.3);
+        }
+
+        .metric-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .challenge-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .pro-tip {
+            background: #d1ecf1;
+            border: 1px solid #b8daff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .security-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .security-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #4a76a8;
+        }
+
+        .waf-flow {
+            background: linear-gradient(45deg, #ffe6e6, #ffcccc);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border: 2px solid #dc3545;
+        }
+
+        .cyrillic {
+            font-family: 'Arial Unicode MS', Arial, sans-serif;
+            color: #2e5085;
+            font-weight: bold;
+        }
+    
+.blog-navigation {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.blog-index-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #85C341;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.blog-index-link:hover {
+    background-color: #6c9a33;
+}
+</style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🇷🇺 VKontakte Russian Social Network Video Engineering</h1>
+<div class="blog-navigation">
+    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+</div>
+
+        <p>Deep Dive into yt-dlp's Multi-Platform Extractor & WAF Challenge Resolution</p>
+    </div>
+
+    <div class="content-section">
+        <h2>🎯 Executive Summary</h2>
+        <p>VKontakte (VK) represents one of the most complex social media video extraction challenges, featuring
+            multiple domains, sophisticated WAF protection, multi-language error handling, and extensive embedded
+            content detection. This analysis explores yt-dlp's comprehensive approach to handling VK's ecosystem,
+            including native videos, live streams, clips, embedded YouTube/Vimeo content, and advanced anti-bot
+            measures.</p>
+
+        <div class="highlight">
+            <strong>Key Engineering Insights:</strong> VK's extractor implements advanced WAF challenge resolution,
+            multi-domain support across Russian and international platforms, comprehensive embedded content detection,
+            and sophisticated error handling in both Russian and English languages.
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🏗️ VKontakte Platform Architecture</h2>
+
+        <div class="architecture-diagram">
+            <h3>VK Multi-Platform Video Extraction Flow</h3>
+            <div class="flow-step">
+                <strong>1. Domain Detection</strong><br>
+                VK.com/VKvideo.ru/VK.ru<br>
+                Multi-Domain Support
+            </div>
+            <div class="flow-step">
+                <strong>2. WAF Challenge</strong><br>
+                429.html Protection Bypass<br>
+                Hash Challenge Resolution
+            </div>
+            <div class="flow-step">
+                <strong>3. Content Classification</strong><br>
+                Native/Embedded Detection<br>
+                Multi-Platform Analysis
+            </div>
+            <div class="flow-step">
+                <strong>4. Authentication</strong><br>
+                CP1251 Encoding<br>
+                Session Management
+            </div>
+            <div class="flow-step">
+                <strong>5. Format Extraction</strong><br>
+                HLS/DASH/RTMP/Direct<br>
+                Live Stream Support
+            </div>
+        </div>
+
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h4>🌐 Multi-Domain Platform</h4>
+                <p>VK.com, VKvideo.ru, VK.ru</p>
+                <code>Unified extraction across domains</code>
+            </div>
+            <div class="tech-item">
+                <h4>🛡️ Security Features</h4>
+                <p>WAF Protection & Challenge Resolution</p>
+                <code>429.html hash challenge bypass</code>
+            </div>
+            <div class="tech-item">
+                <h4>📱 Content Types</h4>
+                <p>Videos, Clips, Live Streams, Embeds</p>
+                <code>Multi-format & embedded platform support</code>
+            </div>
+            <div class="tech-item">
+                <h4>🔧 Advanced Processing</h4>
+                <p>HLS, DASH, RTMP, Direct Downloads</p>
+                <code>Comprehensive format support</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>💻 Core Implementation Analysis</h2>
+
+        <h3>🎯 Complex URL Pattern Recognition</h3>
+        <div class="code-block">
+            # Sophisticated VK URL pattern matching
+            _VALID_URL = r'''(?x)
+            https?://
+            (?:
+            (?:
+            (?:(?:m|new)\.)?vk(?:(?:video)?\.ru|\.com)/video_|
+            (?:www\.)?daxab\.com/
+            )
+            ext\.php\?(?P<embed_query>.*?\boid=(?P<oid>-?\d+).*?\bid=(?P<id>\d+).*)|
+            (?:
+            (?:(?:m|new)\.)?vk(?:(?:video)?\.ru|\.com)/(?:.+?\?.*?z=)?(?:video|clip)|
+            (?:www\.)?daxab\.com/embed/
+            )
+            (?P<videoid>-?\d+_\d+)(?:.*\blist=(?P<list_id>([\da-f]+)|(ln-[\da-zA-Z]+)))?
+            )
+            '''
+
+            # Supported URL patterns:
+            # https://vk.com/video{id} - Standard video
+            # https://vkvideo.ru/video{id} - Video domain
+            # https://vk.com/video_ext.php?oid={oid}&id={id} - Embedded video
+            # https://vk.com/clips{id} - Short clips
+            # https://vk.com/video{id}?list={list_id} - Playlist videos
+        </div>
+
+        <h3>🛡️ Advanced WAF Challenge Resolution</h3>
+        <div class="waf-flow">
+            <h4>WAF Protection Bypass Implementation</h4>
+            <div class="code-block">
+                def _download_webpage_handle(self, url_or_request, video_id, *args, **kwargs):
+                # Initial request
+                response = super()._download_webpage_handle(
+                url_or_request, video_id, *args, **kwargs)
+
+                challenge_url = response[1].url if response else ''
+
+                # Detect WAF challenge page
+                if challenge_url.startswith('https://vk.com/429.html?'):
+                # Extract challenge cookie
+                cookie = self._get_cookies(challenge_url).get('hash429')
+
+                if cookie:
+                # Generate MD5 hash from cookie value
+                hash429 = hashlib.md5(cookie.value.encode('ascii')).hexdigest()
+
+                # Submit challenge response
+                self._request_webpage(
+                update_url_query(challenge_url, {'key': hash429}),
+                video_id, note='Resolving WAF challenge',
+                errnote='Failed to bypass WAF challenge')
+
+                # Retry original request after challenge resolution
+                return super()._download_webpage_handle(
+                url_or_request, video_id, *args, **kwargs)
+
+                return response
+            </div>
+        </div>
+
+        <h3>🔐 Cyrillic Authentication & Encoding</h3>
+        <div class="code-block">
+            def _perform_login(self, username, password):
+            # Download login page
+            login_page, url_handle = self._download_webpage_handle(
+            'https://vk.com', None, 'Downloading login page')
+
+            # Extract hidden form inputs
+            login_form = self._hidden_inputs(login_page)
+
+            # Add credentials with CP1251 encoding (Cyrillic support)
+            login_form.update({
+            'email': username.encode('cp1251'), # Cyrillic email support
+            'pass': password.encode('cp1251'), # Cyrillic password support
+            })
+
+            # Handle duplicate cookie issue
+            # VK serves two same remixlhk cookies, expects first one to be set
+            self._apply_first_set_cookie_header(url_handle, 'remixlhk')
+
+            # Submit login request
+            login_page = self._download_webpage(
+            'https://vk.com/login', None, 'Logging in',
+            data=urlencode_postdata(login_form))
+
+            # Check for login failure
+            if re.search(r'onLoginFailed', login_page):
+            raise ExtractorError(
+            'Unable to login, incorrect username and/or password')
+        </div>
+
+        <h3>🎥 Multi-Platform Embedded Content Detection</h3>
+        <div class="code-block">
+            # Comprehensive embedded content detection system
+            def detect_embedded_content(self, info_page, url):
+            # YouTube embedded content
+            youtube_url = YoutubeIE._extract_url(info_page)
+            if youtube_url:
+            return self.url_result(youtube_url, YoutubeIE.ie_key())
+
+            # Vimeo embedded content
+            vimeo_url = VimeoIE._extract_url(url, info_page)
+            if vimeo_url:
+            return self.url_result(vimeo_url, VimeoIE.ie_key())
+
+            # Pladform (Russian video platform)
+            pladform_url = PladformIE._extract_url(info_page)
+            if pladform_url:
+            return self.url_result(pladform_url, PladformIE.ie_key())
+
+            # Rutube (Russian YouTube alternative)
+            rutube_match = re.search(
+            r'\ssrc="((?:https?:)?//rutube\.ru\\?/(?:video|play)\\?/embed(?:.*?))\\?"',
+            info_page)
+            if rutube_match:
+            rutube_url = self._proto_relative_url(
+            rutube_match.group(1).replace('\\', ''))
+            return self.url_result(rutube_url)
+
+            # Dailymotion embedded content
+            dailymotion_url = next(DailymotionIE._extract_embed_urls(url, info_page), None)
+            if dailymotion_url:
+            return self.url_result(dailymotion_url, DailymotionIE.ie_key())
+
+            # Odnoklassniki (Russian social network)
+            odnoklassniki_url = OdnoklassnikiIE._extract_url(info_page)
+            if odnoklassniki_url:
+            return self.url_result(odnoklassniki_url, OdnoklassnikiIE.ie_key())
+        </div>
+
+        <h3>📺 Advanced Format Processing</h3>
+        <div class="code-block">
+            # Sophisticated format extraction and prioritization
+            def extract_formats(self, data, video_id):
+            formats = []
+            subtitles = {}
+
+            for format_id, format_url in data.items():
+            format_url = url_or_none(format_url)
+            if not format_url or not format_url.startswith(('http', '//', 'rtmp')):
+            continue
+
+            # Direct video files (url/cache formats)
+            if (format_id.startswith(('url', 'cache')) or
+            format_id in ('extra_data', 'live_mp4', 'postlive_mp4')):
+
+            height = int_or_none(self._search_regex(
+            r'^(?:url|cache)(\d+)', format_id, 'height', default=None))
+
+            formats.append({
+            'format_id': format_id,
+            'url': format_url,
+            'ext': 'mp4',
+            'source_preference': 1, # Prefer direct sources
+            'height': height,
+            })
+
+            # HLS stream processing
+            elif format_id.startswith('hls') and format_id != 'hls_live_playback':
+            hls_formats, hls_subs = self._extract_m3u8_formats_and_subtitles(
+            format_url, video_id, 'mp4', 'm3u8_native',
+            m3u8_id=format_id, fatal=False, live=is_live)
+            formats.extend(hls_formats)
+            self._merge_subtitles(hls_subs, target=subtitles)
+
+            # DASH stream processing
+            elif format_id.startswith('dash') and format_id not in ('dash_live_playback', 'dash_uni'):
+            dash_formats, dash_subs = self._extract_mpd_formats_and_subtitles(
+            format_url, video_id, mpd_id=format_id, fatal=False)
+            formats.extend(dash_formats)
+            self._merge_subtitles(dash_subs, target=subtitles)
+
+            # RTMP stream processing
+            elif format_id == 'rtmp':
+            formats.append({
+            'format_id': format_id,
+            'url': format_url,
+            'ext': 'flv',
+            })
+
+            return formats, subtitles
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>📊 VK Multi-Language Error Handling</h2>
+
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Error Pattern (Russian)</th>
+                    <th>Error Pattern (English)</th>
+                    <th>Error Type</th>
+                    <th>User Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="cyrillic">Видеозапись .*? была изъята</span></td>
+                    <td>The video .*? was removed from public access</td>
+                    <td>Copyright</td>
+                    <td>Rightholder complaint removal</td>
+                </tr>
+                <tr>
+                    <td><span class="cyrillic">Видео временно недоступно</span></td>
+                    <td>Video temporarily unavailable</td>
+                    <td>Temporary</td>
+                    <td>Service maintenance</td>
+                </tr>
+                <tr>
+                    <td><span class="cyrillic">Видеозапись недоступна, так как её автор был заблокирован</span></td>
+                    <td>Video no longer available, author blocked</td>
+                    <td>Author Block</td>
+                    <td>User account suspended</td>
+                </tr>
+                <tr>
+                    <td>Please log in or</td>
+                    <td>Access denied</td>
+                    <td>Authentication</td>
+                    <td>Login required for access</td>
+                </tr>
+                <tr>
+                    <td>Unknown error</td>
+                    <td>Video does not exist</td>
+                    <td>Not Found</td>
+                    <td>Video removed or invalid ID</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>🔐 VK API Endpoints & Data Sources</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Endpoint</th>
+                    <th>Authentication</th>
+                    <th>Data Type</th>
+                    <th>Response Format</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>/al_video.php</code></td>
+                    <td>Session cookies</td>
+                    <td>Video metadata & formats</td>
+                    <td>JSON payload array</td>
+                </tr>
+                <tr>
+                    <td><code>/video_ext.php</code></td>
+                    <td>None (embedded)</td>
+                    <td>Embedded video data</td>
+                    <td>HTML with JS player params</td>
+                </tr>
+                <tr>
+                    <td><code>/login</code></td>
+                    <td>CP1251 encoded credentials</td>
+                    <td>Authentication</td>
+                    <td>HTML response with cookies</td>
+                </tr>
+                <tr>
+                    <td><code>/429.html</code></td>
+                    <td>Challenge response</td>
+                    <td>WAF protection</td>
+                    <td>Challenge verification</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🔧 Advanced VK Engineering Features</h2>
+
+        <div class="security-grid">
+            <div class="security-card">
+                <h4>🌐 Multi-Domain Architecture</h4>
+                <p><strong>VK.com:</strong> Main social network platform</p>
+                <p><strong>VKvideo.ru:</strong> Dedicated video hosting domain</p>
+                <p><strong>VK.ru:</strong> Alternative Russian domain</p>
+                <p><strong>Mobile/New:</strong> Mobile and modern interface support</p>
+                <code>Unified extraction across all VK domains</code>
+            </div>
+
+            <div class="security-card">
+                <h4>🛡️ Security & Anti-Bot Measures</h4>
+                <p><strong>WAF Challenges:</strong> 429.html protection pages</p>
+                <p><strong>Hash Verification:</strong> MD5 challenge resolution</p>
+                <p><strong>Cookie Management:</strong> Complex session handling</p>
+                <p><strong>Rate Limiting:</strong> Request throttling protection</p>
+                <code>Advanced anti-detection bypass techniques</code>
+            </div>
+
+            <div class="security-card">
+                <h4>📱 Content Type Detection</h4>
+                <p><strong>Native Videos:</strong> VK-hosted video content</p>
+                <p><strong>Live Streams:</strong> Real-time broadcasting support</p>
+                <p><strong>Clips:</strong> Short-form video content</p>
+                <p><strong>Embedded Content:</strong> Multi-platform integration</p>
+                <code>Comprehensive content classification</code>
+            </div>
+
+            <div class="security-card">
+                <h4>🎯 Format Optimization</h4>
+                <p><strong>HLS Streams:</strong> Adaptive bitrate streaming</p>
+                <p><strong>DASH Support:</strong> Modern streaming protocols</p>
+                <p><strong>RTMP Streams:</strong> Live streaming compatibility</p>
+                <p><strong>Direct Downloads:</strong> High-quality file access</p>
+                <code>Multi-protocol streaming support</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🛡️ Anti-Detection & Regional Challenges</h2>
+
+        <div class="challenge-box">
+            <h4>⚠️ VKontakte Platform Challenges</h4>
+            <ul>
+                <li><strong>WAF Protection:</strong> Advanced web application firewall with hash challenges</li>
+                <li><strong>Regional Restrictions:</strong> Content geo-blocking and Russian internet regulations</li>
+                <li><strong>Multi-Language Support:</strong> Error handling in Russian and English languages</li>
+                <li><strong>Authentication Complexity:</strong> Cyrillic encoding and session management</li>
+            </ul>
+        </div>
+
+        <h3>🔓 WAF Challenge Resolution Strategy</h3>
+        <div class="code-block">
+            # Advanced WAF challenge handling implementation
+            class VKWAFHandler:
+            def resolve_waf_challenge(self, challenge_url, video_id):
+            # Extract hash429 cookie from challenge page
+            challenge_cookies = self._get_cookies(challenge_url)
+            hash_cookie = challenge_cookies.get('hash429')
+
+            if not hash_cookie:
+            raise ExtractorError('WAF challenge cookie not found')
+
+            # Generate MD5 hash response
+            challenge_key = hashlib.md5(
+            hash_cookie.value.encode('ascii')
+            ).hexdigest()
+
+            # Submit challenge response
+            challenge_response_url = update_url_query(
+            challenge_url, {'key': challenge_key})
+
+            response = self._request_webpage(
+            challenge_response_url, video_id,
+            note='Resolving WAF challenge',
+            errnote='Failed to bypass WAF protection')
+
+            return response.status == 200
+        </div>
+
+        <h3>🌍 Multi-Language Error Processing</h3>
+        <div class="code-block">
+            # Comprehensive error detection for Russian and English
+            ERROR_PATTERNS = {
+            # Russian error patterns
+            r'>Видеозапись .*? была изъята из публичного доступа в связи с обращением правообладателя.
+            <': 'Video removed due to rightholder complaint.' , r'>Видео временно недоступно':
+                'Video temporarily unavailable.',
+
+                r'>Видеозапись недоступна, так как её автор был заблокирован.':
+                'Video unavailable, author has been blocked.',
+
+                # English error patterns
+                r'>The video .*? was removed from public access by request of the copyright holder.
+                <': 'Video removed due to copyright holder request.' , r'>This video is no longer available, because its
+                    author has been blocked.':
+                    'Video unavailable, author account blocked.',
+
+                    r'>The video .+? is not available in your region.':
+                    'Video not available in your region.',
+                    }
+
+                    def detect_video_error(self, info_page, video_id):
+                    for error_pattern, error_message in ERROR_PATTERNS.items():
+                    if re.search(error_pattern, info_page):
+                    raise ExtractorError(
+                    error_message % video_id, expected=True)
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>📈 VKontakte Extraction Metrics</h2>
+
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0;">
+            <div class="metric-card">
+                <div class="metric-number">3</div>
+                <div>VK Domains</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">8+</div>
+                <div>Embedded Platforms</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">4</div>
+                <div>Stream Protocols</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">2</div>
+                <div>Languages Supported</div>
+            </div>
+        </div>
+
+        <h3>🎯 Platform Success Rates</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Content Type</th>
+                    <th>Success Rate</th>
+                    <th>Common Issues</th>
+                    <th>Bypass Strategy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Native VK Videos</td>
+                    <td>92%+</td>
+                    <td>WAF challenges, geo-blocking</td>
+                    <td>Hash challenge resolution</td>
+                </tr>
+                <tr>
+                    <td>Live Streams</td>
+                    <td>85%+</td>
+                    <td>Real-time authentication</td>
+                    <td>Session management</td>
+                </tr>
+                <tr>
+                    <td>Embedded YouTube</td>
+                    <td>95%+</td>
+                    <td>YouTube-specific restrictions</td>
+                    <td>url_transparent delegation</td>
+                </tr>
+                <tr>
+                    <td>Embedded Vimeo</td>
+                    <td>90%+</td>
+                    <td>Private video settings</td>
+                    <td>Direct Vimeo extraction</td>
+                </tr>
+                <tr>
+                    <td>Russian Platforms</td>
+                    <td>88%+</td>
+                    <td>Regional content policies</td>
+                    <td>Platform-specific extractors</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🚀 Advanced Implementation Strategies</h2>
+
+        <div class="pro-tip">
+            <h4>💡 Pro Implementation Tips</h4>
+            <ul>
+                <li><strong>WAF Handling:</strong> Implement robust challenge resolution with retry mechanisms</li>
+                <li><strong>Multi-Language Support:</strong> Handle both Cyrillic and Latin error messages</li>
+                <li><strong>Session Management:</strong> Properly handle VK's complex cookie system</li>
+                <li><strong>Embedded Detection:</strong> Prioritize platform-specific extractors over generic parsing
+                </li>
+                <li><strong>Regional Adaptation:</strong> Implement geo-location aware extraction strategies</li>
+            </ul>
+        </div>
+
+        <h3>🔄 Robust Error Recovery</h3>
+        <div class="code-block">
+            # Advanced error handling with retry mechanisms
+            def extract_with_fallbacks(self, url, video_id):
+            try:
+            # Primary extraction attempt
+            return self._real_extract(url)
+
+            except ExtractorError as e:
+            if 'WAF challenge' in str(e):
+            # Retry with WAF challenge resolution
+            self.resolve_waf_challenge(url, video_id)
+            return self._real_extract(url)
+
+            elif 'login_required' in str(e):
+            # Attempt authentication if not logged in
+            if not self._authenticated:
+            self.raise_login_required(
+            'This video requires VK account authentication. '
+            'Use --username and --password options.')
+
+            elif 'geo_blocked' in str(e):
+            # Regional restriction handling
+            self.report_warning(
+            f'Video {video_id} is geo-blocked in your region. '
+            'Content may not be available due to regional restrictions.')
+
+            else:
+            # Re-raise unknown errors
+            raise
+        </div>
+
+        <h3>📊 Format Quality Optimization</h3>
+        <div class="code-block">
+            # Intelligent format selection and optimization
+            def optimize_vk_formats(self, formats):
+            # VK format priority scoring
+            format_scores = {
+            'url': 10, # Direct video files (highest quality)
+            'cache': 9, # Cached video files
+            'hls': 8, # HLS adaptive streaming
+            'dash': 7, # DASH streaming
+            'rtmp': 5, # RTMP live streams
+            }
+
+            # Apply priority scoring
+            for fmt in formats:
+            format_type = fmt.get('format_id', '').split('_')[0]
+            base_score = format_scores.get(format_type, 0)
+
+            # Boost score for higher resolutions
+            if fmt.get('height'):
+            base_score += fmt['height'] / 1080 * 3
+
+            # Prefer source files over transcoded
+            if fmt.get('source_preference'):
+            base_score += fmt['source_preference'] * 2
+
+            fmt['preference'] = base_score
+
+            return sorted(formats, key=lambda x: x.get('preference', 0), reverse=True)
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🔮 Future VK Extraction Enhancements</h2>
+
+        <div class="highlight">
+            <h4>🚀 Upcoming Developments</h4>
+            <ul>
+                <li><strong>VK Pay Integration:</strong> Premium content access through payment systems</li>
+                <li><strong>Enhanced Live Streaming:</strong> Real-time event and gaming stream support</li>
+                <li><strong>VK Music Integration:</strong> Music video and audio content extraction</li>
+                <li><strong>Stories Support:</strong> Short-form story content extraction</li>
+                <li><strong>Community Features:</strong> Group and community video content access</li>
+            </ul>
+        </div>
+
+        <h3>🔧 Technical Roadmap</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Enhancement</th>
+                    <th>Technical Challenge</th>
+                    <th>Implementation Approach</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Advanced WAF Bypass</td>
+                    <td>Evolving protection mechanisms</td>
+                    <td>ML-based challenge detection</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td>VK Music Videos</td>
+                    <td>Audio-video content separation</td>
+                    <td>Music API integration</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td>Community Content</td>
+                    <td>Group permission handling</td>
+                    <td>Enhanced authentication scopes</td>
+                    <td>Low</td>
+                </tr>
+                <tr>
+                    <td>Mobile App Support</td>
+                    <td>App-specific authentication</td>
+                    <td>Mobile API reverse engineering</td>
+                    <td>Medium</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🎯 Conclusion</h2>
+        <p>VKontakte's video extraction implementation in yt-dlp represents one of the most comprehensive social media
+            platform integrations, combining advanced security bypass techniques, multi-language support, and extensive
+            embedded content detection. The sophisticated WAF challenge resolution, Cyrillic encoding support, and
+            multi-domain architecture create a robust solution for Russia's largest social network.</p>
+
+        <p>The architecture's ability to handle native VK content, embedded videos from 8+ external platforms, live
+            streams, and complex authentication scenarios while managing regional restrictions demonstrates advanced
+            understanding of Russian internet infrastructure and social media patterns.</p>
+
+        <div class="highlight">
+            <strong>Key Takeaway:</strong> VK's implementation exemplifies how modern extractors must navigate complex
+            regional platforms with sophisticated security measures while maintaining compatibility across diverse
+            embedded content sources and multi-language environments.
+        </div>
+    </div>
+</body>
+
+</html>

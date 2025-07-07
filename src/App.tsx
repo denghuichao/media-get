@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -15,9 +16,10 @@ import CookieConsent from './components/CookieConsent';
 import SEOHead from './components/SEOHead';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { useTranslation } from 'react-i18next';
+import BlogIndex from './components/BlogIndex';
 
 function App() {
-  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'privacy' | 'terms' | 'disclaimer' | 'about' | 'supported-sites'>('home');
+  const [currentPage, setCurrentPage] = useState<'home' | 'dashboard' | 'privacy' | 'terms' | 'disclaimer' | 'about' | 'supported-sites' | 'blogs'>('home');
   const { t } = useTranslation();
 
   // Listen for hash changes to handle navigation
@@ -36,6 +38,8 @@ function App() {
         setCurrentPage('about');
       } else if (hash === 'supported-sites') {
         setCurrentPage('supported-sites');
+      } else if (hash === 'blogs') {
+        setCurrentPage('blogs');
       } else {
         setCurrentPage('home');
       }
@@ -86,6 +90,12 @@ function App() {
           description: 'Browse all 100+ supported platforms for video, audio, and image downloads with MediaGet.',
           canonicalUrl: 'https://media-get.site/#supported-sites'
         };
+      case 'blogs':
+        return {
+          title: 'Technical Blogs - MediaGet Engineering',
+          description: 'Deep technical insights into video extraction, platform analysis, and yt-dlp engineering.',
+          canonicalUrl: 'https://media-get.site/#blogs'
+        };
       default:
         return {
           title: t('seo.pages.home.title'),
@@ -98,45 +108,35 @@ function App() {
   return (
     <ConfigProvider>
       <SEOHead {...getSEOProps()} />
-      <div className="min-h-screen bg-white">
-        <Header />
-        {currentPage === 'home' ? (
-          <main role="main">
-            <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-8" aria-label="System Status">
-              <SystemStatus />
-            </section>
-            <Hero />
-            <Features />
-            <SupportedSites />
+      <Router>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+          <Header />
+          <main className="flex-grow container mx-auto px-4 py-8">
+            {currentPage === 'blogs' ? (
+              <BlogIndex />
+            ) : (
+              <Routes>
+                <Route path="/" element={
+                  <>
+                    <div id="home"><Hero /></div>
+                    <div id="dashboard"><Dashboard /></div>
+                    <SystemStatus />
+                    <SupportedSites />
+                    <Features />
+                    <div id="about"><AboutAndQuality /></div>
+                    <DisclaimerAndCompliance />
+                  </>
+                } />
+                <Route path="/all-supported-sites" element={<AllSupportedSites />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+              </Routes>
+            )}
           </main>
-        ) : currentPage === 'dashboard' ? (
-          <main role="main" aria-label="Download Dashboard">
-            <Dashboard />
-          </main>
-        ) : currentPage === 'privacy' ? (
-          <main role="main" aria-label="Privacy Policy">
-            <PrivacyPolicy />
-          </main>
-        ) : currentPage === 'terms' ? (
-          <main role="main" aria-label="Terms of Service">
-            <TermsOfService />
-          </main>
-        ) : currentPage === 'disclaimer' ? (
-          <main role="main" aria-label="Disclaimer and Legal Notice">
-            <DisclaimerAndCompliance />
-          </main>
-        ) : currentPage === 'about' ? (
-          <main role="main" aria-label="About MediaGet">
-            <AboutAndQuality />
-          </main>
-        ) : currentPage === 'supported-sites' ? (
-          <main role="main" aria-label="All Supported Sites">
-            <AllSupportedSites />
-          </main>
-        ) : null}
-        <Footer />
-        <CookieConsent />
-      </div>
+          <Footer />
+          <CookieConsent />
+        </div>
+      </Router>
     </ConfigProvider>
   );
 }

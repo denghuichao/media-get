@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rumble Video Platform Engineering: Next-Gen Content Delivery & Live Streaming Architecture</title>
+    <!-- Prism.js CSS for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js languages needed -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-core.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-python.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #85C341, #2E7D32);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        h2 {
+            color: #34495e;
+            border-bottom: 3px solid #85C341;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            color: #16a085;
+            margin-top: 25px;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow-x: auto;
+            border-left: 4px solid #85C341;
+            position: relative;
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            background: none;
+            border: none;
+        }
+
+        .code-block code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #85C341;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #27ae60;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #85C341;
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+        .architecture-diagram {
+            background: #f8f9fa;
+            border: 2px solid #85C341;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .flow-step {
+            background: #85C341;
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .arrow {
+            font-size: 20px;
+            color: #85C341;
+            margin: 0 10px;
+        }
+
+        ul li {
+            margin: 8px 0;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .tech-item {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #85C341;
+        }
+
+        .live-badge {
+            background: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .feature-badge {
+            background: #85C341;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .language-markup {
+            display: none;
+        }
+
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .blog-index-link {
+            background: #85C341;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .blog-index-link:hover {
+            background: #2E7D32;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎥 Rumble Video Platform Engineering: Next-Gen Content Delivery & Live Streaming Architecture</h1>
+
+        <div class="highlight">
+            <strong>Overview:</strong> This comprehensive analysis explores Rumble's modern video platform architecture
+            in yt-dlp, covering advanced live streaming capabilities, multi-format content delivery, timeline video
+            features, and sophisticated embed detection. Rumble represents the next generation of decentralized video
+            platforms with robust technical infrastructure.
+        </div>
+
+        <div class="feature-badge">Live Streaming</div>
+        <div class="feature-badge">Timeline Videos</div>
+        <div class="feature-badge">Multi-Format</div>
+        <div class="feature-badge">HLS Support</div>
+        <div class="live-badge">DVR Capabilities</div>
+        <div class="feature-badge">Subtitles</div>
+
+        <h2>🏗️ Rumble Platform Architecture Overview</h2>
+
+        <div class="architecture-diagram">
+            <h3>yt-dlp Rumble Multi-Service Processing Pipeline</h3>
+            <div class="flow-step">URL Pattern Recognition</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Embed Detection & Extraction</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">API Request & Authentication</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Live Status Classification</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Multi-Format Processing</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">HLS/Progressive Selection</div>
+            <span class="arrow">→</span>
+            <div class="flow-step">Metadata & Subtitle Integration</div>
+        </div>
+
+        <h2>🔧 Core Implementation Analysis</h2>
+
+        <h3>1. Advanced Embed Detection System</h3>
+        <p>Rumble implements sophisticated embed detection supporting multiple integration methods:</p>
+
+        <div class="code-block">
+            <pre><code class="language-python">_EMBED_REGEX = [
+    fr'(?:&lt;(?:script|iframe)[^&gt;]+\bsrc=|["\']embedUrl["\']\s*:\s*)["\'](?P&lt;url&gt;{_VALID_URL})'
+]
+
+@classmethod
+def _extract_embed_urls(cls, url, webpage):
+    embeds = tuple(super()._extract_embed_urls(url, webpage))
+    if embeds:
+        return embeds
+    # Custom JavaScript-based embed detection
+    return [f'https://rumble.com/embed/{mobj.group("id")}' for mobj in re.finditer(
+        r'&lt;script&gt;[^&lt;]*\bRumble\(\s*"play"\s*,\s*{[^}]*[\'"]?video[\'"]?\s*:\s*[\'"](?P&lt;id&gt;[0-9a-z]+)[\'"]',
+        webpage)]</code></pre>
+        </div>
+
+        <div class="info-box">
+            <strong>Embed Intelligence:</strong> The system detects both traditional iframe embeds and modern
+            JavaScript-based Rumble player integrations, ensuring comprehensive embed support across different website
+            implementations.
+        </div>
+
+        <h3>2. Live Streaming State Management</h3>
+        <p>Rumble features sophisticated live streaming with DVR capabilities and multiple states:</p>
+
+        <div class="code-block">
+            <pre><code class="language-python"># Advanced live status determination
+if video.get('live') == 0:
+    live_status = 'not_live' if video.get('livestream_has_dvr') is None else 'was_live'
+elif video.get('live') == 1:
+    live_status = 'is_upcoming' if video.get('livestream_has_dvr') else 'was_live'
+elif video.get('live') == 2:
+    live_status = 'is_live'
+else:
+    live_status = None
+
+# Dynamic live status updates during HLS processing
+if format_type == 'hls':
+    if meta.get('live') is True and video.get('live') == 1:
+        live_status = 'post_live'
+    formats.extend(self._extract_m3u8_formats(
+        video_info['url'], video_id,
+        ext='mp4', m3u8_id='hls', fatal=False, live=live_status == 'is_live'))</code></pre>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Live Code</th>
+                    <th>DVR Status</th>
+                    <th>Final Status</th>
+                    <th>User Experience</th>
+                    <th>Technical Behavior</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>0</td>
+                    <td>None</td>
+                    <td>not_live</td>
+                    <td>Regular video</td>
+                    <td>Standard playback</td>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>Present</td>
+                    <td>was_live</td>
+                    <td>Archived stream</td>
+                    <td>DVR replay available</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>False</td>
+                    <td>was_live</td>
+                    <td>Ended stream</td>
+                    <td>No DVR recording</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>True</td>
+                    <td>is_upcoming</td>
+                    <td>Scheduled stream</td>
+                    <td>Pre-stream state</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Any</td>
+                    <td>is_live</td>
+                    <td>Active stream</td>
+                    <td>Real-time streaming</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>3. Multi-Format Content Processing</h3>
+        <p>Rumble supports diverse content types including timeline videos and audio-only streams:</p>
+
+        <div class="code-block">
+            <pre><code class="language-python">formats = []
+for format_type, format_info in (video.get('ua') or {}).items():
+    if isinstance(format_info, dict):
+        # Handle nested format structures
+        for height, video_info in format_info.items():
+            if not traverse_obj(video_info, ('meta', 'h', {int_or_none})):
+                video_info.setdefault('meta', {})['h'] = height
+        format_info = format_info.values()
+
+    for video_info in format_info:
+        meta = video_info.get('meta') or {}
+        if not video_info.get('url'):
+            continue
+
+        # Skip tar archives (contain duplicates)
+        if format_type == 'tar':
+            continue
+
+        # Handle HLS streaming formats
+        if format_type == 'hls':
+            formats.extend(self._extract_m3u8_formats(
+                video_info['url'], video_id,
+                ext='mp4', m3u8_id='hls', fatal=False, live=live_status == 'is_live'))
+            continue
+
+        # Process specialized content types
+        is_timeline = format_type == 'timeline'
+        is_audio = format_type == 'audio'
+
+        formats.append({
+            'acodec': 'none' if is_timeline else None,
+            'vcodec': 'none' if is_audio else None,
+            'url': video_info['url'],
+            'format_id': join_nonempty(format_type, format_field(meta, 'h', '%sp')),
+            'format_note': 'Timeline' if is_timeline else None,
+            'fps': None if is_timeline or is_audio else video.get('fps'),
+            **traverse_obj(meta, {
+                'tbr': ('bitrate', {int_or_none}),
+                'filesize': ('size', {int_or_none}),
+                'width': ('w', {int_or_none}),
+                'height': ('h', {int_or_none}),
+            }),
+        })</code></pre>
+        </div>
+
+        <h2>📺 Content Type Specialization</h2>
+
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h4>🎬 Standard Videos</h4>
+                <p>Regular MP4 content with multiple quality levels and bitrate options</p>
+            </div>
+            <div class="tech-item">
+                <h4>📊 Timeline Videos</h4>
+                <p>Specialized format for data visualization and timeline-based content</p>
+            </div>
+            <div class="tech-item">
+                <h4>🎵 Audio-Only Streams</h4>
+                <p>Dedicated audio formats for podcasts and music content</p>
+            </div>
+            <div class="tech-item">
+                <h4>📡 HLS Live Streams</h4>
+                <p>Adaptive bitrate streaming for live events and real-time content</p>
+            </div>
+        </div>
+
+        <h3>Timeline Video Innovation</h3>
+
+        <div class="success-box">
+            <strong>Timeline Format:</strong> Rumble's timeline format represents an innovative approach to presenting
+            data-driven content, allowing for synchronized audio narration with visual timeline progression - ideal for
+            news analysis and educational content.
+        </div>
+
+        <h2>🎯 Advanced API Integration</h2>
+
+        <h3>EmbedJS API Architecture</h3>
+
+        <div class="code-block">
+            <pre><code class="language-python">def _real_extract(self, url):
+    video_id = self._match_id(url)
+    video = self._download_json(
+        'https://rumble.com/embedJS/u3/', video_id,
+        query={'request': 'video', 'ver': 2, 'v': video_id})
+
+    # System message handling
+    sys_msg = traverse_obj(video, ('sys', 'msg'))
+    if sys_msg:
+        self.report_warning(sys_msg, video_id=video_id)</code></pre>
+        </div>
+
+        <div class="info-box">
+            <strong>API Versioning:</strong> The embedJS API uses version control (ver=2) ensuring backward
+            compatibility while enabling new features. System messages provide real-time feedback about video
+            availability and processing status.
+        </div>
+
+        <h2>🖼️ Advanced Thumbnail Management</h2>
+
+        <p>Rumble implements sophisticated thumbnail processing with multiple size variants:</p>
+
+        <div class="code-block">
+            <pre><code class="language-python"># Multi-resolution thumbnail extraction
+thumbnails = traverse_obj(video, ('t', ..., {'url': 'i', 'width': 'w', 'height': 'h'}))
+if not thumbnails and video.get('i'):
+    thumbnails = [{'url': video['i']}]</code></pre>
+        </div>
+
+        <h2>📝 Subtitle System Integration</h2>
+
+        <div class="code-block">
+            <pre><code class="language-python"># Comprehensive subtitle support
+subtitles = {
+    lang: [{
+        'url': sub_info['path'],
+        'name': sub_info.get('language') or '',
+    }] for lang, sub_info in (video.get('cc') or {}).items() if sub_info.get('path')
+}</code></pre>
+        </div>
+
+        <h2>🔗 URL Pattern Recognition Matrix</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>URL Type</th>
+                    <th>Pattern</th>
+                    <th>Example</th>
+                    <th>Processing Method</th>
+                    <th>Special Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Embed URLs</td>
+                    <td>/embed/video_id</td>
+                    <td>rumble.com/embed/v5pv5f</td>
+                    <td>Direct API extraction</td>
+                    <td>Live status, subtitles</td>
+                </tr>
+                <tr>
+                    <td>Standard Videos</td>
+                    <td>/v{id}-title.html</td>
+                    <td>rumble.com/vdmum1-title.html</td>
+                    <td>Webpage + embed extraction</td>
+                    <td>Social metrics, descriptions</td>
+                </tr>
+                <tr>
+                    <td>Channel Pages</td>
+                    <td>/c/channel_name</td>
+                    <td>rumble.com/c/Styxhexenhammer666</td>
+                    <td>Paginated extraction</td>
+                    <td>Channel playlists</td>
+                </tr>
+                <tr>
+                    <td>User Profiles</td>
+                    <td>/user/username</td>
+                    <td>rumble.com/user/goldenpoodle</td>
+                    <td>User content listing</td>
+                    <td>Personal videos</td>
+                </tr>
+                <tr>
+                    <td>Browse Pages</td>
+                    <td>/browse/category</td>
+                    <td>rumble.com/browse/live</td>
+                    <td>Category-based extraction</td>
+                    <td>Live content discovery</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>📊 Comprehensive Metadata Processing</h2>
+
+        <h3>Social Engagement Metrics</h3>
+
+        <div class="code-block">
+            <pre><code class="language-python"># Advanced metrics extraction from webpage
+'view_count': int_or_none(self._search_regex(
+    r'"userInteractionCount"\s*:\s*(\d+)', webpage, 'view count', default=None)),
+'like_count': parse_count(self._search_regex(
+    r'&lt;span data-js="rumbles_up_votes"&gt;\s*([\d,.KM]+)', webpage, 'like count', default=None)),
+'dislike_count': parse_count(self._search_regex(
+    r'&lt;span data-js="rumbles_down_votes"&gt;\s*([\d,.KM]+)', webpage, 'dislike count', default=None)),</code></pre>
+        </div>
+
+        <h3>Temporal Data Management</h3>
+
+        <div class="code-block">
+            <pre><code class="language-python"># Intelligent duration handling based on live status
+if live_status in {'is_live', 'post_live'}:
+    duration = None # Live content has dynamic duration
+else:
+    duration = int_or_none(video.get('duration'))
+
+# Release timestamp for scheduled content
+'release_timestamp': parse_iso8601(self._search_regex(
+    r'(?:Livestream begins|Streamed on):\s+&lt;time datetime="([^"]+)',
+    webpage, 'release date', default=None)),</code></pre>
+        </div>
+
+        <h2>🔄 Channel &amp; Playlist Processing</h2>
+
+        <h3>Paginated Content Discovery</h3>
+
+        <div class="code-block">
+            <pre><code class="language-python">def entries(self, url, playlist_id):
+    for page in itertools.count(1):
+        try:
+            webpage = self._download_webpage(
+                f'{url}?page={page}', playlist_id,
+                note=f'Downloading page {page}')
+        except ExtractorError as e:
+            if isinstance(e.cause, HTTPError) and e.cause.status == 404:
+                break # End of content
+            raise
+
+        # Extract video links from page
+        for video_url in traverse_obj(
+            get_elements_html_by_class('videostream__link', webpage),
+            (..., {extract_attributes}, 'href'),
+        ):
+            yield self.url_result(urljoin('https://rumble.com', video_url))</code></pre>
+        </div>
+
+        <h2>⚡ Performance Optimizations</h2>
+
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h4>🚀 Efficient API Calls</h4>
+                <p>Single API request for all video metadata and format information</p>
+            </div>
+            <div class="tech-item">
+                <h4>📄 Smart Pagination</h4>
+                <p>HTTP 404 detection for efficient channel content discovery termination</p>
+            </div>
+            <div class="tech-item">
+                <h4>🔄 Format Deduplication</h4>
+                <p>Intelligent skipping of tar archives and duplicate HLS variants</p>
+            </div>
+            <div class="tech-item">
+                <h4>⏱️ Live Stream Optimization</h4>
+                <p>Dynamic format selection based on live status and DVR availability</p>
+            </div>
+        </div>
+
+        <h2>🔍 Error Handling &amp; System Messaging</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Error Type</th>
+                    <th>Detection Method</th>
+                    <th>Handling Strategy</th>
+                    <th>User Impact</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>System Messages</td>
+                    <td>API sys.msg field</td>
+                    <td>Warning reporting</td>
+                    <td>Informational notices</td>
+                </tr>
+                <tr>
+                    <td>Unsupported Content</td>
+                    <td>Failed embed extraction</td>
+                    <td>UnsupportedError exception</td>
+                    <td>Clear error message</td>
+                </tr>
+                <tr>
+                    <td>Channel End</td>
+                    <td>HTTP 404 response</td>
+                    <td>Graceful pagination stop</td>
+                    <td>Complete channel extraction</td>
+                </tr>
+                <tr>
+                    <td>Live Stream Unavailable</td>
+                    <td>Live status checking</td>
+                    <td>Status-based format filtering</td>
+                    <td>Appropriate format availability</td>
+                </tr>
+                <tr>
+                    <td>Missing Formats</td>
+                    <td>Empty format arrays</td>
+                    <td>Fallback format discovery</td>
+                    <td>Best available quality</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🎯 Best Practices &amp; Recommendations</h2>
+
+        <div class="info-box">
+            <h4>For Developers:</h4>
+            <ul>
+                <li><strong>Live Status Intelligence:</strong> Implement comprehensive live status detection with DVR
+                    capability awareness</li>
+                <li><strong>Format Diversity:</strong> Support specialized content types like timeline videos and
+                    audio-only streams</li>
+                <li><strong>Embed Detection:</strong> Implement multiple embed detection strategies for maximum
+                    compatibility</li>
+                <li><strong>API Versioning:</strong> Use version parameters for API compatibility and feature access
+                </li>
+                <li><strong>Pagination Efficiency:</strong> Implement proper termination conditions for paginated
+                    content discovery</li>
+            </ul>
+        </div>
+
+        <div class="success-box">
+            <h4>Technical Excellence:</h4>
+            <ul>
+                <li>Advanced live streaming state management with DVR capabilities</li>
+                <li>Specialized content type support (timeline, audio-only)</li>
+                <li>Sophisticated embed detection covering modern JavaScript integrations</li>
+                <li>Efficient paginated channel content discovery</li>
+                <li>Comprehensive social engagement metrics extraction</li>
+            </ul>
+        </div>
+
+        <h2>🔮 Platform Innovation</h2>
+
+        <p>Rumble represents next-generation video platform engineering with several innovative features:</p>
+
+        <ul>
+            <li><strong>Timeline Videos:</strong> Revolutionary format for data visualization and educational content
+            </li>
+            <li><strong>DVR Integration:</strong> Sophisticated live streaming with replay capabilities</li>
+            <li><strong>Multi-Content Support:</strong> Unified platform for video, audio, and timeline content</li>
+            <li><strong>Decentralized Architecture:</strong> Modern approach to content distribution and discovery</li>
+            <li><strong>Social Integration:</strong> Built-in engagement metrics and community features</li>
+        </ul>
+
+        <div class="warning-box">
+            <strong>Future Considerations:</strong> As Rumble continues to grow, expect enhanced live streaming
+            features, improved content discovery algorithms, and expanded format support for emerging content types.
+        </div>
+
+        <div class="highlight">
+            <strong>Conclusion:</strong> Rumble's video extraction system in yt-dlp showcases cutting-edge engineering
+            for modern video platforms. The implementation demonstrates advanced live streaming capabilities, innovative
+            content type support, and sophisticated embed detection that positions it as a leader in next-generation
+            video platform technology.
+        </div>
+
+        <div class="blog-navigation">
+            <a href="/index.html#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
+    </div>
+</body>
+
+</html>

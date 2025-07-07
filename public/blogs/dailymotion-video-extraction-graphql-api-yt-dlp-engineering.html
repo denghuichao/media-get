@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dailymotion Video Extraction: yt-dlp's GraphQL API & Multi-Format Engineering</title>
+    <meta name="description"
+        content="Comprehensive technical analysis of yt-dlp's Dailymotion extractor, covering GraphQL API integration, OAuth authentication, geo-blocking handling, and adaptive streaming protocols.">
+    <meta name="keywords"
+        content="yt-dlp, Dailymotion, GraphQL, OAuth, video extraction, geo-blocking, HLS, adaptive streaming, API integration">
+    <meta name="author" content="yt-dlp Technical Analysis">
+
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="Dailymotion Video Extraction: yt-dlp's GraphQL API & Multi-Format Engineering">
+    <meta property="og:description"
+        content="Deep dive into yt-dlp's Dailymotion extractor implementation, covering GraphQL queries, OAuth workflows, and advanced streaming protocol handling.">
+    <meta property="og:type" content="article">
+
+    <!-- Twitter Card Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dailymotion Video Extraction: yt-dlp's GraphQL API & Multi-Format Engineering">
+    <meta name="twitter:description"
+        content="Technical analysis of Dailymotion's modern API architecture and yt-dlp's sophisticated extraction strategies.">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.7;
+            color: #333;
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0066cc, #004499, #003377);
+            color: white;
+            padding: 3rem 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 102, 204, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="pattern" width="10" height="10" patternUnits="userSpaceOnUse"><circle cx="5" cy="5" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23pattern)"/></svg>');
+            animation: move 20s infinite linear;
+            opacity: 0.1;
+        }
+
+        @keyframes move {
+            0% {
+                transform: translateX(-50%) translateY(-50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translateX(-50%) translateY(-50%) rotate(360deg);
+            }
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8rem;
+            font-weight: 900;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            margin: 1.5rem 0 0 0;
+            font-size: 1.3rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            background: white;
+            padding: 3rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        h2 {
+            color: #0066cc;
+            border-bottom: 4px solid #0066cc;
+            padding-bottom: 0.8rem;
+            margin-top: 3rem;
+            font-size: 2.3rem;
+            font-weight: 800;
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #0066cc, #004499);
+            border-radius: 2px;
+        }
+
+        h3 {
+            color: #004499;
+            margin-top: 2.5rem;
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
+
+        h4 {
+            color: #003377;
+            margin-top: 2rem;
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .code-section {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            overflow-x: auto;
+            border-left: 5px solid #0066cc;
+            font-family: 'Fira Code', 'SF Mono', 'Monaco', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .code-section::before {
+            content: 'Python';
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #0066cc;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .graphql-section::before {
+            content: 'GraphQL';
+            background: #e535ab;
+        }
+
+        .json-section::before {
+            content: 'JSON';
+            background: #61dafb;
+            color: #333;
+        }
+
+        .code-analysis {
+            background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 1.8rem;
+            margin: 2rem 0;
+            border-left: 5px solid #0066cc;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            border: 1px solid #4caf50;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.1);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border: 1px solid #ff9800;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.1);
+        }
+
+        .api-box {
+            background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+            border: 1px solid #9c27b0;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.1);
+        }
+
+        .geo-box {
+            background: linear-gradient(135deg, #ffebee, #ffcdd2);
+            border: 1px solid #f44336;
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.1);
+        }
+
+        .architecture-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2rem 0;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .architecture-table th,
+        .architecture-table td {
+            border: 1px solid #e1e8ed;
+            padding: 16px;
+            text-align: left;
+        }
+
+        .architecture-table th {
+            background: linear-gradient(135deg, #0066cc, #004499);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .architecture-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+
+        .architecture-table tr:hover {
+            background-color: #e3f2fd;
+            transition: background-color 0.3s ease;
+        }
+
+        .tech-badge {
+            display: inline-block;
+            background: #0066cc;
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            margin: 0.3rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+        }
+
+        .nav-links {
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 1px solid #e1e8ed;
+        }
+
+        .nav-links h3 {
+            margin-top: 0;
+            color: #004499;
+        }
+
+        .nav-links a {
+            color: #0066cc;
+            text-decoration: none;
+            margin-right: 1.5rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            background: #e3f2fd;
+            text-decoration: none;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(135deg, #263238, #37474f);
+            color: white;
+            border-radius: 16px;
+            margin-top: 3rem;
+        }
+
+        .inline-code {
+            background: #f1f3f4;
+            color: #d73a49;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+
+        /* Code syntax highlighting */
+        .keyword {
+            color: #569cd6;
+        }
+
+        .string {
+            color: #ce9178;
+        }
+
+        .comment {
+            color: #6a9955;
+        }
+
+        .function {
+            color: #dcdcaa;
+        }
+
+        .variable {
+            color: #9cdcfe;
+        }
+
+        .number {
+            color: #b5cea8;
+        }
+
+        .constant {
+            color: #4fc1ff;
+        }
+
+        .class {
+            color: #4ec9b0;
+        }
+
+        .property {
+            color: #9cdcfe;
+        }
+
+        .operator {
+            color: #d4d4d4;
+        }
+    
+.blog-navigation {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.blog-index-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #85C341;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.blog-index-link:hover {
+    background-color: #6c9a33;
+}
+</style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🎬 Dailymotion Video Extraction Mastery</h1>
+<div class="blog-navigation">
+    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+</div>
+
+        <p>Deep Dive into yt-dlp's GraphQL API Integration & Modern Streaming Architecture</p>
+        <div>
+            <span class="tech-badge">GraphQL APIs</span>
+            <span class="tech-badge">OAuth 2.0</span>
+            <span class="tech-badge">Geo-blocking Handling</span>
+            <span class="tech-badge">HLS Streaming</span>
+            <span class="tech-badge">Multi-Format Support</span>
+        </div>
+    </div>
+
+    <div class="nav-links">
+        <h3>🔗 Related Technical Deep Dives</h3>
+        <a href="how-yt-dlp-downloads-youtube-videos-deep-dive.html">YouTube Extractor Analysis</a>
+        <a href="vimeo-video-extraction-deep-dive-yt-dlp.html">Vimeo Technical Analysis</a>
+        <a href="reddit-video-extraction-technical-deep-dive-yt-dlp.html">Reddit Deep Dive</a>
+        <a href="twitter-x-video-extraction-mastery-yt-dlp-engineering.html">Twitter/X Engineering</a>
+    </div>
+
+    <div class="content">
+        <h2>🚀 Introduction: Dailymotion's Modern Video Infrastructure</h2>
+
+        <p>Dailymotion represents a fascinating case study in modern video platform architecture, employing GraphQL
+            APIs, OAuth 2.0 authentication, and sophisticated content delivery networks. As one of Europe's leading
+            video platforms, Dailymotion has evolved to implement advanced geo-blocking mechanisms, adaptive streaming
+            protocols, and comprehensive content protection systems that make video extraction both challenging and
+            educational.</p>
+
+        <p>The yt-dlp Dailymotion extractor showcases advanced API interaction patterns, demonstrating how to
+            effectively work with GraphQL endpoints, manage OAuth token flows, and handle complex metadata structures
+            while maintaining compatibility with Dailymotion's evolving platform constraints.</p>
+
+        <div class="highlight-box">
+            <h4>🎯 Core Technical Challenges</h4>
+            <ul>
+                <li><strong>GraphQL API Integration:</strong> Complex query structures and dynamic schema handling</li>
+                <li><strong>OAuth 2.0 Authentication:</strong> Token management and refresh workflows</li>
+                <li><strong>Geo-blocking Intelligence:</strong> Country-specific content restrictions and bypass
+                    strategies</li>
+                <li><strong>Multi-Format Video Delivery:</strong> HLS, MP4, and adaptive streaming protocol support</li>
+                <li><strong>Embedded Player Detection:</strong> Cross-domain iframe and JavaScript player extraction
+                </li>
+            </ul>
+        </div>
+
+        <h2>🏗️ Architecture Analysis: GraphQL-First Approach</h2>
+
+        <h3>Base Infrastructure & Authentication Framework</h3>
+        <p>Dailymotion's extractor implements a sophisticated base class that manages GraphQL communication, OAuth
+            workflows, and family filtering policies:</p>
+
+        <div class="code-section">
+            <span class="keyword">class</span> <span class="class">DailymotionBaseInfoExtractor</span>(<span
+                class="class">InfoExtractor</span>):
+            <span class="variable">_FAMILY_FILTER</span> = <span class="constant">None</span>
+            <span class="variable">_HEADERS</span> = {
+            <span class="string">'Content-Type'</span>: <span class="string">'application/json'</span>,
+            <span class="string">'Origin'</span>: <span class="string">'https://www.dailymotion.com'</span>,
+            }
+            <span class="variable">_NETRC_MACHINE</span> = <span class="string">'dailymotion'</span>
+
+            <span class="keyword">def</span> <span class="function">_real_initialize</span>(<span
+                class="variable">self</span>):
+            <span class="comment"># Initialize family filter based on cookies and age restrictions</span>
+            <span class="variable">cookies</span> = <span class="variable">self</span>.<span
+                class="function">_get_dailymotion_cookies</span>()
+            <span class="variable">ff</span> = <span class="variable">self</span>.<span
+                class="function">_get_cookie_value</span>(<span class="variable">cookies</span>, <span
+                class="string">'ff'</span>)
+            <span class="variable">self</span>.<span class="variable">_FAMILY_FILTER</span> = <span
+                class="variable">ff</span> == <span class="string">'on'</span> <span class="keyword">if</span> <span
+                class="variable">ff</span> <span class="keyword">else</span> <span
+                class="function">age_restricted</span>(<span class="number">18</span>, <span
+                class="variable">self</span>.<span class="function">get_param</span>(<span
+                class="string">'age_limit'</span>))
+            <span class="variable">self</span>.<span class="function">_set_dailymotion_cookie</span>(<span
+                class="string">'ff'</span>, <span class="string">'on'</span> <span class="keyword">if</span> <span
+                class="variable">self</span>.<span class="variable">_FAMILY_FILTER</span> <span
+                class="keyword">else</span> <span class="string">'off'</span>)
+        </div>
+
+        <div class="code-analysis">
+            <h4>🔧 Initialization Strategy Analysis</h4>
+            <p>The initialization process demonstrates sophisticated content filtering management:</p>
+            <ul>
+                <li><strong>Cookie-Based State Management:</strong> Preserves family filter preferences across sessions
+                </li>
+                <li><strong>Age Restriction Integration:</strong> Automatically configures content access based on
+                    user-defined age limits</li>
+                <li><strong>Dynamic Filter Application:</strong> Applies filtering rules that affect GraphQL query
+                    parameters</li>
+                <li><strong>Cross-Session Persistence:</strong> Maintains user preferences through cookie storage</li>
+            </ul>
+        </div>
+
+        <h3>OAuth 2.0 Token Management System</h3>
+        <p>Dailymotion's authentication system employs OAuth 2.0 with both client credentials and user authentication
+            flows:</p>
+
+        <div class="code-section">
+            <span class="keyword">def</span> <span class="function">_get_token</span>(<span
+                class="variable">self</span>, <span class="variable">xid</span>):
+            <span class="comment"># Check for existing tokens in cookies</span>
+            <span class="variable">cookies</span> = <span class="variable">self</span>.<span
+                class="function">_get_dailymotion_cookies</span>()
+            <span class="variable">token</span> = (<span class="variable">self</span>.<span
+                class="function">_get_cookie_value</span>(<span class="variable">cookies</span>, <span
+                class="string">'access_token'</span>) <span class="keyword">or</span>
+            <span class="variable">self</span>.<span class="function">_get_cookie_value</span>(<span
+                class="variable">cookies</span>, <span class="string">'client_token'</span>))
+            <span class="keyword">if</span> <span class="variable">token</span>:
+            <span class="keyword">return</span> <span class="variable">token</span>
+
+            <span class="comment"># Prepare OAuth request data</span>
+            <span class="variable">data</span> = {
+            <span class="string">'client_id'</span>: <span class="string">'f1a362d288c1b98099c7'</span>,
+            <span class="string">'client_secret'</span>: <span
+                class="string">'eea605b96e01c796ff369935357eca920c5da4c5'</span>,
+            }
+
+            <span class="comment"># Determine authentication flow type</span>
+            <span class="variable">username</span>, <span class="variable">password</span> = <span
+                class="variable">self</span>.<span class="function">_get_login_info</span>()
+            <span class="keyword">if</span> <span class="variable">username</span>:
+            <span class="comment"># User authentication flow (Resource Owner Password Credentials)</span>
+            <span class="variable">data</span>.<span class="function">update</span>({
+            <span class="string">'grant_type'</span>: <span class="string">'password'</span>,
+            <span class="string">'password'</span>: <span class="variable">password</span>,
+            <span class="string">'username'</span>: <span class="variable">username</span>,
+            })
+            <span class="keyword">else</span>:
+            <span class="comment"># Client credentials flow for anonymous access</span>
+            <span class="variable">data</span>[<span class="string">'grant_type'</span>] = <span
+                class="string">'client_credentials'</span>
+        </div>
+
+        <div class="api-box">
+            <h4>🔐 OAuth 2.0 Flow Architecture</h4>
+            <p>Dailymotion's authentication demonstrates dual OAuth flows:</p>
+            <ul>
+                <li><strong>Client Credentials Flow:</strong> Anonymous access for public content with rate limiting
+                </li>
+                <li><strong>Resource Owner Password Flow:</strong> User authentication for private content and higher
+                    quotas</li>
+                <li><strong>Token Persistence:</strong> Cookies store tokens to avoid repeated authentication</li>
+                <li><strong>Error Handling:</strong> Specific error parsing for OAuth-related failures</li>
+                <li><strong>Token Type Management:</strong> Different cookie names for different token types</li>
+            </ul>
+        </div>
+
+        <h3>GraphQL API Communication Engine</h3>
+        <p>The GraphQL integration showcases modern API interaction patterns with dynamic query construction and
+            sophisticated error handling:</p>
+
+        <div class="code-section graphql-section">
+            <span class="keyword">def</span> <span class="function">_call_api</span>(<span class="variable">self</span>,
+            <span class="variable">object_type</span>, <span class="variable">xid</span>, <span
+                class="variable">object_fields</span>, <span class="variable">note</span>, <span
+                class="variable">filter_extra</span>=<span class="constant">None</span>):
+            <span class="comment"># Ensure authorization header is set</span>
+            <span class="keyword">if not</span> <span class="variable">self</span>.<span
+                class="variable">_HEADERS</span>.<span class="function">get</span>(<span
+                class="string">'Authorization'</span>):
+            <span class="variable">self</span>.<span class="variable">_HEADERS</span>[<span
+                class="string">'Authorization'</span>] = <span class="string">f'Bearer {self._get_token(xid)}'</span>
+
+            <span class="comment"># Construct dynamic GraphQL query</span>
+            <span class="variable">resp</span> = <span class="variable">self</span>.<span
+                class="function">_download_json</span>(
+            <span class="string">'https://graphql.api.dailymotion.com/'</span>, <span class="variable">xid</span>, <span
+                class="variable">note</span>,
+            <span class="variable">data</span>=<span class="function">json.dumps</span>({
+            <span class="string">'query'</span>: <span class="string">'''{
+                %s(xid: "%s"%s) {
+                %s
+                }
+                }'''</span> % (<span class="variable">object_type</span>, <span class="variable">xid</span>,
+            <span class="string">', '</span> + <span class="variable">filter_extra</span> <span
+                class="keyword">if</span> <span class="variable">filter_extra</span> <span class="keyword">else</span>
+            <span class="string">''</span>,
+            <span class="variable">object_fields</span>),
+            }).<span class="function">encode</span>(), <span class="variable">headers</span>=<span
+                class="variable">self</span>.<span class="variable">_HEADERS</span>)
+
+            <span class="comment"># Extract and validate response</span>
+            <span class="variable">obj</span> = <span class="variable">resp</span>[<span
+                class="string">'data'</span>][<span class="variable">object_type</span>]
+            <span class="keyword">if not</span> <span class="variable">obj</span>:
+            <span class="keyword">raise</span> <span class="function">ExtractorError</span>(<span
+                class="variable">resp</span>[<span class="string">'errors'</span>][<span class="number">0</span>][<span
+                class="string">'message'</span>], <span class="variable">expected</span>=<span
+                class="constant">True</span>)
+
+            <span class="keyword">return</span> <span class="variable">obj</span>
+        </div>
+
+        <div class="code-analysis">
+            <h4>🎯 GraphQL Query Construction Analysis</h4>
+            <p>The GraphQL implementation demonstrates several advanced patterns:</p>
+            <ul>
+                <li><strong>Dynamic Query Building:</strong> Constructs queries with variable field sets and filters
+                </li>
+                <li><strong>Bearer Token Integration:</strong> Seamlessly integrates OAuth tokens into API requests</li>
+                <li><strong>Error Extraction:</strong> Parses GraphQL-specific error responses with structured error
+                    handling</li>
+                <li><strong>Field Flexibility:</strong> Allows arbitrary field selection for different content types
+                </li>
+                <li><strong>Filter Integration:</strong> Supports dynamic query parameters like password protection</li>
+            </ul>
+        </div>
+
+        <h2>🌐 Geo-blocking and Content Access Control</h2>
+
+        <h3>Geographic Restriction Handling</h3>
+        <p>Dailymotion implements sophisticated geo-blocking that the extractor must navigate intelligently:</p>
+
+        <div class="code-section">
+            <span class="variable">error</span> = <span class="variable">metadata</span>.<span
+                class="function">get</span>(<span class="string">'error'</span>)
+            <span class="keyword">if</span> <span class="variable">error</span>:
+            <span class="variable">title</span> = <span class="variable">error</span>.<span
+                class="function">get</span>(<span class="string">'title'</span>) <span class="keyword">or</span> <span
+                class="variable">error</span>[<span class="string">'raw_message'</span>]
+
+            <span class="comment"># Handle geo-blocking with country information</span>
+            <span class="keyword">if</span> <span class="variable">error</span>.<span class="function">get</span>(<span
+                class="string">'code'</span>) == <span class="string">'DM007'</span>:
+            <span class="variable">allowed_countries</span> = <span class="function">try_get</span>(<span
+                class="variable">media</span>,
+            <span class="keyword">lambda</span> <span class="variable">x</span>: <span class="variable">x</span>[<span
+                class="string">'geoblockedCountries'</span>][<span class="string">'allowed'</span>], <span
+                class="function">list</span>)
+            <span class="variable">self</span>.<span class="function">raise_geo_restricted</span>(<span
+                class="variable">msg</span>=<span class="variable">title</span>, <span
+                class="variable">countries</span>=<span class="variable">allowed_countries</span>)
+
+            <span class="keyword">raise</span> <span class="function">ExtractorError</span>(<span
+                class="string">f'{self.IE_NAME} said: {title}'</span>, <span class="variable">expected</span>=<span
+                class="constant">True</span>)
+        </div>
+
+        <div class="geo-box">
+            <h4>🌍 Geographic Access Control Matrix</h4>
+            <p><strong>Dailymotion's geo-blocking system operates on multiple levels:</strong></p>
+            <ul>
+                <li><strong>Content-Level Restrictions:</strong> Individual videos can be restricted to specific
+                    countries</li>
+                <li><strong>API Error Code DM007:</strong> Specific error code for geographic restrictions</li>
+                <li><strong>Country Whitelist:</strong> Videos include explicit lists of allowed countries</li>
+                <li><strong>Intelligent Error Reporting:</strong> Provides users with specific allowed regions</li>
+                <li><strong>GraphQL Integration:</strong> Geo-blocking information embedded in API responses</li>
+            </ul>
+        </div>
+
+        <h2>📹 Multi-Protocol Video Format Extraction</h2>
+
+        <h3>Adaptive Streaming and Format Processing</h3>
+        <p>Dailymotion serves content through multiple protocols, each requiring specialized extraction logic:</p>
+
+        <div class="code-section">
+            <span class="keyword">for</span> <span class="variable">quality</span>, <span
+                class="variable">media_list</span> <span class="keyword">in</span> <span
+                class="variable">metadata</span>[<span class="string">'qualities'</span>].<span
+                class="function">items</span>():
+            <span class="keyword">for</span> <span class="variable">m</span> <span class="keyword">in</span> <span
+                class="variable">media_list</span>:
+            <span class="variable">media_url</span> = <span class="variable">m</span>.<span
+                class="function">get</span>(<span class="string">'url'</span>)
+            <span class="variable">media_type</span> = <span class="variable">m</span>.<span
+                class="function">get</span>(<span class="string">'type'</span>)
+
+            <span class="keyword">if not</span> <span class="variable">media_url</span> <span class="keyword">or</span>
+            <span class="variable">media_type</span> == <span
+                class="string">'application/vnd.lumberjack.manifest'</span>:
+            <span class="keyword">continue</span>
+
+            <span class="comment"># Handle HLS streaming formats</span>
+            <span class="keyword">if</span> <span class="variable">media_type</span> == <span
+                class="string">'application/x-mpegURL'</span>:
+            <span class="variable">fmt</span>, <span class="variable">subs</span> = <span
+                class="variable">self</span>.<span class="function">_extract_m3u8_formats_and_subtitles</span>(
+            <span class="variable">media_url</span>, <span class="variable">video_id</span>, <span
+                class="string">'mp4'</span>,
+            <span class="variable">live</span>=<span class="variable">is_live</span>, <span
+                class="variable">m3u8_id</span>=<span class="string">'hls'</span>, <span
+                class="variable">fatal</span>=<span class="constant">False</span>)
+            <span class="variable">formats</span>.<span class="function">extend</span>(<span
+                class="variable">fmt</span>)
+            <span class="variable">self</span>.<span class="function">_merge_subtitles</span>(<span
+                class="variable">subs</span>, <span class="variable">target</span>=<span
+                class="variable">subtitles</span>)
+
+            <span class="comment"># Handle progressive MP4 formats</span>
+            <span class="keyword">else</span>:
+            <span class="variable">f</span> = {
+            <span class="string">'url'</span>: <span class="variable">media_url</span>,
+            <span class="string">'format_id'</span>: <span class="string">'http-'</span> + <span
+                class="variable">quality</span>,
+            }
+
+            <span class="comment"># Extract video dimensions and framerate from URL</span>
+            <span class="variable">m</span> = <span class="function">re.search</span>(<span
+                class="string">r'/H264-(\d+)x(\d+)(?:-(60)/)?'</span>, <span class="variable">media_url</span>)
+            <span class="keyword">if</span> <span class="variable">m</span>:
+            <span class="variable">width</span>, <span class="variable">height</span>, <span class="variable">fps</span>
+            = <span class="function">map</span>(<span class="function">int_or_none</span>, <span
+                class="variable">m</span>.<span class="function">groups</span>())
+            <span class="variable">f</span>.<span class="function">update</span>({
+            <span class="string">'fps'</span>: <span class="variable">fps</span>,
+            <span class="string">'height'</span>: <span class="variable">height</span>,
+            <span class="string">'width'</span>: <span class="variable">width</span>,
+            })
+            <span class="variable">formats</span>.<span class="function">append</span>(<span class="variable">f</span>)
+        </div>
+
+        <div class="code-analysis">
+            <h4>🎬 Format Processing Intelligence</h4>
+            <p>The format extraction demonstrates advanced video processing techniques:</p>
+            <ul>
+                <li><strong>MIME Type Detection:</strong> Automatically identifies HLS vs progressive formats</li>
+                <li><strong>URL Pattern Recognition:</strong> Extracts resolution and framerate from URL structure</li>
+                <li><strong>Live Stream Support:</strong> Handles both VOD and live streaming content</li>
+                <li><strong>Subtitle Integration:</strong> Merges subtitles from HLS manifests</li>
+                <li><strong>Quality-Based Organization:</strong> Groups formats by quality levels</li>
+            </ul>
+        </div>
+
+        <h3>Advanced Format Post-Processing</h3>
+        <p>Dailymotion requires sophisticated post-processing to clean URLs and detect frame rates:</p>
+
+        <div class="code-section">
+            <span class="comment"># Clean fragment identifiers from URLs</span>
+            <span class="keyword">for</span> <span class="variable">f</span> <span class="keyword">in</span> <span
+                class="variable">formats</span>:
+            <span class="variable">f</span>[<span class="string">'url'</span>] = <span class="variable">f</span>[<span
+                class="string">'url'</span>].<span class="function">split</span>(<span class="string">'#'</span>)[<span
+                class="number">0</span>]
+
+            <span class="comment"># Detect 60fps formats from format ID</span>
+            <span class="keyword">if not</span> <span class="variable">f</span>.<span class="function">get</span>(<span
+                class="string">'fps'</span>) <span class="keyword">and</span> <span class="variable">f</span>[<span
+                class="string">'format_id'</span>].<span class="function">endswith</span>(<span
+                class="string">'@60'</span>):
+            <span class="variable">f</span>[<span class="string">'fps'</span>] = <span class="number">60</span>
+
+            <span class="comment"># Process subtitle data</span>
+            <span class="variable">subtitles_data</span> = <span class="function">try_get</span>(<span
+                class="variable">metadata</span>,
+            <span class="keyword">lambda</span> <span class="variable">x</span>: <span class="variable">x</span>[<span
+                class="string">'subtitles'</span>][<span class="string">'data'</span>], <span
+                class="function">dict</span>) <span class="keyword">or</span> {}
+
+            <span class="keyword">for</span> <span class="variable">subtitle_lang</span>, <span
+                class="variable">subtitle</span> <span class="keyword">in</span> <span
+                class="variable">subtitles_data</span>.<span class="function">items</span>():
+            <span class="variable">subtitles</span>[<span class="variable">subtitle_lang</span>] = [{
+            <span class="string">'url'</span>: <span class="variable">subtitle_url</span>,
+            } <span class="keyword">for</span> <span class="variable">subtitle_url</span> <span
+                class="keyword">in</span> <span class="variable">subtitle</span>.<span class="function">get</span>(<span
+                class="string">'urls'</span>, [])]
+        </div>
+
+        <h2>🔍 Embedded Player Detection and URL Extraction</h2>
+
+        <h3>Multi-Pattern Embed Detection</h3>
+        <p>Dailymotion content appears across numerous third-party sites, requiring sophisticated embed detection:</p>
+
+        <div class="code-section">
+            <span class="property">@classmethod</span>
+            <span class="keyword">def</span> <span class="function">_extract_embed_urls</span>(<span
+                class="variable">cls</span>, <span class="variable">url</span>, <span class="variable">webpage</span>):
+            <span class="comment"># Standard embed URL extraction</span>
+            <span class="keyword">yield from</span> <span class="function">super</span>().<span
+                class="function">_extract_embed_urls</span>(<span class="variable">url</span>, <span
+                class="variable">webpage</span>)
+
+            <span class="comment"># JavaScript player detection</span>
+            <span class="keyword">for</span> <span class="variable">mobj</span> <span class="keyword">in</span> <span
+                class="function">re.finditer</span>(
+            <span
+                class="string">r'(?s)DM\.player\([^,]+,\s*{.*?video[\'"]?\s*:\s*["\']?(?P&lt;id&gt;[0-9a-zA-Z]+).+?}\s*\);'</span>,
+            <span class="variable">webpage</span>):
+            <span class="keyword">yield</span> <span class="string">'https://www.dailymotion.com/embed/video/'</span> +
+            <span class="variable">mobj</span>.<span class="function">group</span>(<span class="string">'id'</span>)
+
+            <span class="comment"># Script tag embed detection</span>
+            <span class="keyword">for</span> <span class="variable">mobj</span> <span class="keyword">in</span> <span
+                class="function">re.finditer</span>(
+            <span class="string">r'(?s)&lt;script
+                [^&gt;]*\bsrc=(["\'])(?:https?:)?//[\w-]+\.dailymotion\.com/player/(?:(?!\1).)+\1[^&gt;]*&gt;'</span>,
+            <span class="variable">webpage</span>):
+            <span class="variable">attrs</span> = <span class="function">extract_attributes</span>(<span
+                class="variable">mobj</span>.<span class="function">group</span>(<span class="number">0</span>))
+            <span class="variable">player_url</span> = <span class="function">url_or_none</span>(<span
+                class="variable">attrs</span>.<span class="function">get</span>(<span class="string">'src'</span>))
+
+            <span class="keyword">if not</span> <span class="variable">player_url</span>:
+            <span class="keyword">continue</span>
+
+            <span class="comment"># Transform JS URL to HTML player URL</span>
+            <span class="variable">player_url</span> = <span class="variable">player_url</span>.<span
+                class="function">replace</span>(<span class="string">'.js'</span>, <span class="string">'.html'</span>)
+            <span class="keyword">if</span> <span class="variable">player_url</span>.<span
+                class="function">startswith</span>(<span class="string">'//'</span>):
+            <span class="variable">player_url</span> = <span class="string">f'https:{player_url}'</span>
+
+            <span class="comment"># Extract video or playlist parameters</span>
+            <span class="keyword">if</span> <span class="variable">video_id</span> := <span
+                class="variable">attrs</span>.<span class="function">get</span>(<span
+                class="string">'data-video'</span>):
+            <span class="variable">query_string</span> = <span class="string">f'video={video_id}'</span>
+            <span class="keyword">elif</span> <span class="variable">playlist_id</span> := <span
+                class="variable">attrs</span>.<span class="function">get</span>(<span
+                class="string">'data-playlist'</span>):
+            <span class="variable">query_string</span> = <span class="string">f'playlist={playlist_id}'</span>
+            <span class="keyword">else</span>:
+            <span class="keyword">continue</span>
+
+            <span class="keyword">yield</span> <span class="function">update_url</span>(<span
+                class="variable">player_url</span>, <span class="variable">query</span>=<span
+                class="variable">query_string</span>)
+        </div>
+
+        <div class="highlight-box">
+            <h4>🔍 Embed Detection Strategy Analysis</h4>
+            <p>The embed detection system demonstrates comprehensive pattern matching:</p>
+            <ul>
+                <li><strong>JavaScript Player Detection:</strong> Identifies DM.player() instantiation patterns</li>
+                <li><strong>Script Tag Analysis:</strong> Extracts player URLs from script src attributes</li>
+                <li><strong>URL Transformation:</strong> Converts JavaScript URLs to HTML player URLs</li>
+                <li><strong>Parameter Extraction:</strong> Handles both video and playlist embed scenarios</li>
+                <li><strong>Protocol Normalization:</strong> Ensures HTTPS URLs for secure content loading</li>
+            </ul>
+        </div>
+
+        <h2>📊 Performance Analysis and Optimization Metrics</h2>
+
+        <h3>API Efficiency and Caching Strategies</h3>
+        <table class="architecture-table">
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Strategy</th>
+                    <th>Performance Impact</th>
+                    <th>Reliability Benefit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>OAuth Token Management</td>
+                    <td>Cookie-based persistence</td>
+                    <td>Eliminates repeated auth flows</td>
+                    <td>Reduces API rate limiting</td>
+                </tr>
+                <tr>
+                    <td>GraphQL Query Construction</td>
+                    <td>Dynamic field selection</td>
+                    <td>Minimizes data transfer</td>
+                    <td>Adapts to API changes</td>
+                </tr>
+                <tr>
+                    <td>Format Processing</td>
+                    <td>Parallel HLS/MP4 extraction</td>
+                    <td>Faster format discovery</td>
+                    <td>Multiple fallback options</td>
+                </tr>
+                <tr>
+                    <td>Geo-blocking Detection</td>
+                    <td>Error code analysis</td>
+                    <td>Immediate failure detection</td>
+                    <td>Clear user feedback</td>
+                </tr>
+                <tr>
+                    <td>Embed Pattern Matching</td>
+                    <td>Multi-regex approach</td>
+                    <td>Comprehensive coverage</td>
+                    <td>Handles diverse embed types</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Memory and Network Optimization</h3>
+        <div class="warning-box">
+            <h4>⚡ Performance Optimization Techniques</h4>
+            <ul>
+                <li><strong>Lazy Token Generation:</strong> Only requests OAuth tokens when needed</li>
+                <li><strong>Selective Field Querying:</strong> GraphQL queries request only necessary fields</li>
+                <li><strong>URL Fragment Cleanup:</strong> Removes unnecessary URL parameters for cleaner format lists
+                </li>
+                <li><strong>Early Error Detection:</strong> Fast failure for geo-blocked content</li>
+                <li><strong>Subtitle Stream Merging:</strong> Efficient combining of subtitle sources</li>
+            </ul>
+        </div>
+
+        <h2>🔮 Future Challenges and Platform Evolution</h2>
+
+        <div class="api-box">
+            <h4>🎯 Emerging Technical Challenges</h4>
+            <ul>
+                <li><strong>GraphQL Schema Evolution:</strong> Adapting to changing API structures and field
+                    deprecations</li>
+                <li><strong>Enhanced Geo-blocking:</strong> More sophisticated IP detection and VPN blocking</li>
+                <li><strong>OAuth Token Rotation:</strong> Shorter token lifespans requiring refresh mechanisms</li>
+                <li><strong>Content Protection Evolution:</strong> Advanced DRM and watermarking systems</li>
+                <li><strong>Embed Security Hardening:</strong> CSP policies and iframe sandboxing affecting extraction
+                </li>
+            </ul>
+        </div>
+
+        <div class="highlight-box">
+            <h4>🛡️ Adaptive Response Strategies</h4>
+            <ul>
+                <li><strong>GraphQL Introspection:</strong> Dynamic schema discovery for field adaptation</li>
+                <li><strong>Multi-Endpoint Fallbacks:</strong> Alternative API endpoints for different regions</li>
+                <li><strong>Token Refresh Automation:</strong> Automatic OAuth token renewal workflows</li>
+                <li><strong>Embed Pattern Learning:</strong> Machine learning for new embed pattern detection</li>
+                <li><strong>Community Monitoring:</strong> Distributed testing for platform changes</li>
+            </ul>
+        </div>
+
+        <h2>🎯 Conclusion</h2>
+
+        <p>The yt-dlp Dailymotion extractor represents a sophisticated example of modern API integration, demonstrating
+            advanced techniques for GraphQL communication, OAuth authentication, and multi-protocol video extraction.
+            Its comprehensive approach to geo-blocking, format processing, and embed detection showcases the engineering
+            excellence required for reliable content extraction from contemporary video platforms.</p>
+
+        <p>Key technical achievements include intelligent OAuth token management that minimizes API overhead,
+            sophisticated GraphQL query construction that adapts to platform changes, and comprehensive embed detection
+            that works across diverse third-party integrations. The extractor's ability to handle everything from simple
+            video links to complex geo-blocked content demonstrates the depth of engineering required for robust video
+            extraction.</p>
+
+        <div class="highlight-box">
+            <h4>🏆 Technical Excellence Summary</h4>
+            <p>The Dailymotion extractor's success lies in its modern API-first approach, sophisticated authentication
+                management, and intelligent error handling. Its GraphQL integration showcases how to effectively work
+                with contemporary web APIs while maintaining backward compatibility and robust error recovery. The
+                implementation serves as a blueprint for extracting content from modern, API-driven video platforms.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p><strong>yt-dlp Dailymotion Extractor Technical Analysis</strong></p>
+        <p>Comprehensive exploration of GraphQL APIs, OAuth workflows, and modern video platform architecture</p>
+        <p><em>Advancing open-source video extraction through technical innovation and community collaboration</em></p>
+    </div>
+</body>
+
+</html>
