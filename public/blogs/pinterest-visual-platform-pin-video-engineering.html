@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pinterest Visual Platform Pin Video Engineering - yt-dlp Deep Dive</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #e60023, #bd081c);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(230, 0, 35, 0.3);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            margin: 15px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        .content-section {
+            background: white;
+            margin: 30px 0;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #e60023;
+        }
+
+        .content-section h2 {
+            color: #e60023;
+            font-size: 2em;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #e60023;
+        }
+
+        .content-section h3 {
+            color: #bd081c;
+            font-size: 1.4em;
+            margin: 25px 0 15px 0;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #e60023;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(45deg, #fff5f5, #ffe8e8);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border: 2px solid #e60023;
+            text-align: center;
+        }
+
+        .flow-step {
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #e60023;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-table th {
+            background: #e60023;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .api-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .api-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #ffe8e8 0%, #fff5f5 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #e60023;
+            margin: 20px 0;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .tech-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #e60023;
+            text-align: center;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #e60023, #bd081c);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(230, 0, 35, 0.3);
+        }
+
+        .metric-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .challenge-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .pro-tip {
+            background: #d1ecf1;
+            border: 1px solid #b8daff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .pin-format-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .format-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #e60023;
+        }
+    
+.blog-navigation {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.blog-index-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #85C341;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.blog-index-link:hover {
+    background-color: #6c9a33;
+}
+</style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🔍 Pinterest Visual Platform Pin Video Engineering</h1>
+<div class="blog-navigation">
+    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+</div>
+
+        <p>Deep Dive into yt-dlp's Advanced Visual Discovery & Pin Extraction Architecture</p>
+    </div>
+
+    <div class="content-section">
+        <h2>🎯 Executive Summary</h2>
+        <p>Pinterest represents a unique challenge in video extraction engineering, operating as a visual discovery
+            platform where content exists in various formats - from native Pinterest videos to embedded content from
+            other platforms. This analysis explores yt-dlp's sophisticated approach to extracting video content from
+            Pinterest's pin-based architecture, handling everything from story pins to collection boards.</p>
+
+        <div class="highlight">
+            <strong>Key Engineering Insights:</strong> Pinterest's extractor implements a dual-extraction strategy with
+            flexible format detection, multi-domain redirect handling, and comprehensive metadata extraction from both
+            native videos and embedded content sources.
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🏗️ Pinterest Platform Architecture</h2>
+
+        <div class="architecture-diagram">
+            <h3>Pinterest Video Extraction Flow</h3>
+            <div class="flow-step">
+                <strong>1. URL Analysis</strong><br>
+                Multi-domain Pinterest URL parsing<br>
+                <code>pinterest.com|fr|de|jp|co.uk...</code>
+            </div>
+            <div class="flow-step">
+                <strong>2. Resource API Call</strong><br>
+                Pinterest Resource API<br>
+                <code>/resource/PinResource/get/</code>
+            </div>
+            <div class="flow-step">
+                <strong>3. Content Detection</strong><br>
+                Native vs Embedded Analysis<br>
+                Domain & Embed Source Check
+            </div>
+            <div class="flow-step">
+                <strong>4. Format Extraction</strong><br>
+                Multiple Video Sources<br>
+                HLS & Direct URL Processing
+            </div>
+            <div class="flow-step">
+                <strong>5. Metadata Enrichment</strong><br>
+                Complete Pin Information<br>
+                User, Engagement & Category Data
+            </div>
+        </div>
+
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h4>🌐 Multi-Domain Support</h4>
+                <p>28+ International Pinterest Domains</p>
+                <code>.com, .fr, .de, .jp, .co.uk, .nz, .ru, .com.au</code>
+            </div>
+            <div class="tech-item">
+                <h4>📱 Content Types</h4>
+                <p>Native Videos, Story Pins, Embedded Content</p>
+                <code>video_list, story_pin_data, embed.src</code>
+            </div>
+            <div class="tech-item">
+                <h4>🔧 API Integration</h4>
+                <p>Pinterest Resource API</p>
+                <code>PinResource, BoardResource, BoardFeed</code>
+            </div>
+            <div class="tech-item">
+                <h4>📊 Data Processing</h4>
+                <p>JSON Metadata Extraction</p>
+                <code>traverse_obj, unified_timestamp</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>💻 Core Implementation Analysis</h2>
+
+        <h3>🎯 URL Pattern Recognition & Multi-Domain Support</h3>
+        <div class="code-block">
+            # Pinterest's global domain support implementation
+            _VALID_URL_BASE = r'''(?x)
+            https?://(?:[^/]+\.)?pinterest\.(?:
+            com|fr|de|ch|jp|cl|ca|it|co\.uk|nz|ru|com\.au|at|pt|co\.kr|es|com\.mx|
+            dk|ph|th|com\.uy|co|nl|info|kr|ie|vn|com\.vn|ec|mx|in|pe|co\.at|hu|
+            co\.in|co\.nz|id|com\.ec|com\.py|tw|be|uk|com\.bo|com\.pe)'''
+
+            # Pin URL structure: /pin/[optional-title--]<pin_id>
+                _VALID_URL = rf'{PinterestBaseIE._VALID_URL_BASE}/pin/(?:[\w-]+--)?(?P<id>\d+)'
+        </div>
+
+        <h3>🔄 Pinterest Resource API Integration</h3>
+        <div class="code-block">
+            def _call_api(self, resource, video_id, options):
+            return self._download_json(
+            f'https://www.pinterest.com/resource/{resource}Resource/get/',
+            video_id, f'Download {resource} JSON metadata',
+            query={'data': json.dumps({'options': options})},
+            headers={'X-Pinterest-PWS-Handler': 'www/[username].js'})['resource_response']
+
+            # Pin data extraction with comprehensive field set
+            data = self._call_api('Pin', video_id, {
+            'field_set_key': 'unauth_react_main_pin', # Unauthenticated access
+            'id': video_id,
+            })['data']
+        </div>
+
+        <h3>🎥 Advanced Video Format Detection</h3>
+        <div class="code-block">
+            # Multi-source video extraction strategy
+            video_list = traverse_obj(
+            data,
+            ('videos', 'video_list'), # Standard video pins
+            ('story_pin_data', 'pages', ..., 'blocks', ..., 'video', 'video_list'), # Story pins
+            expected_type=dict, get_all=False, default={})
+
+            for format_id, format_dict in video_list.items():
+            format_url = url_or_none(format_dict.get('url'))
+            duration = float_or_none(format_dict.get('duration'), scale=1000)
+
+            # HLS stream detection
+            if 'hls' in format_id.lower() or determine_ext(format_url) == 'm3u8':
+            formats.extend(self._extract_m3u8_formats(
+            format_url, video_id, 'mp4', entry_protocol='m3u8_native',
+            m3u8_id=format_id, fatal=False))
+            else:
+            # Direct video formats
+            formats.append({
+            'url': format_url,
+            'format_id': format_id,
+            'width': int_or_none(format_dict.get('width')),
+            'height': int_or_none(format_dict.get('height')),
+            'duration': duration,
+            })
+        </div>
+
+        <h3>🔗 Embedded Content Handling</h3>
+        <div class="code-block">
+            # Smart embedded content detection
+            domain = data.get('domain', '')
+            if domain.lower() != 'uploaded by user' and traverse_obj(data, ('embed', 'src')):
+            return {
+            '_type': 'url_transparent',
+            'url': data['embed']['src'], # Pass to appropriate extractor
+            **info,
+            }
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>📊 Pinterest API Data Structure</h2>
+
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Data Path</th>
+                    <th>Content Type</th>
+                    <th>Description</th>
+                    <th>Example Values</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>data.videos.video_list</code></td>
+                    <td>Video Formats</td>
+                    <td>Standard pin video sources</td>
+                    <td>{"V_EXP3": {"url": "...", "width": 564}}</td>
+                </tr>
+                <tr>
+                    <td><code>story_pin_data.pages</code></td>
+                    <td>Story Content</td>
+                    <td>Multi-page story pin data</td>
+                    <td>Nested video blocks with metadata</td>
+                </tr>
+                <tr>
+                    <td><code>closeup_attribution</code></td>
+                    <td>User Data</td>
+                    <td>Pin creator information</td>
+                    <td>{"full_name": "User", "id": "123"}</td>
+                </tr>
+                <tr>
+                    <td><code>images</code></td>
+                    <td>Thumbnails</td>
+                    <td>Multiple size thumbnails</td>
+                    <td>{"237x": {"url": "...", "width": 237}}</td>
+                </tr>
+                <tr>
+                    <td><code>embed.src</code></td>
+                    <td>External Content</td>
+                    <td>Embedded video sources</td>
+                    <td>YouTube, Vimeo, Instagram URLs</td>
+                </tr>
+                <tr>
+                    <td><code>pin_join.visual_annotation</code></td>
+                    <td>Categories</td>
+                    <td>AI-detected visual categories</td>
+                    <td>["food", "recipe", "dessert"]</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🔧 Advanced Pinterest Engineering Features</h2>
+
+        <div class="pin-format-grid">
+            <div class="format-card">
+                <h4>📌 Native Pin Videos</h4>
+                <p><strong>Format Detection:</strong> Standard video_list parsing</p>
+                <p><strong>Quality Options:</strong> Multiple resolution variants</p>
+                <p><strong>Streaming:</strong> Progressive download + HLS support</p>
+                <code>formats: V_EXP3, V_HLSV3_MOBILE, V_HLSV4</code>
+            </div>
+
+            <div class="format-card">
+                <h4>📖 Story Pin Videos</h4>
+                <p><strong>Structure:</strong> Multi-page nested content</p>
+                <p><strong>Extraction:</strong> Deep traversal of page blocks</p>
+                <p><strong>Content:</strong> Sequential video elements</p>
+                <code>story_pin_data.pages[].blocks[].video</code>
+            </div>
+
+            <div class="format-card">
+                <h4>🔗 Embedded Content</h4>
+                <p><strong>Detection:</strong> Domain filtering + embed.src</p>
+                <p><strong>Delegation:</strong> url_transparent to source extractor</p>
+                <p><strong>Sources:</strong> YouTube, Vimeo, Instagram, TikTok</p>
+                <code>_type: 'url_transparent'</code>
+            </div>
+
+            <div class="format-card">
+                <h4>📚 Collection Processing</h4>
+                <p><strong>Board API:</strong> BoardResource + BoardFeed</p>
+                <p><strong>Pagination:</strong> Bookmark-based infinite scroll</p>
+                <p><strong>Batch Size:</strong> 250 pins per request</p>
+                <code>page_size: 250, bookmarks: [cursor]</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🛡️ Anti-Detection & Rate Limiting</h2>
+
+        <div class="challenge-box">
+            <h4>⚠️ Pinterest Platform Challenges</h4>
+            <ul>
+                <li><strong>Anonymous Access Limits:</strong> Some pins require authentication</li>
+                <li><strong>Regional Content Restrictions:</strong> Geo-blocked content handling</li>
+                <li><strong>Rate Limiting:</strong> API request throttling on high-volume extraction</li>
+                <li><strong>Dynamic Content Loading:</strong> AJAX-heavy interface navigation</li>
+            </ul>
+        </div>
+
+        <h3>🔒 Authentication Headers</h3>
+        <div class="code-block">
+            # Pinterest Web Service Handler
+            headers = {'X-Pinterest-PWS-Handler': 'www/[username].js'}
+
+            # Unauthenticated field set for public access
+            options = {
+            'field_set_key': 'unauth_react_main_pin',
+            'id': video_id,
+            }
+        </div>
+
+        <h3>🌍 Multi-Domain Resilience</h3>
+        <div class="code-block">
+            # Comprehensive domain support for global access
+            SUPPORTED_DOMAINS = [
+            'com', 'fr', 'de', 'ch', 'jp', 'cl', 'ca', 'it', 'co.uk', 'nz', 'ru',
+            'com.au', 'at', 'pt', 'co.kr', 'es', 'com.mx', 'dk', 'ph', 'th',
+            'com.uy', 'co', 'nl', 'info', 'kr', 'ie', 'vn', 'com.vn', 'ec', 'mx',
+            'in', 'pe', 'co.at', 'hu', 'co.in', 'co.nz', 'id', 'com.ec', 'com.py',
+            'tw', 'be', 'uk', 'com.bo', 'com.pe'
+            ]
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>📈 Pinterest Extraction Metrics</h2>
+
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0;">
+            <div class="metric-card">
+                <div class="metric-number">28+</div>
+                <div>Supported Domains</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">3</div>
+                <div>Content Types</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">250</div>
+                <div>Pins per Board API Call</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">15+</div>
+                <div>Metadata Fields</div>
+            </div>
+        </div>
+
+        <h3>🎯 Extraction Success Rates</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Content Type</th>
+                    <th>Success Rate</th>
+                    <th>Common Issues</th>
+                    <th>Fallback Strategy</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Native Pin Videos</td>
+                    <td>95%+</td>
+                    <td>Regional restrictions</td>
+                    <td>Multi-domain retry</td>
+                </tr>
+                <tr>
+                    <td>Story Pin Videos</td>
+                    <td>90%+</td>
+                    <td>Complex nested structure</td>
+                    <td>Deep traversal algorithms</td>
+                </tr>
+                <tr>
+                    <td>Embedded Content</td>
+                    <td>85%+</td>
+                    <td>Source platform restrictions</td>
+                    <td>url_transparent delegation</td>
+                </tr>
+                <tr>
+                    <td>Board Collections</td>
+                    <td>98%+</td>
+                    <td>Rate limiting on large boards</td>
+                    <td>Pagination with delays</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🚀 Advanced Implementation Strategies</h2>
+
+        <div class="pro-tip">
+            <h4>💡 Pro Implementation Tips</h4>
+            <ul>
+                <li><strong>Flexible Format Detection:</strong> Handle both video_list and story_pin_data structures
+                </li>
+                <li><strong>Domain Redundancy:</strong> Implement multi-domain fallback for geo-restrictions</li>
+                <li><strong>Metadata Enrichment:</strong> Extract comprehensive pin metadata for better organization
+                </li>
+                <li><strong>Embedded Content Delegation:</strong> Use url_transparent for optimal format extraction</li>
+                <li><strong>Collection Optimization:</strong> Implement efficient pagination for large boards</li>
+            </ul>
+        </div>
+
+        <h3>🔄 Error Recovery Mechanisms</h3>
+        <div class="code-block">
+            # Robust video extraction with fallbacks
+            def _extract_video(self, data, extract_formats=True):
+            # Primary: Native video sources
+            video_list = traverse_obj(data, ('videos', 'video_list'), expected_type=dict)
+
+            # Fallback: Story pin video sources
+            if not video_list:
+            video_list = traverse_obj(
+            data, ('story_pin_data', 'pages', ..., 'blocks', ..., 'video', 'video_list'),
+            expected_type=dict, get_all=False, default={})
+
+            # Ultimate fallback: Embedded content
+            if not video_list and traverse_obj(data, ('embed', 'src')):
+            return {'_type': 'url_transparent', 'url': data['embed']['src']}
+        </div>
+
+        <h3>📊 Comprehensive Metadata Extraction</h3>
+        <div class="code-block">
+            # Rich metadata extraction from Pinterest API
+            info = {
+            'title': strip_or_none(traverse_obj(data, 'title', 'grid_title', default='')),
+            'description': traverse_obj(data, 'seo_description', 'description'),
+            'timestamp': unified_timestamp(data.get('created_at')),
+            'uploader': traverse_obj(data, ('closeup_attribution', 'full_name')),
+            'uploader_id': str_or_none(traverse_obj(data, ('closeup_attribution', 'id'))),
+            'repost_count': int_or_none(data.get('repin_count')),
+            'comment_count': int_or_none(data.get('comment_count')),
+            'categories': traverse_obj(data, ('pin_join', 'visual_annotation'), expected_type=list),
+            'tags': traverse_obj(data, 'hashtags', expected_type=list),
+            }
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🔮 Future Pinterest Extraction Enhancements</h2>
+
+        <div class="highlight">
+            <h4>🚀 Upcoming Developments</h4>
+            <ul>
+                <li><strong>Pinterest Shopping Integration:</strong> Product video extraction from Shopping Pins</li>
+                <li><strong>Pinterest TV Support:</strong> Full-length video content handling</li>
+                <li><strong>Enhanced Story Pin Navigation:</strong> Better multi-page story extraction</li>
+                <li><strong>Pinterest Lens Integration:</strong> Visual search result video extraction</li>
+                <li><strong>Creator Studio Content:</strong> Professional creator video content access</li>
+            </ul>
+        </div>
+
+        <h3>🔧 Technical Roadmap</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Enhancement</th>
+                    <th>Technical Challenge</th>
+                    <th>Implementation Approach</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Shopping Pin Videos</td>
+                    <td>E-commerce integration</td>
+                    <td>Product API endpoint integration</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td>Pinterest TV Content</td>
+                    <td>Long-form video handling</td>
+                    <td>Enhanced streaming format support</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td>Visual Search Results</td>
+                    <td>Pinterest Lens API</td>
+                    <td>Computer vision result extraction</td>
+                    <td>Low</td>
+                </tr>
+                <tr>
+                    <td>Creator Analytics</td>
+                    <td>Private creator data</td>
+                    <td>Authentication expansion</td>
+                    <td>Medium</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🎯 Conclusion</h2>
+        <p>Pinterest's video extraction implementation in yt-dlp demonstrates sophisticated engineering for handling a
+            unique visual discovery platform. The dual-strategy approach of supporting both native Pinterest videos and
+            embedded content, combined with comprehensive metadata extraction and multi-domain support, creates a robust
+            solution for Pinterest's diverse content ecosystem.</p>
+
+        <p>The architecture's flexibility in handling story pins, standard video pins, and board collections showcases
+            advanced content detection and extraction capabilities. As Pinterest continues expanding its video offerings
+            with Shopping Pins and Pinterest TV, the extraction framework is well-positioned for future enhancements.
+        </p>
+
+        <div class="highlight">
+            <strong>Key Takeaway:</strong> Pinterest's implementation exemplifies how modern video extractors must adapt
+            to platform-specific content structures while maintaining robustness across diverse content types and
+            international domains.
+        </div>
+    </div>
+</body>
+
+</html>

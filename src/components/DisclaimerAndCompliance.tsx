@@ -104,9 +104,8 @@ export default function DisclaimerAndCompliance() {
                             </p>
                             <div className="bg-gray-100 p-4 rounded-lg">
                                 <p className="text-gray-800">
-                                    <strong>Email:</strong> legal@media-get.com<br />
+                                    <strong>Email:</strong> denghuichao90@gmail.com<br />
                                     <strong>Response Time:</strong> 24-48 hours<br />
-                                    <strong>Address:</strong> Legal Department, MediaGet
                                 </p>
                             </div>
                         </section>

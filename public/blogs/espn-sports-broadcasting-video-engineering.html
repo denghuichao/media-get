@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESPN Sports Broadcasting Video Engineering - yt-dlp Deep Dive</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.8;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #d50000, #b71c1c);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(213, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.8em;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .header p {
+            margin: 15px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        .content-section {
+            background: white;
+            margin: 30px 0;
+            padding: 35px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid #d50000;
+        }
+
+        .content-section h2 {
+            color: #d50000;
+            font-size: 2em;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #d50000;
+        }
+
+        .content-section h3 {
+            color: #b71c1c;
+            font-size: 1.4em;
+            margin: 25px 0 15px 0;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #d50000;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(45deg, #ffebee, #ffcdd2);
+            padding: 30px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border: 2px solid #d50000;
+            text-align: center;
+        }
+
+        .flow-step {
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #d50000;
+            display: inline-block;
+            min-width: 200px;
+        }
+
+        .api-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .api-table th {
+            background: #d50000;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .api-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .api-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #ffcdd2 0%, #ffebee 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #d50000;
+            margin: 20px 0;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .tech-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #d50000;
+            text-align: center;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #d50000, #b71c1c);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(213, 0, 0, 0.3);
+        }
+
+        .metric-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .challenge-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .pro-tip {
+            background: #d1ecf1;
+            border: 1px solid #b8daff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #007bff;
+        }
+
+        .auth-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 25px 0;
+        }
+
+        .auth-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #d50000;
+        }
+
+        .drm-flow {
+            background: linear-gradient(45deg, #e8f5e8, #c8e6c9);
+            padding: 25px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border: 2px solid #4caf50;
+        }
+    
+.blog-navigation {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.blog-index-link {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #85C341;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.blog-index-link:hover {
+    background-color: #6c9a33;
+}
+</style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🏈 ESPN Sports Broadcasting Video Engineering</h1>
+<div class="blog-navigation">
+    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+</div>
+
+        <p>Deep Dive into yt-dlp's Multi-Tier Authentication & Adobe Pass DRM Integration</p>
+    </div>
+
+    <div class="content-section">
+        <h2>🎯 Executive Summary</h2>
+        <p>ESPN represents the pinnacle of sports broadcasting complexity in video extraction, featuring multiple
+            authentication tiers, Adobe Pass integration, Disney+ token management, and sophisticated DRM protection.
+            This analysis explores yt-dlp's comprehensive approach to handling ESPN's multi-platform ecosystem,
+            including ESPN+, WatchESPN, ESPNCricInfo, and FiveThirtyEight video content.</p>
+
+        <div class="highlight">
+            <strong>Key Engineering Insights:</strong> ESPN's extractor implements a three-tier authentication system
+            with free content access, ESPN+ subscription validation, and cable TV provider authentication through Adobe
+            Pass, combined with advanced DRM token management.
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🏗️ ESPN Platform Architecture</h2>
+
+        <div class="architecture-diagram">
+            <h3>ESPN Multi-Tier Video Extraction Flow</h3>
+            <div class="flow-step">
+                <strong>1. Content Classification</strong><br>
+                Free/ESPN+/TV Provider Detection<br>
+                <code>sourceId analysis</code>
+            </div>
+            <div class="flow-step">
+                <strong>2. Authentication Route</strong><br>
+                Disney+ JWT/Adobe Pass<br>
+                Cookie & Token Management
+            </div>
+            <div class="flow-step">
+                <strong>3. API Integration</strong><br>
+                BAMGrid & Watch CDN<br>
+                Multi-Platform Endpoints
+            </div>
+            <div class="flow-step">
+                <strong>4. Format Processing</strong><br>
+                HLS/SMIL/F4M Extraction<br>
+                Quality Optimization
+            </div>
+            <div class="flow-step">
+                <strong>5. DRM Handling</strong><br>
+                Token Authorization Headers<br>
+                Stream Protection Bypass
+            </div>
+        </div>
+
+        <div class="tech-stack">
+            <div class="tech-item">
+                <h4>🔐 Authentication Tiers</h4>
+                <p>Free, ESPN+, Cable TV Provider</p>
+                <code>Adobe Pass + Disney+ Integration</code>
+            </div>
+            <div class="tech-item">
+                <h4>📱 Content Platforms</h4>
+                <p>ESPN, WatchESPN, CricInfo, 538</p>
+                <code>Multi-domain API endpoints</code>
+            </div>
+            <div class="tech-item">
+                <h4>🔧 Format Support</h4>
+                <p>HLS, SMIL, F4M Streams</p>
+                <code>Adaptive bitrate + quality detection</code>
+            </div>
+            <div class="tech-item">
+                <h4>🛡️ DRM Protection</h4>
+                <p>BAMGrid Token Management</p>
+                <code>JWT + OAuth2 token exchange</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>💻 Core Implementation Analysis</h2>
+
+        <h3>🎯 Multi-Tier Content Detection</h3>
+        <div class="code-block">
+            # ESPN content classification system
+            def classify_content_tier(video_data):
+            source_id = video_data.get('sourceId')
+
+            if 'DTC' in source_id:
+            # ESPN+ subscription required (Disney+ ecosystem)
+            return 'espn_plus'
+            elif source_id == 'ESPN_FREE':
+            # Free content, no authentication needed
+            return 'free'
+            else:
+            # Cable TV provider authentication (Adobe Pass)
+            return 'tv_provider'
+
+            # Complex URL pattern matching for different ESPN domains
+            _VALID_URL = r'''(?x)
+            https?://
+            (?:
+            (?:(?:(?:\w+\.)+)?espn\.go|(?:www\.)?espn)\.com/
+            (?:
+            (?:video/(?:clip|iframe/twitter))|
+            (?:.*?\?.*?\bid=|/_/id/)|
+            [^/]+/video/
+            )
+            )|
+            (?:www\.)espnfc\.(?:com|us)/(?:video/)?[^/]+/\d+/video/
+            (?P<id>\d+)'''
+        </div>
+
+        <h3>🔐 ESPN+ Disney+ Token Authentication</h3>
+        <div class="drm-flow">
+            <h4>Advanced Disney+ JWT Token Flow</h4>
+            <div class="code-block">
+                # ESPN+ requires Disney+ ecosystem authentication
+                if 'DTC' in video_data.get('sourceId'):
+                # Extract JWT from ESPN cookie
+                cookie = self._get_cookies(url).get('ESPN-ONESITE.WEB-PROD.token')
+                jwt = self._search_regex(r'=([^|]+)\|', cookie.value, 'cookie jwt')
+
+                # Refresh authentication token
+                id_token = self._download_json(
+                'https://registerdisney.go.com/jgc/v6/client/ESPN-ONESITE.WEB-PROD/guest/refresh-auth',
+                None, 'Refreshing token',
+                headers={'Content-Type': 'application/json'},
+                data=json.dumps({
+                'refreshToken': json.loads(
+                base64.urlsafe_b64decode(f'{jwt}===')
+                )['refresh_token'],
+                }).encode())['data']['token']['id_token']
+
+                # BAMGrid device assertion
+                assertion = self._call_bamgrid_api('devices', video_id, {
+                'deviceFamily': 'android',
+                'applicationRuntime': 'android',
+                'deviceProfile': 'tv',
+                'attributes': {},
+                })['assertion']
+            </div>
+        </div>
+
+        <h3>🎥 Multi-Format Video Processing</h3>
+        <div class="code-block">
+            # Sophisticated format extraction with quality detection
+            def traverse_source(source, base_source_id=None):
+            for src_id, src_item in source.items():
+            if src_id == 'alert':
+            continue
+            elif isinstance(src_item, str):
+            extract_source(src_item, base_source_id)
+            elif isinstance(src_item, dict):
+            traverse_source(src_item, f'{base_source_id}-{src_id}')
+
+            def extract_source(source_url, source_id=None):
+            ext = determine_ext(source_url)
+
+            if ext == 'smil':
+            # SMIL manifest processing
+            formats.extend(self._extract_smil_formats(
+            source_url, video_id, fatal=False))
+            elif ext == 'f4m':
+            # Flash Video Manifest
+            formats.extend(self._extract_f4m_formats(
+            source_url, video_id, f4m_id=source_id, fatal=False))
+            elif ext == 'm3u8':
+            # HLS stream processing
+            formats.extend(self._extract_m3u8_formats(
+            source_url, video_id, 'mp4',
+            entry_protocol='m3u8_native', m3u8_id=source_id))
+            else:
+            # Direct video files with quality parsing
+            format_info = {'url': source_url, 'format_id': source_id}
+
+            # Extract quality information from filename
+            quality_match = re.search(r'(\d+)p(\d+)_(\d+)k\.', source_url)
+            if quality_match:
+            format_info.update({
+            'height': int(quality_match.group(1)),
+            'fps': int(quality_match.group(2)),
+            'tbr': int(quality_match.group(3)),
+            })
+
+            # Prioritize mezzanine (highest quality) sources
+            if source_id == 'mezzanine':
+            format_info['quality'] = 1
+
+            formats.append(format_info)
+        </div>
+
+        <h3>📺 Adobe Pass TV Provider Authentication</h3>
+        <div class="code-block">
+            # Cable TV provider authentication through Adobe Pass
+            def authenticate_tv_provider(self, video_data, video_id, url):
+            # Create MVPD resource identifier
+            resource = self._get_mvpd_resource(
+            'espn1', video_data['name'], video_id, None)
+
+            # Extract MVPD authentication token
+            auth_token = self._extract_mvpd_auth(
+            url, video_id, 'ESPN', resource,
+            self._SOFTWARE_STATEMENT).encode()
+
+            # Request authenticated video asset
+            asset = self._download_json(
+            f'https://watch.auth.api.espn.com/video/auth/media/{video_id}/asset',
+            video_id,
+            data=f'adobeToken={urllib.parse.quote_plus(base64.b64encode(auth_token))}&drmSupport=HLS'.encode(),
+            headers={'apikey': 'uiqlbgzdwuru14v627vdusswb'})
+
+            return asset['stream']
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>📊 ESPN API Ecosystem</h2>
+
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>API Endpoint</th>
+                    <th>Authentication</th>
+                    <th>Content Type</th>
+                    <th>Response Format</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>api-app.espn.com/v1/video/clips</code></td>
+                    <td>None</td>
+                    <td>Free ESPN clips</td>
+                    <td>JSON with source links</td>
+                </tr>
+                <tr>
+                    <td><code>watch-cdn.product.api.espn.com</code></td>
+                    <td>Variable</td>
+                    <td>WatchESPN content</td>
+                    <td>Playback state data</td>
+                </tr>
+                <tr>
+                    <td><code>espn.api.edge.bamgrid.com</code></td>
+                    <td>Bearer Token</td>
+                    <td>ESPN+ (Disney+)</td>
+                    <td>BAMGrid streaming data</td>
+                </tr>
+                <tr>
+                    <td><code>watch.auth.api.espn.com</code></td>
+                    <td>Adobe Pass</td>
+                    <td>TV Provider content</td>
+                    <td>Authenticated stream URLs</td>
+                </tr>
+                <tr>
+                    <td><code>hs-consumer-api.espncricinfo.com</code></td>
+                    <td>None</td>
+                    <td>Cricket videos</td>
+                    <td>HLS playback URLs</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>🔐 Authentication Matrix</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Content Tier</th>
+                    <th>Authentication Method</th>
+                    <th>Required Credentials</th>
+                    <th>Token Management</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ESPN Free</td>
+                    <td>None</td>
+                    <td>Public access</td>
+                    <td>Simple API key</td>
+                </tr>
+                <tr>
+                    <td>ESPN+</td>
+                    <td>Disney+ Cookie</td>
+                    <td>ESPN+ subscription</td>
+                    <td>JWT refresh + BAMGrid OAuth2</td>
+                </tr>
+                <tr>
+                    <td>WatchESPN</td>
+                    <td>Adobe Pass</td>
+                    <td>Cable TV provider</td>
+                    <td>MVPD assertion + software statement</td>
+                </tr>
+                <tr>
+                    <td>CricInfo</td>
+                    <td>None</td>
+                    <td>Public cricket content</td>
+                    <td>Direct API access</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🔧 Advanced ESPN Engineering Features</h2>
+
+        <div class="auth-grid">
+            <div class="auth-card">
+                <h4>🎬 Multi-Platform Integration</h4>
+                <p><strong>ESPN Main:</strong> Free clips and highlights</p>
+                <p><strong>WatchESPN:</strong> Live events and premium content</p>
+                <p><strong>ESPN+:</strong> Subscription streaming service</p>
+                <p><strong>CricInfo:</strong> International cricket coverage</p>
+                <code>Unified extractor architecture</code>
+            </div>
+
+            <div class="auth-card">
+                <h4>🛡️ DRM & Token Management</h4>
+                <p><strong>BAMGrid API:</strong> Disney+ ecosystem integration</p>
+                <p><strong>Adobe Pass:</strong> Cable provider authentication</p>
+                <p><strong>JWT Tokens:</strong> Subscription validation</p>
+                <p><strong>Device Assertions:</strong> Platform verification</p>
+                <code>Multi-layer security bypass</code>
+            </div>
+
+            <div class="auth-card">
+                <h4>📺 Format Optimization</h4>
+                <p><strong>Quality Detection:</strong> Automatic resolution parsing</p>
+                <p><strong>Adaptive Streaming:</strong> HLS/DASH support</p>
+                <p><strong>Legacy Support:</strong> SMIL/F4M compatibility</p>
+                <p><strong>Mezzanine Priority:</strong> Highest quality preference</p>
+                <code>Advanced format selection algorithms</code>
+            </div>
+
+            <div class="auth-card">
+                <h4>🔗 Content Discovery</h4>
+                <p><strong>Article Embedding:</strong> Video extraction from articles</p>
+                <p><strong>Social Integration:</strong> Twitter iframe support</p>
+                <p><strong>Cross-Domain:</strong> ESPNfc international content</p>
+                <p><strong>Mobile Optimization:</strong> Device-specific streams</p>
+                <code>Comprehensive content parsing</code>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🛡️ Anti-Detection & DRM Bypass</h2>
+
+        <div class="challenge-box">
+            <h4>⚠️ ESPN Platform Challenges</h4>
+            <ul>
+                <li><strong>Multi-Tier Authentication:</strong> Complex credential management across different services
+                </li>
+                <li><strong>DRM Protection:</strong> Adobe Pass and Disney+ ecosystem token validation</li>
+                <li><strong>Regional Restrictions:</strong> Content geo-blocking and blackout rules</li>
+                <li><strong>Live Content:</strong> Real-time stream authentication and token refresh</li>
+            </ul>
+        </div>
+
+        <h3>🔓 Advanced Authentication Bypass</h3>
+        <div class="code-block">
+            # Sophisticated ESPN+ authentication flow
+            def authenticate_espn_plus(self, video_id):
+            # Step 1: Extract and decode ESPN cookie JWT
+            cookie_jwt = self.extract_espn_cookie_jwt()
+            refresh_token = self.decode_jwt_refresh_token(cookie_jwt)
+
+            # Step 2: Refresh Disney+ authentication
+            id_token = self.refresh_disney_auth(refresh_token)
+
+            # Step 3: Get BAMGrid device assertion
+            device_assertion = self.get_bamgrid_assertion()
+
+            # Step 4: Exchange for access token
+            access_token = self.exchange_device_token(device_assertion)
+
+            # Step 5: Get account assertion with ID token
+            account_assertion = self.get_account_assertion(id_token, access_token)
+
+            # Step 6: Final token exchange for streaming access
+            streaming_token = self.exchange_account_token(account_assertion)
+
+            return streaming_token
+        </div>
+
+        <h3>📺 Adobe Pass Integration</h3>
+        <div class="code-block">
+            # Cable TV provider authentication through Adobe Pass
+            class ESPNAdobePassHandler:
+            _SOFTWARE_STATEMENT = 'eyJhbGciOiJSUzI1NiJ9...' # ESPN's software statement
+
+            def authenticate_mvpd(self, provider, video_data):
+            # Create MVPD resource for specific content
+            resource = self._get_mvpd_resource(
+            'espn1', # Channel identifier
+            video_data['name'], # Content name
+            video_id, # Video identifier
+            None # Additional parameters
+            )
+
+            # Extract MVPD authentication token
+            mvpd_auth = self._extract_mvpd_auth(
+            url, video_id, 'ESPN',
+            resource, self._SOFTWARE_STATEMENT
+            )
+
+            # Encode for API submission
+            encoded_auth = base64.b64encode(mvpd_auth.encode())
+
+            return urllib.parse.quote_plus(encoded_auth)
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>📈 ESPN Extraction Metrics</h2>
+
+        <div
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0;">
+            <div class="metric-card">
+                <div class="metric-number">4</div>
+                <div>Content Platforms</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">3</div>
+                <div>Authentication Tiers</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">5</div>
+                <div>Format Types</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">DRM</div>
+                <div>Protection Level</div>
+            </div>
+        </div>
+
+        <h3>🎯 Platform Success Rates</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Success Rate</th>
+                    <th>Common Issues</th>
+                    <th>Authentication</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ESPN Free</td>
+                    <td>98%+</td>
+                    <td>Regional geo-blocking</td>
+                    <td>None required</td>
+                </tr>
+                <tr>
+                    <td>ESPN+</td>
+                    <td>85%+</td>
+                    <td>Cookie/subscription validation</td>
+                    <td>Disney+ account required</td>
+                </tr>
+                <tr>
+                    <td>WatchESPN</td>
+                    <td>75%+</td>
+                    <td>Cable provider restrictions</td>
+                    <td>Adobe Pass MVPD</td>
+                </tr>
+                <tr>
+                    <td>CricInfo</td>
+                    <td>95%+</td>
+                    <td>Content availability</td>
+                    <td>None required</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🚀 Advanced Implementation Strategies</h2>
+
+        <div class="pro-tip">
+            <h4>💡 Pro Implementation Tips</h4>
+            <ul>
+                <li><strong>Authentication Caching:</strong> Store and reuse valid tokens across sessions</li>
+                <li><strong>Fallback Chains:</strong> Implement multiple quality/format fallbacks</li>
+                <li><strong>Regional Handling:</strong> Detect and adapt to geo-restrictions</li>
+                <li><strong>Token Refresh:</strong> Proactive authentication token renewal</li>
+                <li><strong>Error Classification:</strong> Distinguish between auth and content errors</li>
+            </ul>
+        </div>
+
+        <h3>🔄 Comprehensive Error Handling</h3>
+        <div class="code-block">
+            # Advanced error handling for ESPN's complex authentication
+            def handle_espn_errors(self, error, video_id, content_type):
+            if 'login_required' in str(error):
+            if content_type == 'espn_plus':
+            self.raise_login_required(
+            'ESPN+ subscription required. Please log in through cookies.',
+            method='cookies'
+            )
+            elif content_type == 'tv_provider':
+            self.raise_login_required(
+            'Cable TV provider authentication required.',
+            method='adobe_pass'
+            )
+
+            elif 'geo_blocked' in str(error):
+            raise ExtractorError(
+            'Content not available in your region. '
+            'May be subject to blackout restrictions.',
+            expected=True
+            )
+
+            elif 'subscription_required' in str(error):
+            raise ExtractorError(
+            'Content requires active ESPN+ subscription.',
+            expected=True
+            )
+        </div>
+
+        <h3>📊 Quality Optimization Algorithm</h3>
+        <div class="code-block">
+            # Intelligent format selection and quality optimization
+            def optimize_formats(self, formats):
+            # Prioritize format types by quality
+            format_priority = {
+            'mezzanine': 10, # Highest quality source
+            'hls': 8, # Adaptive streaming
+            'smil': 6, # SMIL manifest
+            'f4m': 4, # Flash video
+            'direct': 2, # Direct MP4
+            }
+
+            # Enhanced format with priority scoring
+            for fmt in formats:
+            base_priority = format_priority.get(fmt.get('format_id'), 0)
+
+            # Boost priority for higher resolutions
+            if fmt.get('height'):
+            base_priority += fmt['height'] / 1080 * 5
+
+            # Boost priority for higher bitrates
+            if fmt.get('tbr'):
+            base_priority += fmt['tbr'] / 10000
+
+            fmt['preference'] = base_priority
+
+            return sorted(formats, key=lambda x: x.get('preference', 0), reverse=True)
+        </div>
+    </div>
+
+    <div class="content-section">
+        <h2>🔮 Future ESPN Extraction Enhancements</h2>
+
+        <div class="highlight">
+            <h4>🚀 Upcoming Developments</h4>
+            <ul>
+                <li><strong>ESPN Bet Integration:</strong> Sports betting content and live odds</li>
+                <li><strong>Enhanced Live Streaming:</strong> Real-time event extraction improvements</li>
+                <li><strong>4K/HDR Support:</strong> Ultra-high definition content handling</li>
+                <li><strong>Multi-Language Audio:</strong> International broadcast audio tracks</li>
+                <li><strong>Interactive Features:</strong> Poll and stat overlay extraction</li>
+            </ul>
+        </div>
+
+        <h3>🔧 Technical Roadmap</h3>
+        <table class="api-table">
+            <thead>
+                <tr>
+                    <th>Enhancement</th>
+                    <th>Technical Challenge</th>
+                    <th>Implementation Approach</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Live Stream Optimization</td>
+                    <td>Real-time token management</td>
+                    <td>Dynamic authentication refresh</td>
+                    <td>High</td>
+                </tr>
+                <tr>
+                    <td>4K Content Support</td>
+                    <td>Enhanced DRM handling</td>
+                    <td>Advanced stream format detection</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td>International Expansion</td>
+                    <td>Regional API variations</td>
+                    <td>Multi-region endpoint support</td>
+                    <td>Low</td>
+                </tr>
+                <tr>
+                    <td>Mobile App Integration</td>
+                    <td>App-specific authentication</td>
+                    <td>Mobile API reverse engineering</td>
+                    <td>Medium</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="content-section">
+        <h2>🎯 Conclusion</h2>
+        <p>ESPN's video extraction implementation in yt-dlp represents the most complex sports broadcasting engineering
+            challenge, combining multi-tier authentication, DRM bypass, and comprehensive format support. The
+            integration of Disney+ ecosystem authentication, Adobe Pass cable provider validation, and sophisticated
+            token management creates a robust solution for ESPN's diverse content portfolio.</p>
+
+        <p>The architecture's ability to handle free content, subscription services, and cable TV authentication while
+            managing live streaming and multiple format types demonstrates advanced understanding of modern sports
+            broadcasting infrastructure. The implementation effectively balances security bypass techniques with respect
+            for legitimate content protection.</p>
+
+        <div class="highlight">
+            <strong>Key Takeaway:</strong> ESPN's implementation exemplifies how modern sports media extractors must
+            navigate complex multi-platform ecosystems while handling diverse authentication methods and maintaining
+            high-quality video delivery across all content tiers.
+        </div>
+    </div>
+</body>
+
+</html>

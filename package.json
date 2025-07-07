@@ -20,15 +20,18 @@
     "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
+    "@types/react-router-dom": "^5.3.3",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "i18next": "^23.7.16",
     "i18next-browser-languagedetector": "^7.2.0",
     "lucide-react": "^0.344.0",
     "multer": "^1.4.5-lts.1",
+    "parse5": "^7.3.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^13.5.0",
+    "react-router-dom": "^7.6.3",
     "sqlite3": "^5.1.6",
     "uuid": "^9.0.1"
   },
