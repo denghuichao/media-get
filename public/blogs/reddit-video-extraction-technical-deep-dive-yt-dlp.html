@@ -72,6 +72,8 @@
             overflow-x: auto;
             font-family: 'Courier New', monospace;
             line-height: 1.4;
+            white-space: pre;
+            tab-size: 4;
         }
 
         .python {
@@ -84,6 +86,47 @@
 
         .bash {
             border-left: 4px solid #4EAA25;
+        }
+
+        /* Syntax Highlighting for Python code */
+        .code-block .keyword {
+            color: #d73a49;
+        }
+
+        .code-block .string {
+            color: #032f62;
+        }
+
+        .code-block .comment {
+            color: #6a737d;
+        }
+
+        .code-block .function {
+            color: #6f42c1;
+        }
+
+        .code-block .variable {
+            color: #e36209;
+        }
+
+        .code-block .number {
+            color: #005cc5;
+        }
+
+        .code-block .constant {
+            color: #005cc5;
+        }
+
+        .code-block .class {
+            color: #6f42c1;
+        }
+
+        .code-block .property {
+            color: #005cc5;
+        }
+
+        .code-block .operator {
+            color: #d73a49;
         }
 
         .highlight {
@@ -175,36 +218,35 @@
         .toc a:hover {
             text-decoration: underline;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <h1>Reddit Video Extraction: Technical Deep Dive into yt-dlp Implementation</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
-
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
         <div class="nav-links">
             <strong>Related Analyses:</strong>
@@ -252,16 +294,17 @@
 
             <h3>Reddit URL Pattern Analysis</h3>
             <div class="code-block python">
-                _VALID_URL =
-                r'https?://(?:\w+\.)?reddit(?:media)?\.com/(?P<slug>(?:(?:r|user)/[^/]+/)?comments/(?P<id>[^/?#&]+))'
+                <span class="comment"># Reddit URL pattern matching</span>
+                <span class="variable">_VALID_URL</span> = <span
+                    class="string">r'https?://(?:\w+\.)?reddit(?:media)?\.com/(?P&lt;slug&gt;(?:(?:r|user)/[^/]+/)?comments/(?P&lt;id&gt;[^/?#&]+)'</span>
 
-                        # Supported URL formats:
-                        # https://www.reddit.com/r/videos/comments/6rrwyj/that_small_heart_attack/
-                        # https://www.reddit.com/user/creepyt0es/comments/nip71r/
-                        # https://www.reddit.com/comments/124pp33
-                        # https://old.reddit.com/r/GenZedong/comments/12fujy3/
-                        # https://nm.reddit.com/r/Cricket/comments/8idvby/
-                        # https://www.redditmedia.com/r/serbia/comments/pu9wbx/
+                <span class="comment"># Supported URL formats:</span>
+                <span class="comment"># https://www.reddit.com/r/videos/comments/6rrwyj/that_small_heart_attack/</span>
+                <span class="comment"># https://www.reddit.com/user/creepyt0es/comments/nip71r/</span>
+                <span class="comment"># https://www.reddit.com/comments/124pp33</span>
+                <span class="comment"># https://old.reddit.com/r/GenZedong/comments/12fujy3/</span>
+                <span class="comment"># https://nm.reddit.com/r/Cricket/comments/8idvby/</span>
+                <span class="comment"># https://www.redditmedia.com/r/serbia/comments/pu9wbx/'</span>
             </div>
 
             <p>The regex pattern demonstrates Reddit's flexible URL structure, supporting both subreddit posts
@@ -274,20 +317,26 @@
 
             <h3>Core Class Structure</h3>
             <div class="code-block python">
-                class RedditIE(InfoExtractor):
-                _NETRC_MACHINE = 'reddit'
+                <span class="keyword">class</span> <span class="class">RedditIE</span>(<span
+                    class="class">InfoExtractor</span>):
+                <span class="variable">_NETRC_MACHINE</span> = <span class="string">'reddit'</span>
 
-                def _perform_login(self, username, password):
-                """Handle Reddit login with captcha detection"""
+                <span class="keyword">def</span> <span class="function">_perform_login</span>(<span
+                    class="variable">self</span>, <span class="variable">username</span>, <span
+                    class="variable">password</span>):
+                <span class="string">"""Handle Reddit login with captcha detection"""</span>
 
-                def _real_initialize(self):
-                """Initialize cookies for age-restricted content"""
+                <span class="keyword">def</span> <span class="function">_real_initialize</span>(<span
+                    class="variable">self</span>):
+                <span class="string">"""Initialize cookies for age-restricted content"""</span>
 
-                def _get_subtitles(self, video_id):
-                """Extract subtitle tracks from v.redd.it"""
+                <span class="keyword">def</span> <span class="function">_get_subtitles</span>(<span
+                    class="variable">self</span>, <span class="variable">video_id</span>):
+                <span class="string">"""Extract subtitle tracks from v.redd.it"""</span>
 
-                def _real_extract(self, url):
-                """Main extraction logic"""
+                <span class="keyword">def</span> <span class="function">_real_extract</span>(<span
+                    class="variable">self</span>, <span class="variable">url</span>):
+                <span class="string">"""Main extraction logic"""</span>
             </div>
 
             <p>The Reddit extractor implements a sophisticated multi-stage extraction process that begins with URL
@@ -297,15 +346,29 @@
 
             <h3>Initialization Process Deep Dive</h3>
             <div class="code-block python">
-                def _real_initialize(self):
-                # Set cookie to opt-in to age-restricted subreddits
-                self._set_cookie('reddit.com', 'over18', '1')
+                <span class="keyword">def</span> <span class="function">_real_initialize</span>(<span
+                    class="variable">self</span>):
+                <span class="comment"># Set cookie to opt-in to age-restricted subreddits</span>
+                <span class="variable">self</span>.<span class="function">_set_cookie</span>(<span
+                    class="string">'reddit.com'</span>, <span class="string">'over18'</span>, <span
+                    class="string">'1'</span>)
 
-                # Set cookie to opt-in to "gated" subreddits
-                options = traverse_obj(self._get_cookies('https://www.reddit.com/'), (
-                '_options', 'value', {urllib.parse.unquote}, {json.loads}, {dict})) or {}
-                options['pref_gated_sr_optin'] = True
-                self._set_cookie('reddit.com', '_options', urllib.parse.quote(json.dumps(options)))
+                <span class="comment"># Set cookie to opt-in to "gated" subreddits</span>
+                <span class="variable">options</span> = <span class="function">traverse_obj</span>(<span
+                    class="variable">self</span>.<span class="function">_get_cookies</span>(<span
+                    class="string">'https://www.reddit.com/'</span>), (
+                <span class="string">'_options'</span>, <span class="string">'value'</span>, {<span
+                    class="variable">urllib</span>.<span class="variable">parse</span>.<span
+                    class="function">unquote</span>}, {<span class="variable">json</span>.<span
+                    class="function">loads</span>}, {<span class="class">dict</span>})) <span class="keyword">or</span>
+                {}
+                <span class="variable">options</span>[<span class="string">'pref_gated_sr_optin'</span>] = <span
+                    class="constant">True</span>
+                <span class="variable">self</span>.<span class="function">_set_cookie</span>(<span
+                    class="string">'reddit.com'</span>, <span class="string">'_options'</span>, <span
+                    class="variable">urllib</span>.<span class="variable">parse</span>.<span
+                    class="function">quote</span>(<span class="variable">json</span>.<span
+                    class="function">dumps</span>(<span class="variable">options</span>)))
             </div>
 
             <p>The initialization process demonstrates sophisticated cookie management, automatically configuring the
@@ -318,26 +381,40 @@
 
             <h3>Login Implementation Analysis</h3>
             <div class="code-block python">
-                def _perform_login(self, username, password):
-                captcha = self._download_json(
-                'https://www.reddit.com/api/requires_captcha/login.json', None,
-                'Checking login requirement')['required']
+                <span class="keyword">def</span> <span class="function">_perform_login</span>(<span
+                    class="variable">self</span>, <span class="variable">username</span>, <span
+                    class="variable">password</span>):
+                <span class="variable">captcha</span> = <span class="variable">self</span>.<span
+                    class="function">_download_json</span>(
+                <span class="string">'https://www.reddit.com/api/requires_captcha/login.json'</span>, <span
+                    class="constant">None</span>,
+                <span class="string">'Checking login requirement'</span>)[<span class="string">'required'</span>]
 
-                if captcha:
-                raise ExtractorError('Reddit is requiring captcha before login', expected=True)
+                <span class="keyword">if</span> <span class="variable">captcha</span>:
+                <span class="keyword">raise</span> <span class="class">ExtractorError</span>(<span
+                    class="string">'Reddit is requiring captcha before login'</span>, <span
+                    class="variable">expected</span>=<span class="constant">True</span>)
 
-                login = self._download_json(
-                f'https://www.reddit.com/api/login/{username}', None,
-                data=urlencode_postdata({
-                'op': 'login-main',
-                'user': username,
-                'passwd': password,
-                'api_type': 'json',
-                }), note='Logging in', errnote='Login request failed')
+                <span class="variable">login</span> = <span class="variable">self</span>.<span
+                    class="function">_download_json</span>(
+                <span class="string">f'https://www.reddit.com/api/login/{username}'</span>, <span
+                    class="constant">None</span>,
+                <span class="variable">data</span>=<span class="function">urlencode_postdata</span>({
+                <span class="string">'op'</span>: <span class="string">'login-main'</span>,
+                <span class="string">'user'</span>: <span class="variable">username</span>,
+                <span class="string">'passwd'</span>: <span class="variable">password</span>,
+                <span class="string">'api_type'</span>: <span class="string">'json'</span>,
+                }), <span class="variable">note</span>=<span class="string">'Logging in'</span>, <span
+                    class="variable">errnote</span>=<span class="string">'Login request failed'</span>)
 
-                errors = '; '.join(traverse_obj(login, ('json', 'errors', ..., 1)))
-                if errors:
-                raise ExtractorError(f'Unable to login, Reddit API says {errors}', expected=True)
+                <span class="variable">errors</span> = <span class="string">'; '</span>.<span
+                    class="function">join</span>(<span class="function">traverse_obj</span>(<span
+                    class="variable">login</span>, (<span class="string">'json'</span>, <span
+                    class="string">'errors'</span>, ..., <span class="number">1</span>)))
+                <span class="keyword">if</span> <span class="variable">errors</span>:
+                <span class="keyword">raise</span> <span class="class">ExtractorError</span>(<span
+                    class="string">f'Unable to login, Reddit API says {errors}'</span>, <span
+                    class="variable">expected</span>=<span class="constant">True</span>)
             </div>
 
             <p>The login implementation showcases Reddit's anti-automation measures, including captcha detection and
@@ -394,18 +471,33 @@
 
             <h3>JSON API Request Pattern</h3>
             <div class="code-block python">
-                def _real_extract(self, url):
-                slug, video_id = self._match_valid_url(url).group('slug', 'id')
+                <span class="keyword">def</span> <span class="function">_real_extract</span>(<span
+                    class="variable">self</span>, <span class="variable">url</span>):
+                <span class="variable">slug</span>, <span class="variable">video_id</span> = <span
+                    class="variable">self</span>.<span class="function">_match_valid_url</span>(<span
+                    class="variable">url</span>).<span class="function">group</span>(<span class="string">'slug'</span>,
+                <span class="string">'id'</span>)
 
-                try:
-                data = self._download_json(
-                f'https://www.reddit.com/{slug}/.json', video_id, expected_status=403)
-                except ExtractorError as e:
-                if isinstance(e.cause, json.JSONDecodeError):
-                if self._get_cookies('https://www.reddit.com/').get('reddit_session'):
-                raise ExtractorError('Your IP address is unable to access the Reddit API', expected=True)
-                self.raise_login_required('Account authentication is required')
-                raise
+                <span class="keyword">try</span>:
+                <span class="variable">data</span> = <span class="variable">self</span>.<span
+                    class="function">_download_json</span>(
+                <span class="string">f'https://www.reddit.com/{slug}/.json'</span>, <span
+                    class="variable">video_id</span>, <span class="variable">expected_status</span>=<span
+                    class="number">403</span>)
+                <span class="keyword">except</span> <span class="class">ExtractorError</span> <span
+                    class="keyword">as</span> <span class="variable">e</span>:
+                <span class="keyword">if</span> <span class="function">isinstance</span>(<span
+                    class="variable">e</span>.<span class="variable">cause</span>, <span
+                    class="variable">json</span>.<span class="class">JSONDecodeError</span>):
+                <span class="keyword">if</span> <span class="variable">self</span>.<span
+                    class="function">_get_cookies</span>(<span class="string">'https://www.reddit.com/'</span>).<span
+                    class="function">get</span>(<span class="string">'reddit_session'</span>):
+                <span class="keyword">raise</span> <span class="class">ExtractorError</span>(<span class="string">'Your
+                    IP address is unable to access the Reddit API'</span>, <span class="variable">expected</span>=<span
+                    class="constant">True</span>)
+                <span class="variable">self</span>.<span class="function">raise_login_required</span>(<span
+                    class="string">'Account authentication is required'</span>)
+                <span class="keyword">raise</span>
             </div>
 
             <p>The API communication pattern demonstrates sophisticated error handling for Reddit's various access
@@ -443,14 +535,22 @@
 
             <h3>Error Response Handling</h3>
             <div class="code-block python">
-                if traverse_obj(data, 'error') == 403:
-                reason = data.get('reason')
-                if reason == 'quarantined':
-                self.raise_login_required('Quarantined subreddit; an account that has opted in is required')
-                elif reason == 'private':
-                self.raise_login_required('Private subreddit; an account that has been approved is required')
-                else:
-                raise ExtractorError(f'HTTP Error 403 Forbidden; reason given: {reason}')
+                <span class="keyword">if</span> <span class="function">traverse_obj</span>(<span
+                    class="variable">data</span>, <span class="string">'error'</span>) == <span
+                    class="number">403</span>:
+                <span class="variable">reason</span> = <span class="variable">data</span>.<span
+                    class="function">get</span>(<span class="string">'reason'</span>)
+                <span class="keyword">if</span> <span class="variable">reason</span> == <span
+                    class="string">'quarantined'</span>:
+                <span class="variable">self</span>.<span class="function">raise_login_required</span>(<span
+                    class="string">'Quarantined subreddit; an account that has opted in is required'</span>)
+                <span class="keyword">elif</span> <span class="variable">reason</span> == <span
+                    class="string">'private'</span>:
+                <span class="variable">self</span>.<span class="function">raise_login_required</span>(<span
+                    class="string">'Private subreddit; an account that has been approved is required'</span>)
+                <span class="keyword">else</span>:
+                <span class="keyword">raise</span> <span class="class">ExtractorError</span>(<span class="string">f'HTTP
+                    Error 403 Forbidden; reason given: {reason}'</span>)
             </div>
 
             <p>The error handling system provides granular responses to different types of access restrictions, enabling
@@ -462,19 +562,23 @@
 
             <h3>Native Reddit Video Detection</h3>
             <div class="code-block python">
-                # Check if media is hosted on reddit:
-                reddit_video = traverse_obj(data, (
-                (None, ('crosspost_parent_list', ...)),
-                ('secure_media', 'media'),
-                'reddit_video'), get_all=False)
+                <span class="comment"># Check if media is hosted on reddit:</span>
+                <span class="variable">reddit_video</span> = <span class="function">traverse_obj</span>(<span
+                    class="variable">data</span>, (
+                (<span class="constant">None</span>, (<span class="string">'crosspost_parent_list'</span>, ...)),
+                (<span class="string">'secure_media'</span>, <span class="string">'media'</span>),
+                <span class="string">'reddit_video'</span>), <span class="variable">get_all</span>=<span
+                    class="constant">False</span>)
 
-                if reddit_video:
-                # Extract video ID from fallback URL
-                display_id = video_id
-                video_id = self._search_regex(
-                r'https?://v\.redd\.it/(?P<id>[^/?#&]+)',
-                    reddit_video['fallback_url'],
-                    'video_id', default=display_id)
+                <span class="keyword">if</span> <span class="variable">reddit_video</span>:
+                <span class="comment"># Extract video ID from fallback URL</span>
+                <span class="variable">display_id</span> = <span class="variable">video_id</span>
+                <span class="variable">video_id</span> = <span class="variable">self</span>.<span
+                    class="function">_search_regex</span>(
+                <span class="string">r'https?://v\.redd\.it/(?P&lt;id&gt;[^/?#&]+)'</span>,
+                <span class="variable">reddit_video</span>[<span class="string">'fallback_url'</span>],
+                <span class="string">'video_id'</span>, <span class="variable">default</span>=<span
+                    class="variable">display_id</span>)
             </div>
 
             <p>The video detection algorithm examines multiple data paths to locate Reddit-hosted video content,
@@ -483,20 +587,34 @@
 
             <h3>URL Construction and Fallback Strategy</h3>
             <div class="code-block python">
-                playlist_urls = [
-                try_get(reddit_video, lambda x: unescapeHTML(x[y]))
-                for y in ('dash_url', 'hls_url')
+                <span class="variable">playlist_urls</span> = [
+                <span class="function">try_get</span>(<span class="variable">reddit_video</span>, <span
+                    class="keyword">lambda</span> <span class="variable">x</span>: <span
+                    class="function">unescapeHTML</span>(<span class="variable">x</span>[<span
+                    class="variable">y</span>]))
+                <span class="keyword">for</span> <span class="variable">y</span> <span class="keyword">in</span> (<span
+                    class="string">'dash_url'</span>, <span class="string">'hls_url'</span>)
                 ]
 
-                # Construct fallback URLs if not provided
-                dash_playlist_url = playlist_urls[0] or f'https://v.redd.it/{video_id}/DASHPlaylist.mpd'
-                hls_playlist_url = playlist_urls[1] or f'https://v.redd.it/{video_id}/HLSPlaylist.m3u8'
+                <span class="comment"># Construct fallback URLs if not provided</span>
+                <span class="variable">dash_playlist_url</span> = <span class="variable">playlist_urls</span>[<span
+                    class="number">0</span>] <span class="keyword">or</span> <span
+                    class="string">f'https://v.redd.it/{video_id}/DASHPlaylist.mpd'</span>
+                <span class="variable">hls_playlist_url</span> = <span class="variable">playlist_urls</span>[<span
+                    class="number">1</span>] <span class="keyword">or</span> <span
+                    class="string">f'https://v.redd.it/{video_id}/HLSPlaylist.m3u8'</span>
 
-                # Add subtitle parameters to HLS URL
-                qs = traverse_obj(parse_qs(hls_playlist_url), {
-                'f': ('f', 0, {lambda x: ','.join([x, 'subsAll']) if x else 'hd,subsAll'}),
+                <span class="comment"># Add subtitle parameters to HLS URL</span>
+                <span class="variable">qs</span> = <span class="function">traverse_obj</span>(<span
+                    class="function">parse_qs</span>(<span class="variable">hls_playlist_url</span>), {
+                <span class="string">'f'</span>: (<span class="string">'f'</span>, <span class="number">0</span>, {<span
+                    class="keyword">lambda</span> <span class="variable">x</span>: <span class="string">','</span>.<span
+                    class="function">join</span>([<span class="variable">x</span>, <span
+                    class="string">'subsAll'</span>]) <span class="keyword">if</span> <span class="variable">x</span>
+                <span class="keyword">else</span> <span class="string">'hd,subsAll'</span>}),
                 })
-                hls_playlist_url = update_url_query(hls_playlist_url, qs)
+                <span class="variable">hls_playlist_url</span> = <span class="function">update_url_query</span>(<span
+                    class="variable">hls_playlist_url</span>, <span class="variable">qs</span>)
             </div>
 
             <p>The URL construction logic demonstrates Reddit's predictable v.redd.it structure, allowing the extractor
@@ -505,28 +623,47 @@
 
             <h3>Format Extraction Strategy</h3>
             <div class="code-block python">
-                formats = [{
-                'url': unescapeHTML(reddit_video['fallback_url']),
-                'height': int_or_none(reddit_video.get('height')),
-                'width': int_or_none(reddit_video.get('width')),
-                'tbr': int_or_none(reddit_video.get('bitrate_kbps')),
-                'acodec': 'none', # Reddit videos are typically video-only
-                'vcodec': 'h264',
-                'ext': 'mp4',
-                'format_id': 'fallback',
-                'format_note': 'DASH video, mp4_dash',
+                <span class="variable">formats</span> = [{
+                <span class="string">'url'</span>: <span class="function">unescapeHTML</span>(<span
+                    class="variable">reddit_video</span>[<span class="string">'fallback_url'</span>]),
+                <span class="string">'height'</span>: <span class="function">int_or_none</span>(<span
+                    class="variable">reddit_video</span>.<span class="function">get</span>(<span
+                    class="string">'height'</span>)),
+                <span class="string">'width'</span>: <span class="function">int_or_none</span>(<span
+                    class="variable">reddit_video</span>.<span class="function">get</span>(<span
+                    class="string">'width'</span>)),
+                <span class="string">'tbr'</span>: <span class="function">int_or_none</span>(<span
+                    class="variable">reddit_video</span>.<span class="function">get</span>(<span
+                    class="string">'bitrate_kbps'</span>)),
+                <span class="string">'acodec'</span>: <span class="string">'none'</span>, <span class="comment"># Reddit
+                    videos are typically video-only</span>
+                <span class="string">'vcodec'</span>: <span class="string">'h264'</span>,
+                <span class="string">'ext'</span>: <span class="string">'mp4'</span>,
+                <span class="string">'format_id'</span>: <span class="string">'fallback'</span>,
+                <span class="string">'format_note'</span>: <span class="string">'DASH video, mp4_dash'</span>,
                 }]
 
-                # Extract HLS formats with subtitles
-                hls_fmts, subtitles = self._extract_m3u8_formats_and_subtitles(
-                hls_playlist_url, display_id, 'mp4', m3u8_id='hls', fatal=False)
-                formats.extend(hls_fmts)
+                <span class="comment"># Extract HLS formats with subtitles</span>
+                <span class="variable">hls_fmts</span>, <span class="variable">subtitles</span> = <span
+                    class="variable">self</span>.<span class="function">_extract_m3u8_formats_and_subtitles</span>(
+                <span class="variable">hls_playlist_url</span>, <span class="variable">display_id</span>, <span
+                    class="string">'mp4'</span>, <span class="variable">m3u8_id</span>=<span
+                    class="string">'hls'</span>, <span class="variable">fatal</span>=<span
+                    class="constant">False</span>)
+                <span class="variable">formats</span>.<span class="function">extend</span>(<span
+                    class="variable">hls_fmts</span>)
 
-                # Extract DASH formats with subtitles
-                dash_fmts, dash_subs = self._extract_mpd_formats_and_subtitles(
-                dash_playlist_url, display_id, mpd_id='dash', fatal=False)
-                formats.extend(dash_fmts)
-                self._merge_subtitles(dash_subs, target=subtitles)
+                <span class="comment"># Extract DASH formats with subtitles</span>
+                <span class="variable">dash_fmts</span>, <span class="variable">dash_subs</span> = <span
+                    class="variable">self</span>.<span class="function">_extract_mpd_formats_and_subtitles</span>(
+                <span class="variable">dash_playlist_url</span>, <span class="variable">display_id</span>, <span
+                    class="variable">mpd_id</span>=<span class="string">'dash'</span>, <span
+                    class="variable">fatal</span>=<span class="constant">False</span>)
+                <span class="variable">formats</span>.<span class="function">extend</span>(<span
+                    class="variable">dash_fmts</span>)
+                <span class="variable">self</span>.<span class="function">_merge_subtitles</span>(<span
+                    class="variable">dash_subs</span>, <span class="variable">target</span>=<span
+                    class="variable">subtitles</span>)
             </div>
 
             <p>The format extraction employs a multi-protocol approach, providing users with both DASH and HLS options
@@ -551,11 +688,17 @@
 
             <h3>Subtitle Integration Analysis</h3>
             <div class="code-block python">
-                def _get_subtitles(self, video_id):
-                # Fallback if there were no subtitles provided by DASH or HLS manifests
-                caption_url = f'https://v.redd.it/{video_id}/wh_ben_en.vtt'
-                if self._is_valid_url(caption_url, video_id, item='subtitles'):
-                return {'en': [{'url': caption_url}]}
+                <span class="keyword">def</span> <span class="function">_get_subtitles</span>(<span
+                    class="variable">self</span>, <span class="variable">video_id</span>):
+                <span class="comment"># Fallback if there were no subtitles provided by DASH or HLS manifests</span>
+                <span class="variable">caption_url</span> = <span
+                    class="string">f'https://v.redd.it/{video_id}/wh_ben_en.vtt'</span>
+                <span class="keyword">if</span> <span class="variable">self</span>.<span
+                    class="function">_is_valid_url</span>(<span class="variable">caption_url</span>, <span
+                    class="variable">video_id</span>, <span class="variable">item</span>=<span
+                    class="string">'subtitles'</span>):
+                <span class="keyword">return</span> {<span class="string">'en'</span>: [{<span
+                    class="string">'url'</span>: <span class="variable">caption_url</span>}]}
             </div>
 
             <p>The subtitle extraction system demonstrates Reddit's systematic approach to accessibility, with
@@ -604,24 +747,30 @@
 
             <h3>Multi-Modal Content Handling</h3>
             <div class="code-block python">
-                parsed_url = urllib.parse.urlparse(video_url)
+                <span class="variable">parsed_url</span> = <span class="variable">urllib</span>.<span
+                    class="variable">parse</span>.<span class="function">urlparse</span>(<span
+                    class="variable">video_url</span>)
 
-                # Check for embeds in text posts
-                if 'reddit.com' in parsed_url.netloc and f'/{video_id}/' in parsed_url.path:
-                entries = []
-                for media in traverse_obj(data, ('media_metadata', ...), expected_type=dict):
-                if not media.get('id') or media.get('e') != 'RedditVideo':
-                continue
-                # Extract embedded video formats
-                formats = []
-                if media.get('hlsUrl'):
-                formats.extend(self._extract_m3u8_formats(
-                unescapeHTML(media['hlsUrl']), video_id, 'mp4',
-                m3u8_id='hls', fatal=False))
-                if media.get('dashUrl'):
-                formats.extend(self._extract_mpd_formats(
-                unescapeHTML(media['dashUrl']), video_id,
-                mpd_id='dash', fatal=False))
+                <span class="comment"># Check for embeds in text posts</span>
+                <span class="keyword">if</span> <span class="string">'reddit.com'</span> <span class="keyword">in</span>
+                <span class="variable">parsed_url</span>.<span class="variable">netloc</span> <span
+                    class="keyword">and</span> <span class="string">f'/{video_id}/'</span> <span
+                    class="keyword">in</span> <span class="variable">parsed_url</span>.<span
+                    class="variable">path</span>:
+                <span class="variable">entries</span> = []
+                <span class="keyword">for</span> <span class="variable">media</span> <span class="keyword">in</span>
+                <span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span
+                    class="string">'media_metadata'</span>, ...), <span class="variable">expected_type</span>=<span
+                    class="class">dict</span>):
+                <span class="keyword">if not</span> <span class="variable">media</span>.<span
+                    class="function">get</span>(<span class="string">'id'</span>) <span class="keyword">or</span> <span
+                    class="variable">media</span>.<span class="function">get</span>(<span class="string">'e'</span>) !=
+                <span class="string">'RedditVideo'</span>:
+                <span class="keyword">continue</span> <span class="comment"># Skip non-video media early</span>
+
+                <span class="comment"># Process only video content</span>
+                <span class="variable">formats</span> = []
+                <span class="comment"># ... format extraction logic</span>
             </div>
 
             <p>The content detection system intelligently differentiates between various content types, including text
@@ -630,20 +779,26 @@
 
             <h3>External Content Delegation</h3>
             <div class="code-block python">
-                if parsed_url.netloc == 'v.redd.it':
-                self.raise_no_formats('This video is processing', expected=True, video_id=video_id)
-                return {
-                **info,
-                'id': parsed_url.path.split('/')[1],
-                'display_id': video_id,
+                <span class="keyword">if</span> <span class="variable">parsed_url</span>.<span
+                    class="variable">netloc</span> == <span class="string">'v.redd.it'</span>:
+                <span class="variable">self</span>.<span class="function">raise_no_formats</span>(<span
+                    class="string">'This video is processing'</span>, <span class="variable">expected</span>=<span
+                    class="constant">True</span>, <span class="variable">video_id</span>=<span
+                    class="variable">video_id</span>)
+                <span class="keyword">return</span> {
+                **<span class="variable">info</span>,
+                <span class="string">'id'</span>: <span class="variable">parsed_url</span>.<span
+                    class="variable">path</span>.<span class="function">split</span>(<span
+                    class="string">'/'</span>)[<span class="number">1</span>],
+                <span class="string">'display_id'</span>: <span class="variable">video_id</span>,
                 }
 
-                # Not hosted on reddit, must continue extraction
-                return {
-                **info,
-                'display_id': video_id,
-                '_type': 'url_transparent',
-                'url': video_url,
+                <span class="comment"># Not hosted on reddit, must continue extraction</span>
+                <span class="keyword">return</span> {
+                **<span class="variable">info</span>,
+                <span class="string">'display_id'</span>: <span class="variable">video_id</span>,
+                <span class="string">'_type'</span>: <span class="string">'url_transparent'</span>,
+                <span class="string">'url'</span>: <span class="variable">video_url</span>,
                 }
             </div>
 
@@ -653,29 +808,46 @@
 
             <h3>Thumbnail Extraction Deep Dive</h3>
             <div class="code-block python">
-                thumbnails = []
+                <span class="variable">thumbnails</span> = []
 
-                def add_thumbnail(src):
-                if not isinstance(src, dict):
-                return
-                thumbnail_url = url_or_none(src.get('url'))
-                if not thumbnail_url:
-                return
-                thumbnails.append({
-                'url': unescapeHTML(thumbnail_url),
-                'width': int_or_none(src.get('width')),
-                'height': int_or_none(src.get('height')),
-                'http_headers': {'Accept': '*/*'},
+                <span class="keyword">def</span> <span class="function">add_thumbnail</span>(<span
+                    class="variable">src</span>):
+                <span class="keyword">if not</span> <span class="function">isinstance</span>(<span
+                    class="variable">src</span>, <span class="class">dict</span>):
+                <span class="keyword">return</span>
+                <span class="variable">thumbnail_url</span> = <span class="function">url_or_none</span>(<span
+                    class="variable">src</span>.<span class="function">get</span>(<span class="string">'url'</span>))
+                <span class="keyword">if not</span> <span class="variable">thumbnail_url</span>:
+                <span class="keyword">return</span>
+                <span class="variable">thumbnails</span>.<span class="function">append</span>({
+                <span class="string">'url'</span>: <span class="function">unescapeHTML</span>(<span
+                    class="variable">thumbnail_url</span>),
+                <span class="string">'width'</span>: <span class="function">int_or_none</span>(<span
+                    class="variable">src</span>.<span class="function">get</span>(<span class="string">'width'</span>)),
+                <span class="string">'height'</span>: <span class="function">int_or_none</span>(<span
+                    class="variable">src</span>.<span class="function">get</span>(<span
+                    class="string">'height'</span>)),
+                <span class="string">'http_headers'</span>: {<span class="string">'Accept'</span>: <span
+                    class="string">'*/*'</span>},
                 })
 
-                for image in try_get(data, lambda x: x['preview']['images']) or []:
-                if not isinstance(image, dict):
-                continue
-                add_thumbnail(image.get('source'))
-                resolutions = image.get('resolutions')
-                if isinstance(resolutions, list):
-                for resolution in resolutions:
-                add_thumbnail(resolution)
+                <span class="keyword">for</span> <span class="variable">image</span> <span class="keyword">in</span>
+                <span class="function">try_get</span>(<span class="variable">data</span>, <span
+                    class="keyword">lambda</span> <span class="variable">x</span>: <span class="variable">x</span>[<span
+                    class="string">'preview'</span>][<span class="string">'images'</span>]) <span
+                    class="keyword">or</span> []:
+                <span class="keyword">if not</span> <span class="function">isinstance</span>(<span
+                    class="variable">image</span>, <span class="class">dict</span>):
+                <span class="keyword">continue</span>
+                <span class="function">add_thumbnail</span>(<span class="variable">image</span>.<span
+                    class="function">get</span>(<span class="string">'source'</span>))
+                <span class="variable">resolutions</span> = <span class="variable">image</span>.<span
+                    class="function">get</span>(<span class="string">'resolutions'</span>)
+                <span class="keyword">if</span> <span class="function">isinstance</span>(<span
+                    class="variable">resolutions</span>, <span class="class">list</span>):
+                <span class="keyword">for</span> <span class="variable">resolution</span> <span
+                    class="keyword">in</span> <span class="variable">resolutions</span>:
+                <span class="function">add_thumbnail</span>(<span class="variable">resolution</span>)
             </div>
 
             <p>The thumbnail extraction process demonstrates Reddit's comprehensive image preview system, extracting
@@ -700,14 +872,20 @@
 
             <h3>IP Block Detection Logic</h3>
             <div class="code-block python">
-                except ExtractorError as e:
-                if isinstance(e.cause, json.JSONDecodeError):
-                if self._get_cookies('https://www.reddit.com/').get('reddit_session'):
-                raise ExtractorError(
-                'Your IP address is unable to access the Reddit API',
-                expected=True)
-                self.raise_login_required('Account authentication is required')
-                raise
+                <span class="keyword">except</span> <span class="class">ExtractorError</span> <span
+                    class="keyword">as</span> <span class="variable">e</span>:
+                <span class="keyword">if</span> <span class="function">isinstance</span>(<span
+                    class="variable">e</span>.<span class="variable">cause</span>, <span
+                    class="variable">json</span>.<span class="class">JSONDecodeError</span>):
+                <span class="keyword">if</span> <span class="variable">self</span>.<span
+                    class="function">_get_cookies</span>(<span class="string">'https://www.reddit.com/'</span>).<span
+                    class="function">get</span>(<span class="string">'reddit_session'</span>):
+                <span class="keyword">raise</span> <span class="class">ExtractorError</span>(
+                <span class="string">'Your IP address is unable to access the Reddit API'</span>,
+                <span class="variable">expected</span>=<span class="constant">True</span>)
+                <span class="variable">self</span>.<span class="function">raise_login_required</span>(<span
+                    class="string">'Account authentication is required'</span>)
+                <span class="keyword">raise</span>
             </div>
 
             <p>The IP block detection logic demonstrates sophisticated error analysis, distinguishing between
@@ -716,12 +894,18 @@
 
             <h3>Processing State Handling</h3>
             <div class="code-block python">
-                if parsed_url.netloc == 'v.redd.it':
-                self.raise_no_formats('This video is processing', expected=True, video_id=video_id)
-                return {
-                **info,
-                'id': parsed_url.path.split('/')[1],
-                'display_id': video_id,
+                <span class="keyword">if</span> <span class="variable">parsed_url</span>.<span
+                    class="variable">netloc</span> == <span class="string">'v.redd.it'</span>:
+                <span class="variable">self</span>.<span class="function">raise_no_formats</span>(<span
+                    class="string">'This video is processing'</span>, <span class="variable">expected</span>=<span
+                    class="constant">True</span>, <span class="variable">video_id</span>=<span
+                    class="variable">video_id</span>)
+                <span class="keyword">return</span> {
+                **<span class="variable">info</span>,
+                <span class="string">'id'</span>: <span class="variable">parsed_url</span>.<span
+                    class="variable">path</span>.<span class="function">split</span>(<span
+                    class="string">'/'</span>)[<span class="number">1</span>],
+                <span class="string">'display_id'</span>: <span class="variable">video_id</span>,
                 }
             </div>
 
@@ -735,20 +919,33 @@
 
             <h3>Efficient Data Traversal</h3>
             <div class="code-block python">
-                # Optimized metadata extraction using traverse_obj
-                info = {
-                'thumbnails': thumbnails,
-                'age_limit': {True: 18, False: 0}.get(data.get('over_18')),
-                **traverse_obj(data, {
-                'title': ('title', {truncate_string(left=72)}),
-                'alt_title': ('title', {str}),
-                'description': ('selftext', {str}, filter),
-                'timestamp': ('created_utc', {float_or_none}),
-                'uploader': ('author', {str}),
-                'channel_id': ('subreddit', {str}),
-                'like_count': ('ups', {int_or_none}),
-                'dislike_count': ('downs', {int_or_none}),
-                'comment_count': ('num_comments', {int_or_none}),
+                <span class="comment"># Optimized metadata extraction using traverse_obj</span>
+                <span class="variable">info</span> = {
+                <span class="string">'thumbnails'</span>: <span class="variable">thumbnails</span>,
+                <span class="string">'age_limit'</span>: {<span class="constant">True</span>: <span
+                    class="number">18</span>, <span class="constant">False</span>: <span class="number">0</span>}.<span
+                    class="function">get</span>(<span class="variable">data</span>.<span
+                    class="function">get</span>(<span class="string">'over_18'</span>)),
+                **<span class="function">traverse_obj</span>(<span class="variable">data</span>, {
+                <span class="string">'title'</span>: (<span class="string">'title'</span>, {<span
+                    class="function">truncate_string</span>(<span class="variable">left</span>=<span
+                    class="number">72</span>)}),
+                <span class="string">'alt_title'</span>: (<span class="string">'title'</span>, {<span
+                    class="class">str</span>}),
+                <span class="string">'description'</span>: (<span class="string">'selftext'</span>, {<span
+                    class="class">str</span>}, <span class="variable">filter</span>),
+                <span class="string">'timestamp'</span>: (<span class="string">'created_utc'</span>, {<span
+                    class="function">float_or_none</span>}),
+                <span class="string">'uploader'</span>: (<span class="string">'author'</span>, {<span
+                    class="class">str</span>}),
+                <span class="string">'channel_id'</span>: (<span class="string">'subreddit'</span>, {<span
+                    class="class">str</span>}),
+                <span class="string">'like_count'</span>: (<span class="string">'ups'</span>, {<span
+                    class="function">int_or_none</span>}),
+                <span class="string">'dislike_count'</span>: (<span class="string">'downs'</span>, {<span
+                    class="function">int_or_none</span>}),
+                <span class="string">'comment_count'</span>: (<span class="string">'num_comments'</span>, {<span
+                    class="function">int_or_none</span>}),
                 }),
                 }
             </div>
@@ -771,14 +968,20 @@
 
             <h3>Memory Efficiency in Large Threads</h3>
             <div class="code-block python">
-                # Efficient processing of embedded media without loading entire thread
-                for media in traverse_obj(data, ('media_metadata', ...), expected_type=dict):
-                if not media.get('id') or media.get('e') != 'RedditVideo':
-                continue # Skip non-video media early
+                <span class="comment"># Efficient processing of embedded media without loading entire thread</span>
+                <span class="keyword">for</span> <span class="variable">media</span> <span class="keyword">in</span>
+                <span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span
+                    class="string">'media_metadata'</span>, ...), <span class="variable">expected_type</span>=<span
+                    class="class">dict</span>):
+                <span class="keyword">if not</span> <span class="variable">media</span>.<span
+                    class="function">get</span>(<span class="string">'id'</span>) <span class="keyword">or</span> <span
+                    class="variable">media</span>.<span class="function">get</span>(<span class="string">'e'</span>) !=
+                <span class="string">'RedditVideo'</span>:
+                <span class="keyword">continue</span> <span class="comment"># Skip non-video media early</span>
 
-                # Process only video content
-                formats = []
-                # ... format extraction logic
+                <span class="comment"># Process only video content</span>
+                <span class="variable">formats</span> = []
+                <span class="comment"># ... format extraction logic</span>
             </div>
 
             <p>The extraction process employs early filtering and lazy evaluation to handle large Reddit threads

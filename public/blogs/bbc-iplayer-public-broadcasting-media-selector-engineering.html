@@ -55,6 +55,50 @@
             margin: 15px 0;
             overflow-x: auto;
             border-left: 4px solid #CC0000;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            white-space: pre;
+            tab-size: 4;
+        }
+
+        /* Syntax Highlighting for Python code */
+        .code-block .keyword {
+            color: #569cd6;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .function {
+            color: #dcdcaa;
+        }
+
+        .code-block .variable {
+            color: #9cdcfe;
+        }
+
+        .code-block .number {
+            color: #b5cea8;
+        }
+
+        .code-block .constant {
+            color: #4fc1ff;
+        }
+
+        .code-block .class {
+            color: #4ec9b0;
+        }
+
+        .code-block .property {
+            color: #9cdcfe;
+        }
+
+        .code-block .operator {
+            color: #d4d4d4;
         }
 
         .highlight {
@@ -168,36 +212,35 @@
             display: inline-block;
             margin: 5px;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <h1>📺 BBC iPlayer Engineering: Public Broadcasting & Media Selector Architecture</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
-
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
         <div class="highlight">
             <strong>Overview:</strong> This comprehensive analysis explores the BBC's sophisticated media delivery
@@ -238,27 +281,39 @@
         <p>BBC's Media Selector API provides sophisticated content delivery with multiple mediaset strategies:</p>
 
         <div class="code-block">
-            _MEDIA_SELECTOR_URL_TEMPL =
-            'https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/%s/vpid/%s'
+            <span class="variable">_MEDIA_SELECTOR_URL_TEMPL</span> = <span
+                class="string">'https://open.live.bbc.co.uk/mediaselector/6/select/version/2.0/mediaset/%s/vpid/%s'</span>
 
-            _MEDIA_SETS = [
-            # Provides HQ HLS streams with even better quality that pc mediaset but fails
-            # with geolocation in some cases when it's even not geo restricted at all
-            'iptv-all',
-            'pc',
+            <span class="variable">_MEDIA_SETS</span> = [
+            <span class="comment"># Provides HQ HLS streams with even better quality that pc mediaset but fails</span>
+            <span class="comment"># with geolocation in some cases when it's even not geo restricted at all</span>
+            <span class="string">'iptv-all'</span>,
+            <span class="string">'pc'</span>,
             ]
 
-            def _download_media_selector_url(self, media_selection_url, programme_id):
-            try:
-            media_selection = self._download_json(
-            media_selection_url, programme_id, 'Downloading media selection JSON',
-            expected_status=(403, 404))
-            except ExtractorError as ee:
-            if isinstance(ee.cause, HTTPError) and ee.cause.status in (403, 404):
-            media_selection = {}
-            else:
-            raise
-            return self._process_media_selector_url(media_selection, programme_id)
+            <span class="keyword">def</span> <span class="function">_download_media_selector_url</span>(<span
+                class="variable">self</span>, <span class="variable">media_selection_url</span>, <span
+                class="variable">programme_id</span>):
+            <span class="keyword">try</span>:
+            <span class="variable">media_selection</span> = <span class="variable">self</span>.<span
+                class="function">_download_json</span>(
+            <span class="variable">media_selection_url</span>, <span class="variable">programme_id</span>, <span
+                class="string">'Downloading media selection JSON'</span>,
+            <span class="variable">expected_status</span>=(<span class="number">403</span>, <span
+                class="number">404</span>))
+            <span class="keyword">except</span> <span class="class">ExtractorError</span> <span
+                class="keyword">as</span> <span class="variable">ee</span>:
+            <span class="keyword">if</span> <span class="function">isinstance</span>(<span
+                class="variable">ee</span>.<span class="variable">cause</span>, <span class="class">HTTPError</span>)
+            <span class="keyword">and</span> <span class="variable">ee</span>.<span class="variable">cause</span>.<span
+                class="variable">status</span> <span class="keyword">in</span> (<span class="number">403</span>, <span
+                class="number">404</span>):
+            <span class="variable">media_selection</span> = {}
+            <span class="keyword">else</span>:
+            <span class="keyword">raise</span>
+            <span class="keyword">return</span> <span class="variable">self</span>.<span
+                class="function">_process_media_selector_url</span>(<span class="variable">media_selection</span>, <span
+                class="variable">programme_id</span>)
         </div>
 
         <div class="info-box">
@@ -271,19 +326,19 @@
         <p>BBC implements sophisticated ID pattern recognition for various content types:</p>
 
         <div class="code-block">
-            _ID_REGEX = r'(?:[pbml][\da-z]{7}|w[\da-z]{7,14})'
-            _VALID_URL = rf'''(?x)
-            https?://
-            (?:www\.)?bbc\.co\.uk/
-            (?:
-            programmes/(?!articles/)|
-            iplayer(?:/[^/]+)?/(?:episode/|playlist/)|
-            music/(?:clips|audiovideo/popular)[/#]|
-            radio/player/|
-            events/[^/]+/play/[^/]+/
-            )
-            (?P<id>{_ID_REGEX})(?!/(?:episodes|broadcasts|clips))
-            '''
+            <span class="variable">_ID_REGEX</span> = <span class="string">r'(?:[pbml][\da-z]{7}|w[\da-z]{7,14})'</span>
+            <span class="variable">_VALID_URL</span> = <span class="string">rf'''(?x)
+                https?://
+                (?:www\.)?bbc\.co\.uk/
+                (?:
+                programmes/(?!articles/)|
+                iplayer(?:/[^/]+)?/(?:episode/|playlist/)|
+                music/(?:clips|audiovideo/popular)[/#]|
+                radio/player/|
+                events/[^/]+/play/[^/]+/
+                )
+                (?P&lt;id&gt;{_ID_REGEX})(?!/(?:episodes|broadcasts|clips))
+                '''</span>
         </div>
 
         <table>
@@ -339,19 +394,28 @@
         <p>BBC's Enhanced Media Player (EMP) uses XML-based playlists for content organization:</p>
 
         <div class="code-block">
-            _EMP_PLAYLIST_NS = 'http://bbc.co.uk/2008/emp/playlist'
+            <span class="variable">_EMP_PLAYLIST_NS</span> = <span
+                class="string">'http://bbc.co.uk/2008/emp/playlist'</span>
 
-            def _extract_items(self, playlist):
-            return playlist.findall(f'./{{{self._EMP_PLAYLIST_NS}}}item')
+            <span class="keyword">def</span> <span class="function">_extract_items</span>(<span
+                class="variable">self</span>, <span class="variable">playlist</span>):
+            <span class="keyword">return</span> <span class="variable">playlist</span>.<span
+                class="function">findall</span>(<span class="string">f'./{{{self._EMP_PLAYLIST_NS}}}item'</span>)
 
-            def _extract_medias(self, media_selection):
-            error = media_selection.get('result')
-            if error:
-            raise BBCCoUkIE.MediaSelectionError(error)
-            return media_selection.get('media') or []
+            <span class="keyword">def</span> <span class="function">_extract_medias</span>(<span
+                class="variable">self</span>, <span class="variable">media_selection</span>):
+            <span class="variable">error</span> = <span class="variable">media_selection</span>.<span
+                class="function">get</span>(<span class="string">'result'</span>)
+            <span class="keyword">if</span> <span class="variable">error</span>:
+            <span class="keyword">raise</span> <span class="class">BBCCoUkIE</span>.<span
+                class="class">MediaSelectionError</span>(<span class="variable">error</span>)
+            <span class="keyword">return</span> <span class="variable">media_selection</span>.<span
+                class="function">get</span>(<span class="string">'media'</span>) <span class="keyword">or</span> []
 
-            def _extract_connections(self, media):
-            return media.get('connection') or []
+            <span class="keyword">def</span> <span class="function">_extract_connections</span>(<span
+                class="variable">self</span>, <span class="variable">media</span>):
+            <span class="keyword">return</span> <span class="variable">media</span>.<span
+                class="function">get</span>(<span class="string">'connection'</span>) <span class="keyword">or</span> []
         </div>
 
         <h2>🌍 Geographic Content Protection</h2>
@@ -360,22 +424,36 @@
         <p>BBC implements sophisticated geographic restrictions with intelligent fallback mechanisms:</p>
 
         <div class="code-block">
-            class MediaSelectionError(Exception):
-            def __init__(self, error_id):
-            self.id = error_id
+            <span class="keyword">class</span> <span class="class">MediaSelectionError</span>(<span
+                class="class">Exception</span>):
+            <span class="keyword">def</span> <span class="function">__init__</span>(<span class="variable">self</span>,
+            <span class="variable">error_id</span>):
+            <span class="variable">self</span>.<span class="variable">id</span> = <span class="variable">error_id</span>
 
-            # Geographic error handling in media selector
-            def _download_media_selector_url(self, media_selection_url, programme_id):
-            try:
-            media_selection = self._download_json(
-            media_selection_url, programme_id, 'Downloading media selection JSON',
-            expected_status=(403, 404))
-            except ExtractorError as ee:
-            if isinstance(ee.cause, HTTPError) and ee.cause.status in (403, 404):
-            media_selection = {}
-            else:
-            raise
-            return self._process_media_selector_url(media_selection, programme_id)
+            <span class="comment"># Geographic error handling in media selector</span>
+            <span class="keyword">def</span> <span class="function">_download_media_selector_url</span>(<span
+                class="variable">self</span>, <span class="variable">media_selection_url</span>, <span
+                class="variable">programme_id</span>):
+            <span class="keyword">try</span>:
+            <span class="variable">media_selection</span> = <span class="variable">self</span>.<span
+                class="function">_download_json</span>(
+            <span class="variable">media_selection_url</span>, <span class="variable">programme_id</span>, <span
+                class="string">'Downloading media selection JSON'</span>,
+            <span class="variable">expected_status</span>=(<span class="number">403</span>, <span
+                class="number">404</span>))
+            <span class="keyword">except</span> <span class="class">ExtractorError</span> <span
+                class="keyword">as</span> <span class="variable">ee</span>:
+            <span class="keyword">if</span> <span class="function">isinstance</span>(<span
+                class="variable">ee</span>.<span class="variable">cause</span>, <span class="class">HTTPError</span>)
+            <span class="keyword">and</span> <span class="variable">ee</span>.<span class="variable">cause</span>.<span
+                class="variable">status</span> <span class="keyword">in</span> (<span class="number">403</span>, <span
+                class="number">404</span>):
+            <span class="variable">media_selection</span> = {}
+            <span class="keyword">else</span>:
+            <span class="keyword">raise</span>
+            <span class="keyword">return</span> <span class="variable">self</span>.<span
+                class="function">_process_media_selector_url</span>(<span class="variable">media_selection</span>, <span
+                class="variable">programme_id</span>)
         </div>
 
         <div class="warning-box">
@@ -455,32 +533,51 @@
         <h3>BBC Account Integration</h3>
 
         <div class="code-block">
-            _LOGIN_URL = 'https://account.bbc.com/signin'
-            _NETRC_MACHINE = 'bbc'
+            <span class="variable">_LOGIN_URL</span> = <span class="string">'https://account.bbc.com/signin'</span>
+            <span class="variable">_NETRC_MACHINE</span> = <span class="string">'bbc'</span>
 
-            def _perform_login(self, username, password):
-            login_page = self._download_webpage(
-            self._LOGIN_URL, None, 'Downloading signin page')
+            <span class="keyword">def</span> <span class="function">_perform_login</span>(<span
+                class="variable">self</span>, <span class="variable">username</span>, <span
+                class="variable">password</span>):
+            <span class="variable">login_page</span> = <span class="variable">self</span>.<span
+                class="function">_download_webpage</span>(
+            <span class="variable">self</span>.<span class="variable">_LOGIN_URL</span>, <span
+                class="constant">None</span>, <span class="string">'Downloading signin page'</span>)
 
-            login_form = self._hidden_inputs(login_page)
-            login_form.update({
-            'username': username,
-            'password': password,
+            <span class="variable">login_form</span> = <span class="variable">self</span>.<span
+                class="function">_hidden_inputs</span>(<span class="variable">login_page</span>)
+            <span class="variable">login_form</span>.<span class="function">update</span>({
+            <span class="string">'username'</span>: <span class="variable">username</span>,
+            <span class="string">'password'</span>: <span class="variable">password</span>,
             })
 
-            post_url = urljoin(self._LOGIN_URL, self._search_regex(
-            r'<form[^>]+action=(["\'])(?P<url>.+?)\1', login_page,
-            'post url', default=self._LOGIN_URL, group='url'))
+            <span class="variable">post_url</span> = <span class="function">urljoin</span>(<span
+                class="variable">self</span>.<span class="variable">_LOGIN_URL</span>, <span
+                class="variable">self</span>.<span class="function">_search_regex</span>(
+            <span class="string">r'&lt;form[^&gt;]+action=(["\'])(?P&lt;url&gt;.+?)\1'</span>, <span
+                class="variable">login_page</span>,
+            <span class="string">'post url'</span>, <span class="variable">default</span>=<span
+                class="variable">self</span>.<span class="variable">_LOGIN_URL</span>, <span
+                class="variable">group</span>=<span class="string">'url'</span>))
 
-            response, urlh = self._download_webpage_handle(
-            post_url, None, 'Logging in', data=urlencode_postdata(login_form),
-            headers={'Referer': self._LOGIN_URL})
+            <span class="variable">response</span>, <span class="variable">urlh</span> = <span
+                class="variable">self</span>.<span class="function">_download_webpage_handle</span>(
+            <span class="variable">post_url</span>, <span class="constant">None</span>, <span class="string">'Logging
+                in'</span>, <span class="variable">data</span>=<span class="function">urlencode_postdata</span>(<span
+                class="variable">login_form</span>),
+            <span class="variable">headers</span>={<span class="string">'Referer'</span>: <span
+                class="variable">self</span>.<span class="variable">_LOGIN_URL</span>})
 
-            if self._LOGIN_URL in urlh.url:
-            error = clean_html(get_element_by_class('form-message', response))
-            if error:
-            raise ExtractorError(f'Unable to login: {error}', expected=True)
-            raise ExtractorError('Unable to log in')
+            <span class="keyword">if</span> <span class="variable">self</span>.<span class="variable">_LOGIN_URL</span>
+            <span class="keyword">in</span> <span class="variable">urlh</span>.<span class="variable">url</span>:
+            <span class="variable">error</span> = <span class="function">clean_html</span>(<span
+                class="function">get_element_by_class</span>(<span class="string">'form-message'</span>, <span
+                class="variable">response</span>))
+            <span class="keyword">if</span> <span class="variable">error</span>:
+            <span class="keyword">raise</span> <span class="class">ExtractorError</span>(<span class="string">f'Unable
+                to login: {error}'</span>, <span class="variable">expected</span>=<span class="constant">True</span>)
+            <span class="keyword">raise</span> <span class="class">ExtractorError</span>(<span class="string">'Unable to
+                log in'</span>)
         </div>
 
         <h2>📱 Subtitle & Accessibility Integration</h2>
@@ -488,32 +585,48 @@
         <h3>Advanced Subtitle Processing</h3>
 
         <div class="code-block">
-            def _get_subtitles(self, media, programme_id):
-            subtitles = {}
-            for connection in self._extract_connections(media):
-            cc_url = url_or_none(connection.get('href'))
-            if not cc_url:
-            continue
-            captions = self._download_xml(
-            cc_url, programme_id, 'Downloading captions', fatal=False)
-            if not captions:
-            continue
+            <span class="keyword">def</span> <span class="function">_get_subtitles</span>(<span
+                class="variable">self</span>, <span class="variable">media</span>, <span
+                class="variable">programme_id</span>):
+            <span class="variable">subtitles</span> = {}
+            <span class="keyword">for</span> <span class="variable">connection</span> <span class="keyword">in</span>
+            <span class="variable">self</span>.<span class="function">_extract_connections</span>(<span
+                class="variable">media</span>):
+            <span class="variable">cc_url</span> = <span class="function">url_or_none</span>(<span
+                class="variable">connection</span>.<span class="function">get</span>(<span
+                class="string">'href'</span>))
+            <span class="keyword">if not</span> <span class="variable">cc_url</span>:
+            <span class="keyword">continue</span>
+            <span class="variable">captions</span> = <span class="variable">self</span>.<span
+                class="function">_download_xml</span>(
+            <span class="variable">cc_url</span>, <span class="variable">programme_id</span>, <span
+                class="string">'Downloading captions'</span>, <span class="variable">fatal</span>=<span
+                class="constant">False</span>)
+            <span class="keyword">if not</span> <span class="variable">captions</span>:
+            <span class="keyword">continue</span>
 
-            lang = captions.get('xml:lang', 'en')
-            subtitles[lang] = []
-            for caption in captions.findall('.//{http://www.w3.org/ns/ttml}div'):
-            # Process TTML subtitle format
-            subtitle_lines = []
-            for p in caption.findall('.//{http://www.w3.org/ns/ttml}p'):
-            if p.text:
-            subtitle_lines.append(p.text.strip())
+            <span class="variable">lang</span> = <span class="variable">captions</span>.<span
+                class="function">get</span>(<span class="string">'xml:lang'</span>, <span class="string">'en'</span>)
+            <span class="variable">subtitles</span>[<span class="variable">lang</span>] = []
+            <span class="keyword">for</span> <span class="variable">caption</span> <span class="keyword">in</span> <span
+                class="variable">captions</span>.<span class="function">findall</span>(<span
+                class="string">'.//{http://www.w3.org/ns/ttml}div'</span>):
+            <span class="comment"># Process TTML subtitle format</span>
+            <span class="variable">subtitle_lines</span> = []
+            <span class="keyword">for</span> <span class="variable">p</span> <span class="keyword">in</span> <span
+                class="variable">caption</span>.<span class="function">findall</span>(<span
+                class="string">'.//{http://www.w3.org/ns/ttml}p'</span>):
+            <span class="keyword">if</span> <span class="variable">p</span>.<span class="variable">text</span>:
+            <span class="variable">subtitle_lines</span>.<span class="function">append</span>(<span
+                class="variable">p</span>.<span class="variable">text</span>.<span class="function">strip</span>())
 
-            if subtitle_lines:
-            subtitles[lang].append({
-            'url': cc_url,
-            'ext': 'ttml',
+            <span class="keyword">if</span> <span class="variable">subtitle_lines</span>:
+            <span class="variable">subtitles</span>[<span class="variable">lang</span>].<span
+                class="function">append</span>({
+            <span class="string">'url'</span>: <span class="variable">cc_url</span>,
+            <span class="string">'ext'</span>: <span class="string">'ttml'</span>,
             })
-            return subtitles
+            <span class="keyword">return</span> <span class="variable">subtitles</span>
         </div>
 
         <h2>⚡ Advanced Stream Processing</h2>
@@ -521,42 +634,74 @@
         <h3>Multi-Protocol Stream Handling</h3>
 
         <div class="code-block">
-            def _extract_asx_playlist(self, connection, programme_id):
-            asx = self._download_xml(connection.get('href'), programme_id, 'Downloading ASX playlist')
-            return [ref.get('href') for ref in asx.findall('./Entry/ref')]
+            <span class="keyword">def</span> <span class="function">_extract_asx_playlist</span>(<span
+                class="variable">self</span>, <span class="variable">connection</span>, <span
+                class="variable">programme_id</span>):
+            <span class="variable">asx</span> = <span class="variable">self</span>.<span
+                class="function">_download_xml</span>(<span class="variable">connection</span>.<span
+                class="function">get</span>(<span class="string">'href'</span>), <span
+                class="variable">programme_id</span>, <span class="string">'Downloading ASX playlist'</span>)
+            <span class="keyword">return</span> [<span class="variable">ref</span>.<span
+                class="function">get</span>(<span class="string">'href'</span>) <span class="keyword">for</span> <span
+                class="variable">ref</span> <span class="keyword">in</span> <span class="variable">asx</span>.<span
+                class="function">findall</span>(<span class="string">'./Entry/ref'</span>)]
 
-            # Handle different streaming protocols
-            def _process_media_selector_url(self, media_selection, programme_id):
-            formats = []
-            subtitles = {}
+            <span class="comment"># Handle different streaming protocols</span>
+            <span class="keyword">def</span> <span class="function">_process_media_selector_url</span>(<span
+                class="variable">self</span>, <span class="variable">media_selection</span>, <span
+                class="variable">programme_id</span>):
+            <span class="variable">formats</span> = []
+            <span class="variable">subtitles</span> = {}
 
-            for media in self._extract_medias(media_selection):
-            kind = media.get('kind')
-            if kind in ('audio', 'video'):
-            # Process media connections
-            for connection in self._extract_connections(media):
-            href = connection.get('href')
-            if not href:
-            continue
+            <span class="keyword">for</span> <span class="variable">media</span> <span class="keyword">in</span> <span
+                class="variable">self</span>.<span class="function">_extract_medias</span>(<span
+                class="variable">media_selection</span>):
+            <span class="variable">kind</span> = <span class="variable">media</span>.<span
+                class="function">get</span>(<span class="string">'kind'</span>)
+            <span class="keyword">if</span> <span class="variable">kind</span> <span class="keyword">in</span> (<span
+                class="string">'audio'</span>, <span class="string">'video'</span>):
+            <span class="comment"># Process media connections</span>
+            <span class="keyword">for</span> <span class="variable">connection</span> <span class="keyword">in</span>
+            <span class="variable">self</span>.<span class="function">_extract_connections</span>(<span
+                class="variable">media</span>):
+            <span class="variable">href</span> = <span class="variable">connection</span>.<span
+                class="function">get</span>(<span class="string">'href'</span>)
+            <span class="keyword">if not</span> <span class="variable">href</span>:
+            <span class="keyword">continue</span>
 
-            # Handle different connection types
-            if connection.get('supplier') == 'akamai':
-            # Akamai CDN streams
-            formats.extend(self._extract_akamai_formats(href, programme_id))
-            elif 'livestream' in href:
-            # Live streaming formats
-            formats.extend(self._extract_m3u8_formats(href, programme_id, 'mp4'))
-            elif href.endswith('.m3u8'):
-            # HLS streams
-            formats.extend(self._extract_m3u8_formats(href, programme_id, 'mp4'))
+            <span class="comment"># Handle different connection types</span>
+            <span class="keyword">if</span> <span class="variable">connection</span>.<span
+                class="function">get</span>(<span class="string">'supplier'</span>) == <span
+                class="string">'akamai'</span>:
+            <span class="comment"># Akamai CDN streams</span>
+            <span class="variable">formats</span>.<span class="function">extend</span>(<span
+                class="variable">self</span>.<span class="function">_extract_akamai_formats</span>(<span
+                class="variable">href</span>, <span class="variable">programme_id</span>))
+            <span class="keyword">elif</span> <span class="string">'livestream'</span> <span class="keyword">in</span>
+            <span class="variable">href</span>:
+            <span class="comment"># Live streaming formats</span>
+            <span class="variable">formats</span>.<span class="function">extend</span>(<span
+                class="variable">self</span>.<span class="function">_extract_m3u8_formats</span>(<span
+                class="variable">href</span>, <span class="variable">programme_id</span>, <span
+                class="string">'mp4'</span>))
+            <span class="keyword">elif</span> <span class="variable">href</span>.<span
+                class="function">endswith</span>(<span class="string">'.m3u8'</span>):
+            <span class="comment"># HLS streams</span>
+            <span class="variable">formats</span>.<span class="function">extend</span>(<span
+                class="variable">self</span>.<span class="function">_extract_m3u8_formats</span>(<span
+                class="variable">href</span>, <span class="variable">programme_id</span>, <span
+                class="string">'mp4'</span>))
 
-            elif kind == 'captions':
-            # Process subtitle tracks
-            subtitles.update(self._get_subtitles(media, programme_id))
+            <span class="keyword">elif</span> <span class="variable">kind</span> == <span
+                class="string">'captions'</span>:
+            <span class="comment"># Process subtitle tracks</span>
+            <span class="variable">subtitles</span>.<span class="function">update</span>(<span
+                class="variable">self</span>.<span class="function">_get_subtitles</span>(<span
+                class="variable">media</span>, <span class="variable">programme_id</span>))
 
-            return {
-            'formats': formats,
-            'subtitles': subtitles,
+            <span class="keyword">return</span> {
+            <span class="string">'formats'</span>: <span class="variable">formats</span>,
+            <span class="string">'subtitles'</span>: <span class="variable">subtitles</span>,
             }
         </div>
 
@@ -616,18 +761,26 @@
         </div>
 
         <div class="code-block">
-            # Quality-based mediaset selection
-            for mediaset in self._MEDIA_SETS:
-            try:
-            media_selection_url = self._MEDIA_SELECTOR_URL_TEMPL % (mediaset, programme_id)
-            programme_formats, error = self._download_media_selector_url(
-            media_selection_url, programme_id)
-            if programme_formats:
-            break
-            except BBCCoUkIE.MediaSelectionError as e:
-            if e.id in ('notukerror', 'geolocation'):
-            continue
-            raise
+            <span class="comment"># Quality-based mediaset selection</span>
+            <span class="keyword">for</span> <span class="variable">mediaset</span> <span class="keyword">in</span>
+            <span class="variable">self</span>.<span class="variable">_MEDIA_SETS</span>:
+            <span class="keyword">try</span>:
+            <span class="variable">media_selection_url</span> = <span class="variable">self</span>.<span
+                class="variable">_MEDIA_SELECTOR_URL_TEMPL</span> % (<span class="variable">mediaset</span>, <span
+                class="variable">programme_id</span>)
+            <span class="variable">programme_formats</span>, <span class="variable">error</span> = <span
+                class="variable">self</span>.<span class="function">_download_media_selector_url</span>(
+            <span class="variable">media_selection_url</span>, <span class="variable">programme_id</span>)
+            <span class="keyword">if</span> <span class="variable">programme_formats</span>:
+            <span class="keyword">break</span>
+            <span class="keyword">except</span> <span class="class">BBCCoUkIE</span>.<span
+                class="class">MediaSelectionError</span> <span class="keyword">as</span> <span
+                class="variable">e</span>:
+            <span class="keyword">if</span> <span class="variable">e</span>.<span class="variable">id</span> <span
+                class="keyword">in</span> (<span class="string">'notukerror'</span>, <span
+                class="string">'geolocation'</span>):
+            <span class="keyword">continue</span>
+            <span class="keyword">raise</span>
         </div>
 
         <h2>🎯 Best Practices & Recommendations</h2>

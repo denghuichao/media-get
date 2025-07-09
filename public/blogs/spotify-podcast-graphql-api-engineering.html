@@ -55,6 +55,49 @@
             margin: 15px 0;
             overflow-x: auto;
             border-left: 4px solid #1DB954;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        /* Syntax Highlighting for Python code */
+        .code-block .keyword {
+            color: #569cd6;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .function {
+            color: #dcdcaa;
+        }
+
+        .code-block .variable {
+            color: #9cdcfe;
+        }
+
+        .code-block .number {
+            color: #b5cea8;
+        }
+
+        .code-block .constant {
+            color: #4fc1ff;
+        }
+
+        .code-block .class {
+            color: #4ec9b0;
+        }
+
+        .code-block .property {
+            color: #9cdcfe;
+        }
+
+        .code-block .operator {
+            color: #d4d4d4;
         }
 
         .highlight {
@@ -177,35 +220,35 @@
             margin: 15px 0;
             border-left: 4px solid #e91e63;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <h1>🎵 Spotify Podcast Engineering: GraphQL API & Audio Content Delivery Architecture</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
 
         <div class="highlight">
@@ -253,24 +296,37 @@
         <p>Spotify implements sophisticated GraphQL API architecture with pre-computed query hashes for performance:</p>
 
         <div class="code-block">
-            _OPERATION_HASHES = {
-            'Episode': '8276d4423d709ae9b68ec1b74cc047ba0f7479059a37820be730f125189ac2bf',
-            'MinimalShow': '13ee079672fad3f858ea45a55eb109553b4fb0969ed793185b2e34cbb6ee7cc0',
-            'ShowEpisodes': 'e0e5ce27bd7748d2c59b4d44ba245a8992a05be75d6fabc3b20753fc8857444d',
+            <span class="variable">_OPERATION_HASHES</span> = {
+            <span class="string">'Episode'</span>: <span
+                class="string">'8276d4423d709ae9b68ec1b74cc047ba0f7479059a37820be730f125189ac2bf'</span>,
+            <span class="string">'MinimalShow'</span>: <span
+                class="string">'13ee079672fad3f858ea45a55eb109553b4fb0969ed793185b2e34cbb6ee7cc0'</span>,
+            <span class="string">'ShowEpisodes'</span>: <span
+                class="string">'e0e5ce27bd7748d2c59b4d44ba245a8992a05be75d6fabc3b20753fc8857444d'</span>,
             }
 
-            def _call_api(self, operation, video_id, variables, **kwargs):
-            return self._download_json(
-            'https://api-partner.spotify.com/pathfinder/v1/query', video_id, query={
-            'operationName': 'query' + operation,
-            'variables': json.dumps(variables),
-            'extensions': json.dumps({
-            'persistedQuery': {
-            'sha256Hash': self._OPERATION_HASHES[operation],
+            <span class="keyword">def</span> <span class="function">_call_api</span>(<span class="variable">self</span>,
+            <span class="variable">operation</span>, <span class="variable">video_id</span>, <span
+                class="variable">variables</span>, **<span class="variable">kwargs</span>):
+            <span class="keyword">return</span> <span class="variable">self</span>.<span
+                class="function">_download_json</span>(
+            <span class="string">'https://api-partner.spotify.com/pathfinder/v1/query'</span>, <span
+                class="variable">video_id</span>, <span class="variable">query</span>={
+            <span class="string">'operationName'</span>: <span class="string">'query'</span> + <span
+                class="variable">operation</span>,
+            <span class="string">'variables'</span>: <span class="variable">json</span>.<span
+                class="function">dumps</span>(<span class="variable">variables</span>),
+            <span class="string">'extensions'</span>: <span class="variable">json</span>.<span
+                class="function">dumps</span>({
+            <span class="string">'persistedQuery'</span>: {
+            <span class="string">'sha256Hash'</span>: <span class="variable">self</span>.<span
+                class="variable">_OPERATION_HASHES</span>[<span class="variable">operation</span>],
             },
             }),
-            }, headers={'authorization': 'Bearer ' + self._ACCESS_TOKEN},
-            **kwargs)['data']
+            }, <span class="variable">headers</span>={<span class="string">'authorization'</span>: <span
+                class="string">'Bearer '</span> + <span class="variable">self</span>.<span
+                class="variable">_ACCESS_TOKEN</span>},
+            **<span class="variable">kwargs</span>)[<span class="string">'data'</span>]
         </div>
 
         <div class="info-box">
@@ -283,12 +339,17 @@
         <p>Spotify requires dynamic bearer token acquisition for API authentication:</p>
 
         <div class="code-block">
-            def _real_initialize(self):
-            self._ACCESS_TOKEN = self._download_json(
-            'https://open.spotify.com/get_access_token', None)['accessToken']
+            <span class="keyword">def</span> <span class="function">_real_initialize</span>(<span
+                class="variable">self</span>):
+            <span class="variable">self</span>.<span class="variable">_ACCESS_TOKEN</span> = <span
+                class="variable">self</span>.<span class="function">_download_json</span>(
+            <span class="string">'https://open.spotify.com/get_access_token'</span>, <span
+                class="constant">None</span>)[<span class="string">'accessToken'</span>]
 
-            # Usage in API calls
-            headers={'authorization': 'Bearer ' + self._ACCESS_TOKEN}
+            <span class="comment"># Usage in API calls</span>
+            <span class="variable">headers</span>={<span class="string">'authorization'</span>: <span
+                class="string">'Bearer '</span> + <span class="variable">self</span>.<span
+                class="variable">_ACCESS_TOKEN</span>}
         </div>
 
         <h3>3. Advanced Audio Content Processing</h3>

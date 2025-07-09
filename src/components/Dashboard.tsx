@@ -34,6 +34,7 @@ import {
   getUserTimezone,
   getTimezoneOffset
 } from '../utils/dateUtils';
+import { trackDownloadClick, getPlatformFromUrl } from '../utils/analytics';
 
 interface MediaPlayerProps {
   download: TaskStatus;
@@ -281,6 +282,13 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   };
 
   const downloadCurrentFile = () => {
+    // 跟踪MediaPlayer中的下载事件
+    const platform = getPlatformFromUrl(download.url || '');
+    const mediaType = download.mediaType || 'video';
+    const format = currentFile.format || 'unknown';
+
+    trackDownloadClick(platform, mediaType, format, false);
+
     const link = document.createElement('a');
     link.href = mediaUrl;
     link.download = currentFile.filename || 'download';
@@ -290,6 +298,13 @@ function MediaPlayer({ download, onClose }: MediaPlayerProps) {
   };
 
   const downloadAllFiles = () => {
+    // 跟踪MediaPlayer中的批量下载事件
+    const platform = getPlatformFromUrl(download.url || '');
+    const mediaType = download.mediaType || 'video';
+    const format = 'multiple';
+
+    trackDownloadClick(platform, mediaType, format, download.isPlaylist || false);
+
     if (filteredFiles.length > 1) {
       filteredFiles.forEach((file, index) => {
         setTimeout(() => {
@@ -976,6 +991,14 @@ function DashboardContent() {
 
   const handleDownloadFile = (download: TaskStatus) => {
     const filteredFiles = getFilteredFiles(download);
+
+    // 跟踪下载按钮点击事件
+    const platform = getPlatformFromUrl(download.url || '');
+    const mediaType = download.mediaType || 'video';
+    const format = download.result?.files?.[0]?.format || 'unknown';
+    const isPlaylist = download.isPlaylist || false;
+
+    trackDownloadClick(platform, mediaType, format, isPlaylist);
 
     if (filteredFiles.length > 1) {
       // For multi-file downloads, download all filtered files

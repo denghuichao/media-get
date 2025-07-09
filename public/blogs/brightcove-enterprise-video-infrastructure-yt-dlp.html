@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brightcove Enterprise Video Infrastructure Deep Dive: Cloud Media Platform in yt-dlp - Technical Analysis
+    </title>
+    <meta name="description"
+        content="In-depth technical analysis of yt-dlp's Brightcove extractor, covering cloud video infrastructure, player APIs, legacy and modern systems, enterprise streaming, and Brightcove's scalable video platform.">
+    <meta name="keywords"
+        content="yt-dlp, Brightcove video extraction, enterprise video platform, cloud streaming, player API, video cloud, media infrastructure, Brightcove legacy">
+    <style>
+        body {
+            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #003D82;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            border-bottom: 3px solid #003D82;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-top: 40px;
+            border-left: 5px solid #003D82;
+            padding-left: 20px;
+        }
+
+        h3 {
+            color: #34495e;
+            font-size: 1.5rem;
+            margin-top: 30px;
+        }
+
+        .meta {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border-left: 5px solid #003D82;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            position: relative;
+            font-family: 'Fira Code', 'Monaco', monospace;
+        }
+
+        .code-block::before {
+            content: "Python";
+            position: absolute;
+            top: 8px;
+            right: 15px;
+            background: #003D82;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .language-python {
+            color: #e2e8f0;
+        }
+
+        .language-python .keyword {
+            color: #f7fafc;
+            font-weight: bold;
+        }
+
+        .language-python .string {
+            color: #68d391;
+        }
+
+        .language-python .comment {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(45deg, #f7fafc, #edf2f7);
+            border: 2px solid #003D82;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .tech-specs {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #003D82, #002855);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f7fafc;
+        }
+
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-value {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #fff;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: #2d3748;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .challenge-box {
+            background: linear-gradient(135deg, #fd79a8, #fdcb6e);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 5px solid #e84393;
+        }
+
+        ul,
+        ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <article>
+            <header>
+                <h1>☁️ Brightcove Enterprise Video Infrastructure Deep Dive: Cloud Media Platform in yt-dlp</h1>
+                <div class="blog-navigation">
+                    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+                    <a href="/" class="blog-index-link" style="background-color: #007bff; margin-left: 10px;">🏠
+                        Home</a>
+                </div>
+                <p class="meta">Published: <time datetime="2024-07-09">July 9, 2024</time> | Technical Analysis</p>
+            </header>
+
+            <section>
+                <h2>🏢 How yt-dlp Handles Brightcove's Enterprise Cloud Video Infrastructure</h2>
+
+                <p>
+                    Brightcove represents one of the most sophisticated enterprise cloud video platforms, serving
+                    global media companies, broadcasters, and enterprise customers with massive-scale video
+                    infrastructure. As a pioneer in cloud-based video hosting, Brightcove operates both legacy
+                    and modern systems, creating unique technical challenges for video extraction tools like yt-dlp.
+                </p>
+
+                <div class="highlight">
+                    <strong>Enterprise Cloud Challenge:</strong> Brightcove's dual-architecture approach maintains
+                    backward compatibility with legacy Flash-based systems while supporting modern HTML5 players
+                    and cloud-native APIs. This requires sophisticated extraction strategies that handle multiple
+                    generations of video technology and enterprise-grade security measures.
+                </div>
+
+                <h3>🔧 Key Technical Architecture Components</h3>
+                <ul>
+                    <li><strong>Dual-Generation Systems:</strong> Legacy Flash and modern HTML5 player architectures
+                    </li>
+                    <li><strong>Cloud-Native API:</strong> RESTful video services with enterprise authentication</li>
+                    <li><strong>Account-Based Organization:</strong> Multi-tenant architecture with customer isolation
+                    </li>
+                    <li><strong>Player Configuration System:</strong> Dynamic player generation and customization</li>
+                    <li><strong>Global CDN Integration:</strong> Worldwide content delivery with edge optimization</li>
+                </ul>
+
+                <h3>🏗️ Brightcove's Cloud Video Architecture Overview</h3>
+                <div class="architecture-diagram">
+                    <h4>Brightcove's Enterprise Cloud Infrastructure</h4>
+                    <pre>
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│   Legacy System     │    │   Modern System     │    │   Cloud API         │
+│   Flash Players     │───▶│   HTML5 Players     │───▶│   REST Services     │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+         │                           │                           │
+         ▼                           ▼                           ▼
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│ XML/AMFPHP APIs     │    │ JSON APIs           │    │ Account Management  │
+│ Flash Video Refs    │    │ Player Configs      │    │ Security & Auth     │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+         │                           │                           │
+         └───────────────┬───────────┘───────────────────────────┘
+                         ▼
+                ┌─────────────────────┐
+                │ Global CDN Network  │
+                │ Enterprise Delivery │
+                └─────────────────────┘
+                    </pre>
+                </div>
+
+                <h3>💡 Dual-Extractor Architecture: Legacy and Modern Systems</h3>
+
+                <p>
+                    Brightcove's evolution from Flash-based to HTML5-based video delivery requires two distinct
+                    extraction strategies. The legacy system handles Flash players and XML-based APIs, while
+                    the modern system processes HTML5 players with JSON-based configurations.
+                </p>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Legacy Brightcove extraction for Flash-based systems
+class BrightcoveLegacyIE(InfoExtractor):
+    IE_NAME = 'brightcove:legacy'
+    _VALID_URL = r'(?:https?://.*brightcove\.com/(services|viewer).*?\?|brightcove:)(?P<query>.*)'
+
+    def _real_extract(self, url):
+        """Extract from legacy Flash-based Brightcove players"""
+        linkBase, video_id = self._parse_legacy_url(url)
+
+        # Legacy AMFPHP API call for Flash-based content
+        query_str = 'command=find_video_by_id&video_id=%s' % video_id
+        query_str += '&playerKey=%s' % self._get_player_key(url)
+        
+        # Extract using legacy XML/AMFPHP protocols
+        req = self._build_legacy_request(linkBase, query_str)
+        webpage = self._download_webpage(req, video_id)
+        
+        # Parse legacy Flash Video Object data
+        if '<object' not in webpage:
+            raise ExtractorError('Could not find video player', expected=True)
+        
+        # Extract Flash video parameters and sources
+        return self._extract_legacy_video_info(webpage, video_id)
+
+    def _extract_legacy_video_info(self, webpage, video_id):
+        """Process legacy Flash video object data"""
+        
+        # Extract Flash parameters using regex patterns
+        params = self._extract_flash_params(webpage)
+        
+        # Legacy API call to get video metadata
+        video_info = self._call_legacy_api(params)
+        
+        # Process renditions (quality variants) from legacy system
+        formats = []
+        for rendition in video_info.get('renditions', []):
+            if rendition.get('remote'):  # Skip remote/streaming-only
+                continue
+            
+            formats.append({
+                'url': rendition['defaultURL'],
+                'format_id': f"legacy-{rendition.get('encodingRate', 'unknown')}",
+                'tbr': int_or_none(rendition.get('encodingRate')),
+                'filesize': int_or_none(rendition.get('size')),
+                'ext': mimetype2ext(rendition.get('videoCodec')),
+            })
+        
+        return {
+            'id': video_id,
+            'title': video_info.get('displayName'),
+            'description': video_info.get('shortDescription'),
+            'formats': formats,
+            'uploader': video_info.get('publisherName'),
+        }</code></pre>
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Modern Brightcove extraction for HTML5 players
+class BrightcoveNewIE(BrightcoveNewBaseIE):
+    IE_NAME = 'brightcove:new'
+    _VALID_URL = r'https?://players\.brightcove\.net/(?P<account_id>\d+)/(?P<player_id>[^/]+)_(?P<embed>[^/]+)/index\.html\?.*(?P<content_type>video|playlist)Id=(?P<video_id>\d+|ref:[^&]+)'
+
+    def _real_extract(self, url):
+        """Extract from modern HTML5 Brightcove players"""
+        account_id, player_id, embed, content_type, video_id = self._parse_modern_url(url)
+        
+        # Modern cloud API endpoint construction
+        api_url = f'https://edge.api.brightcove.com/playback/v1/accounts/{account_id}'
+        
+        if content_type == 'playlist':
+            api_url += f'/playlists/{video_id}'
+        else:
+            api_url += f'/videos/{video_id}'
+        
+        # Modern API authentication and headers
+        headers = {
+            'Accept': f'application/json;pk={self._get_policy_key(account_id, player_id)}',
+            'User-Agent': 'Mozilla/5.0 (compatible; yt-dlp)',
+        }
+        
+        # Extract video data using modern REST API
+        json_data = self._download_json(api_url, video_id, headers=headers)
+        
+        if content_type == 'playlist':
+            return self._extract_playlist_info(json_data, video_id)
+        else:
+            return self._extract_video_info(json_data, account_id)
+
+    def _extract_video_info(self, json_data, account_id):
+        """Process modern HTML5 video data"""
+        video_id = json_data['id']
+        
+        # Extract modern streaming sources
+        formats = []
+        for source in json_data.get('sources', []):
+            source_type = source.get('type')
+            src = source.get('src')
+            
+            if not src:
+                continue
+            
+            # Handle HLS adaptive streaming
+            if source_type == 'application/x-mpegURL':
+                hls_formats = self._extract_m3u8_formats(
+                    src, video_id, 'mp4', entry_protocol='m3u8_native',
+                    m3u8_id='hls', fatal=False)
+                formats.extend(hls_formats)
+            
+            # Handle DASH adaptive streaming
+            elif source_type == 'application/dash+xml':
+                dash_formats = self._extract_mpd_formats(
+                    src, video_id, mpd_id='dash', fatal=False)
+                formats.extend(dash_formats)
+            
+            # Handle progressive MP4
+            elif source_type == 'video/mp4':
+                formats.append({
+                    'url': src,
+                    'format_id': f'http-{source.get("height", "unknown")}p',
+                    'height': int_or_none(source.get('height')),
+                    'width': int_or_none(source.get('width')),
+                    'tbr': int_or_none(source.get('avg_bitrate')),
+                    'ext': 'mp4',
+                })
+
+        # Extract modern metadata with comprehensive fields
+        return {
+            'id': video_id,
+            'title': clean_html(json_data.get('name')),
+            'description': clean_html(json_data.get('description')),
+            'duration': float_or_none(json_data.get('duration'), scale=1000),
+            'timestamp': parse_iso8601(json_data.get('published_at')),
+            'uploader_id': account_id,
+            'formats': formats,
+            'tags': json_data.get('tags', []),
+            'is_live': json_data.get('state') == 'LIVE',
+        }</code></pre>
+                </div>
+
+                <h3>🔐 Enterprise Authentication and Policy Keys</h3>
+
+                <div class="success">
+                    <strong>Cloud Security:</strong> Brightcove's modern API employs policy-based authentication
+                    with dynamic key generation, account isolation, and enterprise-grade access control that
+                    requires sophisticated authentication handling during extraction.
+                </div>
+
+                <div class="tech-specs">
+                    <h4>Brightcove Authentication Systems</h4>
+                    <table>
+                        <tr>
+                            <th>System Type</th>
+                            <th>Authentication Method</th>
+                            <th>Use Case</th>
+                            <th>Extraction Complexity</th>
+                        </tr>
+                        <tr>
+                            <td>Legacy Flash</td>
+                            <td>Player Key Parameters</td>
+                            <td>Older integrations</td>
+                            <td>Medium</td>
+                        </tr>
+                        <tr>
+                            <td>Modern HTML5</td>
+                            <td>Policy Key Headers</td>
+                            <td>Current deployments</td>
+                            <td>High</td>
+                        </tr>
+                        <tr>
+                            <td>Enterprise API</td>
+                            <td>OAuth 2.0 / JWT</td>
+                            <td>Backend integrations</td>
+                            <td>Very High</td>
+                        </tr>
+                        <tr>
+                            <td>Adobe Pass</td>
+                            <td>MVPD Authentication</td>
+                            <td>Premium content</td>
+                            <td>Extremely High</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h3>🎯 Policy Key Extraction and Dynamic Authentication</h3>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Advanced policy key extraction for modern Brightcove authentication
+def _get_policy_key(self, account_id, player_id):
+    """Extract policy key for modern Brightcove API authentication"""
+    
+    # Construct player configuration URL
+    player_url = f'https://players.brightcove.net/{account_id}/{player_id}_default/index.min.js'
+    
+    try:
+        # Download player JavaScript configuration
+        player_code = self._download_webpage(
+            player_url, f'{account_id}:{player_id}',
+            note='Downloading player configuration',
+            errnote='Failed to download player configuration')
+        
+        # Extract policy key from player configuration
+        policy_key = self._search_regex(
+            r'policyKey\s*:\s*["\']([^"\']+)["\']',
+            player_code, 'policy key', default=None)
+        
+        if not policy_key:
+            # Fallback: extract from catalog configuration
+            policy_key = self._search_regex(
+                r'catalog\s*:\s*{[^}]*policyKey\s*:\s*["\']([^"\']+)["\']',
+                player_code, 'policy key', default=None)
+        
+        if not policy_key:
+            # Final fallback: extract from any policy key reference
+            policy_key = self._search_regex(
+                r'BCov_policy["\']?\s*:\s*["\']([^"\']+)["\']',
+                player_code, 'policy key')
+        
+        return policy_key
+        
+    except ExtractorError:
+        # Fallback to generic policy key (may have limited access)
+        self.report_warning('Could not extract policy key, using fallback')
+        return 'BCpkADawqM1W-vUOMe6RSA3pA6Vw-VWUNn5rL0lzQabvrI63-VjS93gVUugDlmBpHHbgLCq3M0nOC9c'
+
+def _download_json_with_policy_key(self, url, video_id, account_id, player_id):
+    """Download JSON data with proper policy key authentication"""
+    
+    policy_key = self._get_policy_key(account_id, player_id)
+    
+    headers = {
+        'Accept': f'application/json;pk={policy_key}',
+        'Origin': 'https://players.brightcove.net',
+        'Referer': f'https://players.brightcove.net/{account_id}/{player_id}_default/',
+        'User-Agent': 'Mozilla/5.0 (compatible; yt-dlp Brightcove extractor)',
+    }
+    
+    return self._download_json(url, video_id, headers=headers)</code></pre>
+                </div>
+
+                <h3>📺 Advanced Content Types and Playlist Handling</h3>
+
+                <div class="highlight">
+                    <strong>Content Organization:</strong> Brightcove's enterprise platform supports sophisticated
+                    content organization including playlists, series, live streams, and interactive content that
+                    require specialized extraction approaches for different content types and delivery methods.
+                </div>
+
+                <div class="performance-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">10B+</div>
+                        <div>Monthly Video Views</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">6000+</div>
+                        <div>Enterprise Customers</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">99.9%</div>
+                        <div>Cloud SLA Uptime</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">200+</div>
+                        <div>Global CDN Nodes</div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Advanced playlist and live content handling
+def _extract_playlist_info(self, json_data, playlist_id):
+    """Extract enterprise playlist with advanced content organization"""
+    
+    entries = []
+    for video in json_data.get('videos', []):
+        video_id = video.get('id')
+        if not video_id:
+            continue
+        
+        # Build individual video entries with enterprise context
+        entries.append({
+            '_type': 'url_transparent',
+            'ie_key': 'BrightcoveNew',
+            'url': f'brightcove:{video_id}',
+            'title': clean_html(video.get('name')),
+            'description': clean_html(video.get('description')),
+            'duration': float_or_none(video.get('duration'), scale=1000),
+            'thumbnail': self._get_best_thumbnail(video.get('images', {})),
+        })
+    
+    return {
+        'id': playlist_id,
+        'title': json_data.get('name'),
+        'description': json_data.get('description'),
+        'entries': entries,
+        '_type': 'playlist',
+    }
+
+def _handle_live_content(self, json_data):
+    """Handle live streaming content with enterprise features"""
+    
+    if json_data.get('state') != 'LIVE':
+        return None
+    
+    # Extract live streaming sources
+    live_formats = []
+    for source in json_data.get('sources', []):
+        if source.get('type') == 'application/x-mpegURL':
+            # Live HLS stream
+            live_formats.extend(self._extract_m3u8_formats(
+                source['src'], json_data['id'], 'mp4',
+                entry_protocol='m3u8_native', m3u8_id='hls',
+                live=True, fatal=False))
+    
+    return {
+        'is_live': True,
+        'formats': live_formats,
+        'live_status': 'is_live',
+    }</code></pre>
+                </div>
+
+                <h2>🔍 Enterprise Integration and Advanced Features</h2>
+
+                <h3>1. Adobe Pass Integration for Premium Content</h3>
+                <div class="challenge-box">
+                    <strong>Premium Content Challenge:</strong> Brightcove integrates with Adobe Pass for cable
+                    and satellite TV authentication, requiring complex MVPD (Multichannel Video Programming
+                    Distributor) authentication flows that affect video accessibility.
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Adobe Pass integration for premium Brightcove content
+class BrightcoveNewIE(AdobePassIE, BrightcoveNewBaseIE):
+    """Brightcove with Adobe Pass authentication support"""
+    
+    def _extract_video_info(self, json_data, account_id):
+        """Extract video with Adobe Pass authentication if required"""
+        
+        # Check for Adobe Pass protection
+        if json_data.get('economics') == 'AD_SUPPORTED':
+            # Free content, proceed normally
+            return super()._extract_video_info(json_data, account_id)
+        
+        elif json_data.get('economics') == 'PAY_PER_VIEW':
+            # Premium content requiring authentication
+            adobe_pass_data = json_data.get('adobePass', {})
+            
+            if adobe_pass_data:
+                # Attempt Adobe Pass authentication
+                try:
+                    auth_token = self._extract_mvpd_auth(
+                        adobe_pass_data.get('resource'),
+                        adobe_pass_data.get('requestor_id'))
+                    
+                    # Re-request video data with authentication
+                    authenticated_data = self._download_authenticated_json(
+                        json_data, auth_token)
+                    
+                    return super()._extract_video_info(authenticated_data, account_id)
+                    
+                except ExtractorError:
+                    self.raise_geo_restricted(
+                        'This video requires cable/satellite TV authentication')
+        
+        # Default extraction for public content
+        return super()._extract_video_info(json_data, account_id)</code></pre>
+                </div>
+
+                <h3>2. Multi-Account and Enterprise Tenant Handling</h3>
+                <div class="tech-specs">
+                    <h4>Enterprise Multi-Tenancy Features</h4>
+                    <ul>
+                        <li><strong>Account Isolation:</strong> Complete separation of customer content and analytics
+                        </li>
+                        <li><strong>Custom Branding:</strong> White-label players and branded video experiences</li>
+                        <li><strong>Access Control:</strong> Granular permissions and content restriction systems</li>
+                        <li><strong>Analytics Integration:</strong> Enterprise-grade viewer tracking and business
+                            intelligence</li>
+                    </ul>
+                </div>
+
+                <h3>3. Advanced Embed Detection for Enterprise Websites</h3>
+                <div class="code-block">
+                    <pre><code class="language-python"># Sophisticated embed detection for enterprise website integration
+@classmethod
+def _extract_brightcove_urls(cls, webpage):
+    """Extract Brightcove embeds from enterprise websites"""
+    
+    entries = []
+    
+    # Modern player URL embeds
+    for match in re.finditer(
+        r'<iframe[^>]+src=(["\'])(?P<url>(?:https?:)?//players\.brightcove\.net/\d+/[^/]+/index\.html[^"\']*)\1',
+        webpage):
+        entries.append(match.group('url'))
+    
+    # Legacy Flash player embeds
+    for match in re.finditer(
+        r'<object[^>]*>.*?<param[^>]+name=["\']?(?:movie|src)["\']?[^>]*value=["\']([^"\']*brightcove[^"\']*)["\']',
+        webpage, re.DOTALL):
+        entries.append(match.group(1))
+    
+    # JavaScript player initialization
+    for match in re.finditer(
+        r'brightcove\.createExperiences\(\s*{[^}]*videoPlayer\s*:\s*["\']?(\d+)["\']?',
+        webpage):
+        video_id = match.group(1)
+        entries.append(f'brightcove:{video_id}')
+    
+    # Data attribute embeds (modern web frameworks)
+    for match in re.finditer(
+        r'data-video-id=["\'](\d+)["\'][^>]*data-account=["\'](\d+)["\']',
+        webpage):
+        video_id, account_id = match.groups()
+        entries.append(f'https://players.brightcove.net/{account_id}/default_default/index.html?videoId={video_id}')
+    
+    return entries</code></pre>
+                </div>
+
+                <h2>🛠️ Advanced Technical Implementation</h2>
+
+                <h3>1. Comprehensive Error Handling for Enterprise Environments</h3>
+                <div class="warning">
+                    <strong>Enterprise Reliability:</strong> Enterprise video platforms require exceptional error
+                    handling to manage network issues, authentication failures, content restrictions, and API
+                    rate limiting that can affect large-scale video extraction operations.
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Enterprise-grade error handling and recovery
+def _download_json_with_retry(self, url, video_id, note=None, errnote=None, **kwargs):
+    """Download JSON with enterprise-grade retry logic"""
+    
+    max_retries = 3
+    retry_delays = [1, 3, 10]  # Exponential backoff
+    
+    for attempt in range(max_retries):
+        try:
+            return self._download_json(url, video_id, note=note, **kwargs)
+            
+        except HTTPError as e:
+            if e.status == 401:
+                raise ExtractorError('Authentication failed - invalid policy key', expected=True)
+            elif e.status == 403:
+                raise ExtractorError('Access forbidden - content may be geo-restricted', expected=True)
+            elif e.status == 404:
+                raise ExtractorError('Video not found - may be deleted or private', expected=True)
+            elif e.status == 429:
+                # Rate limiting - wait and retry
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delays[attempt])
+                    continue
+                raise ExtractorError('Rate limit exceeded - try again later', expected=True)
+            elif 500 <= e.status < 600:
+                # Server error - retry with backoff
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delays[attempt])
+                    continue
+                raise ExtractorError(f'Server error {e.status} - service may be unavailable')
+            else:
+                raise
+                
+        except ExtractorError as e:
+            if attempt == max_retries - 1:
+                raise
+            time.sleep(retry_delays[attempt])
+    
+    raise ExtractorError('Maximum retry attempts exceeded')</code></pre>
+                </div>
+
+                <h3>2. Enterprise Video Quality and Format Optimization</h3>
+                <div class="code-block">
+                    <pre><code class="language-python"># Enterprise video quality management and optimization
+def _process_enterprise_formats(self, sources, video_id):
+    """Process video formats with enterprise quality standards"""
+    
+    formats = []
+    
+    for source in sources:
+        source_type = source.get('type', '')
+        src = source.get('src')
+        
+        if not src or not source_type:
+            continue
+        
+        # Enterprise HLS with quality tiers
+        if source_type == 'application/x-mpegURL':
+            hls_formats = self._extract_m3u8_formats(
+                src, video_id, 'mp4', entry_protocol='m3u8_native',
+                m3u8_id='hls', fatal=False)
+            
+            # Add enterprise quality preferences
+            for f in hls_formats:
+                if f.get('height'):
+                    if f['height'] >= 1080:
+                        f['quality'] = 100  # Enterprise HD priority
+                    elif f['height'] >= 720:
+                        f['quality'] = 80   # Business standard
+                    else:
+                        f['quality'] = 60   # Mobile/bandwidth limited
+            
+            formats.extend(hls_formats)
+        
+        # Enterprise progressive downloads
+        elif source_type == 'video/mp4':
+            progressive_format = {
+                'url': src,
+                'format_id': f'http-{source.get("height", "unknown")}p',
+                'ext': 'mp4',
+                'quality': 90,  # High preference for enterprise networks
+            }
+            
+            # Add detailed quality information
+            for field in ['height', 'width', 'avg_bitrate', 'size']:
+                value = source.get(field)
+                if value:
+                    progressive_format[field.replace('avg_', '')] = int_or_none(value)
+            
+            formats.append(progressive_format)
+    
+    return formats</code></pre>
+                </div>
+
+                <h3>3. Enterprise Content Analytics and Metadata</h3>
+                <div class="tech-specs">
+                    <h4>Enterprise Video Analytics Integration</h4>
+                    <table>
+                        <tr>
+                            <th>Analytics Feature</th>
+                            <th>Business Value</th>
+                            <th>Data Extraction</th>
+                            <th>Implementation</th>
+                        </tr>
+                        <tr>
+                            <td>Viewer Engagement</td>
+                            <td>Content optimization</td>
+                            <td>Watch time, drop-off points</td>
+                            <td>JavaScript tracking</td>
+                        </tr>
+                        <tr>
+                            <td>Geographic Distribution</td>
+                            <td>Global reach analysis</td>
+                            <td>IP geolocation, CDN usage</td>
+                            <td>Server-side analytics</td>
+                        </tr>
+                        <tr>
+                            <td>Device Performance</td>
+                            <td>Technical optimization</td>
+                            <td>Platform, bandwidth, quality</td>
+                            <td>Client telemetry</td>
+                        </tr>
+                        <tr>
+                            <td>Business Intelligence</td>
+                            <td>ROI measurement</td>
+                            <td>Conversion tracking</td>
+                            <td>API integration</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h2>🚀 Future Evolution and Cloud Video Trends</h2>
+
+                <h3>1. Edge Computing and Global Distribution</h3>
+                <div class="highlight">
+                    <strong>Edge Innovation:</strong> Brightcove's evolution toward edge computing includes real-time
+                    video processing, AI-powered content optimization, and ultra-low latency streaming that will
+                    require new extraction approaches for edge-delivered content.
+                </div>
+
+                <h3>2. AI-Powered Video Processing and Personalization</h3>
+                <div class="challenge-box">
+                    <strong>Future Challenges:</strong>
+                    <ul>
+                        <li>AI-generated video thumbnails and highlights</li>
+                        <li>Real-time video personalization and dynamic content</li>
+                        <li>Advanced DRM with hardware-based protection</li>
+                        <li>Blockchain-based content verification and licensing</li>
+                    </ul>
+                </div>
+
+                <h3>3. Cloud-Native Video Infrastructure Evolution</h3>
+                <div class="performance-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">8K</div>
+                        <div>Maximum Quality</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">50ms</div>
+                        <div>Global CDN Latency</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">99.99%</div>
+                        <div>Enterprise SLA</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">100+</div>
+                        <div>API Endpoints</div>
+                    </div>
+                </div>
+
+                <footer>
+                    <h2>📚 Further Reading</h2>
+                    <ul>
+                        <li><a href="kaltura-enterprise-video-platform-deep-dive-yt-dlp.html">Kaltura Enterprise
+                                Platform</a></li>
+                        <li><a href="wistia-business-video-platform-deep-dive-yt-dlp.html">Wistia Business Video
+                                Platform</a></li>
+                        <li><a href="amazon-ecommerce-video-platform-deep-dive-yt-dlp.html">Amazon E-commerce Video</a>
+                        </li>
+                        <li><a href="jwplatform-video-infrastructure-deep-dive-yt-dlp.html">JW Player Platform</a></li>
+                    </ul>
+                </footer>
+
+                <div class="footer">
+                    <h3>☁️ Brightcove Extractor: Enterprise Cloud Video Mastery</h3>
+                    <p>
+                        The Brightcove extractor in yt-dlp represents a masterclass in handling enterprise cloud video
+                        infrastructure. From dual-generation system support to policy-based authentication, Adobe Pass
+                        integration, and global CDN optimization, this implementation showcases the engineering
+                        excellence
+                        required to work with cloud-native enterprise video platforms.
+                    </p>
+                    <p style="margin-top: 20px; font-style: italic;">
+                        "Enterprise cloud platforms require cloud-native extraction solutions - scalability, security,
+                        and multi-tenancy awareness are fundamental requirements." - yt-dlp Engineering Team
+                    </p>
+                </div>
+            </section>
+        </article>
+    </div>
+</body>
+
+</html>

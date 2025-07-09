@@ -72,6 +72,49 @@
             border-left: 4px solid #e60023;
             font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
             line-height: 1.5;
+            white-space: pre;
+            tab-size: 4;
+        }
+
+        /* Syntax Highlighting for Python code */
+        .code-block .keyword {
+            color: #569cd6;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .function {
+            color: #dcdcaa;
+        }
+
+        .code-block .variable {
+            color: #9cdcfe;
+        }
+
+        .code-block .number {
+            color: #b5cea8;
+        }
+
+        .code-block .constant {
+            color: #4fc1ff;
+        }
+
+        .code-block .class {
+            color: #4ec9b0;
+        }
+
+        .code-block .property {
+            color: #9cdcfe;
+        }
+
+        .code-block .operator {
+            color: #d4d4d4;
         }
 
         .architecture-diagram {
@@ -193,35 +236,35 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             border-top: 4px solid #e60023;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
 </head>
 
 <body>
     <div class="header">
         <h1>🔍 Pinterest Visual Platform Pin Video Engineering</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
         <p>Deep Dive into yt-dlp's Advanced Visual Discovery & Pin Extraction Architecture</p>
     </div>
@@ -301,72 +344,72 @@
 
         <h3>🎯 URL Pattern Recognition & Multi-Domain Support</h3>
         <div class="code-block">
-            # Pinterest's global domain support implementation
-            _VALID_URL_BASE = r'''(?x)
-            https?://(?:[^/]+\.)?pinterest\.(?:
-            com|fr|de|ch|jp|cl|ca|it|co\.uk|nz|ru|com\.au|at|pt|co\.kr|es|com\.mx|
-            dk|ph|th|com\.uy|co|nl|info|kr|ie|vn|com\.vn|ec|mx|in|pe|co\.at|hu|
-            co\.in|co\.nz|id|com\.ec|com\.py|tw|be|uk|com\.bo|com\.pe)'''
+<span class="comment"># Pinterest's global domain support implementation</span>
+<span class="variable">_VALID_URL_BASE</span> = <span class="string">r'''(?x)
+    https?://(?:[^/]+\.)?pinterest\.(?:
+    com|fr|de|ch|jp|cl|ca|it|co\.uk|nz|ru|com\.au|at|pt|co\.kr|es|com\.mx|
+    dk|ph|th|com\.uy|co|nl|info|kr|ie|vn|com\.vn|ec|mx|in|pe|co\.at|hu|
+    co\.in|co\.nz|id|com\.ec|com\.py|tw|be|uk|com\.bo|com\.pe)'''</span>
 
-            # Pin URL structure: /pin/[optional-title--]<pin_id>
-                _VALID_URL = rf'{PinterestBaseIE._VALID_URL_BASE}/pin/(?:[\w-]+--)?(?P<id>\d+)'
+<span class="comment"># Pin URL structure: /pin/[optional-title--]&lt;pin_id&gt;</span>
+<span class="variable">_VALID_URL</span> = <span class="string">rf'{PinterestBaseIE._VALID_URL_BASE}/pin/(?:[\w-]+--)?(?P&lt;id&gt;\d+)'</span>
         </div>
 
         <h3>🔄 Pinterest Resource API Integration</h3>
         <div class="code-block">
-            def _call_api(self, resource, video_id, options):
-            return self._download_json(
-            f'https://www.pinterest.com/resource/{resource}Resource/get/',
-            video_id, f'Download {resource} JSON metadata',
-            query={'data': json.dumps({'options': options})},
-            headers={'X-Pinterest-PWS-Handler': 'www/[username].js'})['resource_response']
+<span class="keyword">def</span> <span class="function">_call_api</span>(<span class="variable">self</span>, <span class="variable">resource</span>, <span class="variable">video_id</span>, <span class="variable">options</span>):
+    <span class="keyword">return</span> <span class="variable">self</span>.<span class="function">_download_json</span>(
+        <span class="string">f'https://www.pinterest.com/resource/{resource}Resource/get/'</span>,
+        <span class="variable">video_id</span>, <span class="string">f'Download {resource} JSON metadata'</span>,
+        <span class="variable">query</span>={<span class="string">'data'</span>: <span class="variable">json</span>.<span class="function">dumps</span>({<span class="string">'options'</span>: <span class="variable">options</span>})},
+        <span class="variable">headers</span>={<span class="string">'X-Pinterest-PWS-Handler'</span>: <span class="string">'www/[username].js'</span>})[<span class="string">'resource_response'</span>]
 
-            # Pin data extraction with comprehensive field set
-            data = self._call_api('Pin', video_id, {
-            'field_set_key': 'unauth_react_main_pin', # Unauthenticated access
-            'id': video_id,
-            })['data']
+<span class="comment"># Pin data extraction with comprehensive field set</span>
+<span class="variable">data</span> = <span class="variable">self</span>.<span class="function">_call_api</span>(<span class="string">'Pin'</span>, <span class="variable">video_id</span>, {
+    <span class="string">'field_set_key'</span>: <span class="string">'unauth_react_main_pin'</span>, <span class="comment"># Unauthenticated access</span>
+    <span class="string">'id'</span>: <span class="variable">video_id</span>,
+})[<span class="string">'data'</span>]
         </div>
 
         <h3>🎥 Advanced Video Format Detection</h3>
         <div class="code-block">
-            # Multi-source video extraction strategy
-            video_list = traverse_obj(
-            data,
-            ('videos', 'video_list'), # Standard video pins
-            ('story_pin_data', 'pages', ..., 'blocks', ..., 'video', 'video_list'), # Story pins
-            expected_type=dict, get_all=False, default={})
+<span class="comment"># Multi-source video extraction strategy</span>
+<span class="variable">video_list</span> = <span class="function">traverse_obj</span>(
+    <span class="variable">data</span>,
+    (<span class="string">'videos'</span>, <span class="string">'video_list'</span>), <span class="comment"># Standard video pins</span>
+    (<span class="string">'story_pin_data'</span>, <span class="string">'pages'</span>, ..., <span class="string">'blocks'</span>, ..., <span class="string">'video'</span>, <span class="string">'video_list'</span>), <span class="comment"># Story pins</span>
+    <span class="variable">expected_type</span>=<span class="class">dict</span>, <span class="variable">get_all</span>=<span class="constant">False</span>, <span class="variable">default</span>={})
 
-            for format_id, format_dict in video_list.items():
-            format_url = url_or_none(format_dict.get('url'))
-            duration = float_or_none(format_dict.get('duration'), scale=1000)
+<span class="keyword">for</span> <span class="variable">format_id</span>, <span class="variable">format_dict</span> <span class="keyword">in</span> <span class="variable">video_list</span>.<span class="function">items</span>():
+    <span class="variable">format_url</span> = <span class="function">url_or_none</span>(<span class="variable">format_dict</span>.<span class="function">get</span>(<span class="string">'url'</span>))
+    <span class="variable">duration</span> = <span class="function">float_or_none</span>(<span class="variable">format_dict</span>.<span class="function">get</span>(<span class="string">'duration'</span>), <span class="variable">scale</span>=<span class="number">1000</span>)
 
-            # HLS stream detection
-            if 'hls' in format_id.lower() or determine_ext(format_url) == 'm3u8':
-            formats.extend(self._extract_m3u8_formats(
-            format_url, video_id, 'mp4', entry_protocol='m3u8_native',
-            m3u8_id=format_id, fatal=False))
-            else:
-            # Direct video formats
-            formats.append({
-            'url': format_url,
-            'format_id': format_id,
-            'width': int_or_none(format_dict.get('width')),
-            'height': int_or_none(format_dict.get('height')),
-            'duration': duration,
-            })
+    <span class="comment"># HLS stream detection</span>
+    <span class="keyword">if</span> <span class="string">'hls'</span> <span class="keyword">in</span> <span class="variable">format_id</span>.<span class="function">lower</span>() <span class="keyword">or</span> <span class="function">determine_ext</span>(<span class="variable">format_url</span>) == <span class="string">'m3u8'</span>:
+        <span class="variable">formats</span>.<span class="function">extend</span>(<span class="variable">self</span>.<span class="function">_extract_m3u8_formats</span>(
+            <span class="variable">format_url</span>, <span class="variable">video_id</span>, <span class="string">'mp4'</span>, <span class="variable">entry_protocol</span>=<span class="string">'m3u8_native'</span>,
+            <span class="variable">m3u8_id</span>=<span class="variable">format_id</span>, <span class="variable">fatal</span>=<span class="constant">False</span>))
+    <span class="keyword">else</span>:
+        <span class="comment"># Direct video formats</span>
+        <span class="variable">formats</span>.<span class="function">append</span>({
+            <span class="string">'url'</span>: <span class="variable">format_url</span>,
+            <span class="string">'format_id'</span>: <span class="variable">format_id</span>,
+            <span class="string">'width'</span>: <span class="function">int_or_none</span>(<span class="variable">format_dict</span>.<span class="function">get</span>(<span class="string">'width'</span>)),
+            <span class="string">'height'</span>: <span class="function">int_or_none</span>(<span class="variable">format_dict</span>.<span class="function">get</span>(<span class="string">'height'</span>)),
+            <span class="string">'duration'</span>: <span class="variable">duration</span>,
+        })
         </div>
 
         <h3>🔗 Embedded Content Handling</h3>
         <div class="code-block">
-            # Smart embedded content detection
-            domain = data.get('domain', '')
-            if domain.lower() != 'uploaded by user' and traverse_obj(data, ('embed', 'src')):
-            return {
-            '_type': 'url_transparent',
-            'url': data['embed']['src'], # Pass to appropriate extractor
-            **info,
-            }
+<span class="comment"># Smart embedded content detection</span>
+<span class="variable">domain</span> = <span class="variable">data</span>.<span class="function">get</span>(<span class="string">'domain'</span>, <span class="string">''</span>)
+<span class="keyword">if</span> <span class="variable">domain</span>.<span class="function">lower</span>() != <span class="string">'uploaded by user'</span> <span class="keyword">and</span> <span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span class="string">'embed'</span>, <span class="string">'src'</span>)):
+    <span class="keyword">return</span> {
+        <span class="string">'_type'</span>: <span class="string">'url_transparent'</span>,
+        <span class="string">'url'</span>: <span class="variable">data</span>[<span class="string">'embed'</span>][<span class="string">'src'</span>], <span class="comment"># Pass to appropriate extractor</span>
+        **<span class="variable">info</span>,
+    }
         </div>
     </div>
 
@@ -476,34 +519,33 @@
 
         <h3>🔒 Authentication Headers</h3>
         <div class="code-block">
-            # Pinterest Web Service Handler
-            headers = {'X-Pinterest-PWS-Handler': 'www/[username].js'}
+<span class="comment"># Pinterest Web Service Handler</span>
+headers = {'X-Pinterest-PWS-Handler': 'www/[username].js'}
 
-            # Unauthenticated field set for public access
-            options = {
-            'field_set_key': 'unauth_react_main_pin',
-            'id': video_id,
-            }
+<span class="comment"># Unauthenticated field set for public access</span>
+options = {
+    'field_set_key': 'unauth_react_main_pin',
+    'id': video_id,
+}
         </div>
 
         <h3>🌍 Multi-Domain Resilience</h3>
         <div class="code-block">
-            # Comprehensive domain support for global access
-            SUPPORTED_DOMAINS = [
-            'com', 'fr', 'de', 'ch', 'jp', 'cl', 'ca', 'it', 'co.uk', 'nz', 'ru',
-            'com.au', 'at', 'pt', 'co.kr', 'es', 'com.mx', 'dk', 'ph', 'th',
-            'com.uy', 'co', 'nl', 'info', 'kr', 'ie', 'vn', 'com.vn', 'ec', 'mx',
-            'in', 'pe', 'co.at', 'hu', 'co.in', 'co.nz', 'id', 'com.ec', 'com.py',
-            'tw', 'be', 'uk', 'com.bo', 'com.pe'
-            ]
+<span class="comment"># Comprehensive domain support for global access</span>
+SUPPORTED_DOMAINS = [
+    'com', 'fr', 'de', 'ch', 'jp', 'cl', 'ca', 'it', 'co.uk', 'nz', 'ru',
+    'com.au', 'at', 'pt', 'co.kr', 'es', 'com.mx', 'dk', 'ph', 'th',
+    'com.uy', 'co', 'nl', 'info', 'kr', 'ie', 'vn', 'com.vn', 'ec', 'mx',
+    'in', 'pe', 'co.at', 'hu', 'co.in', 'co.nz', 'id', 'com.ec', 'com.py',
+    'tw', 'be', 'uk', 'com.bo', 'com.pe'
+]
         </div>
     </div>
 
     <div class="content-section">
         <h2>📈 Pinterest Extraction Metrics</h2>
 
-        <div
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0;">
             <div class="metric-card">
                 <div class="metric-number">28+</div>
                 <div>Supported Domains</div>
@@ -567,11 +609,9 @@
         <div class="pro-tip">
             <h4>💡 Pro Implementation Tips</h4>
             <ul>
-                <li><strong>Flexible Format Detection:</strong> Handle both video_list and story_pin_data structures
-                </li>
+                <li><strong>Flexible Format Detection:</strong> Handle both video_list and story_pin_data structures</li>
                 <li><strong>Domain Redundancy:</strong> Implement multi-domain fallback for geo-restrictions</li>
-                <li><strong>Metadata Enrichment:</strong> Extract comprehensive pin metadata for better organization
-                </li>
+                <li><strong>Metadata Enrichment:</strong> Extract comprehensive pin metadata for better organization</li>
                 <li><strong>Embedded Content Delegation:</strong> Use url_transparent for optimal format extraction</li>
                 <li><strong>Collection Optimization:</strong> Implement efficient pagination for large boards</li>
             </ul>
@@ -579,36 +619,36 @@
 
         <h3>🔄 Error Recovery Mechanisms</h3>
         <div class="code-block">
-            # Robust video extraction with fallbacks
-            def _extract_video(self, data, extract_formats=True):
-            # Primary: Native video sources
-            video_list = traverse_obj(data, ('videos', 'video_list'), expected_type=dict)
+<span class="comment"># Robust video extraction with fallbacks</span>
+<span class="keyword">def</span> <span class="function">_extract_video</span>(<span class="variable">self</span>, <span class="variable">data</span>, <span class="variable">extract_formats</span>=<span class="constant">True</span>):
+    <span class="comment"># Primary: Native video sources</span>
+    <span class="variable">video_list</span> = <span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span class="string">'videos'</span>, <span class="string">'video_list'</span>), <span class="variable">expected_type</span>=<span class="class">dict</span>)
 
-            # Fallback: Story pin video sources
-            if not video_list:
-            video_list = traverse_obj(
-            data, ('story_pin_data', 'pages', ..., 'blocks', ..., 'video', 'video_list'),
-            expected_type=dict, get_all=False, default={})
+    <span class="comment"># Fallback: Story pin video sources</span>
+    <span class="keyword">if not</span> <span class="variable">video_list</span>:
+        <span class="variable">video_list</span> = <span class="function">traverse_obj</span>(
+            <span class="variable">data</span>, (<span class="string">'story_pin_data'</span>, <span class="string">'pages'</span>, ..., <span class="string">'blocks'</span>, ..., <span class="string">'video'</span>, <span class="string">'video_list'</span>),
+            <span class="variable">expected_type</span>=<span class="class">dict</span>, <span class="variable">get_all</span>=<span class="constant">False</span>, <span class="variable">default</span>={})
 
-            # Ultimate fallback: Embedded content
-            if not video_list and traverse_obj(data, ('embed', 'src')):
-            return {'_type': 'url_transparent', 'url': data['embed']['src']}
+    <span class="comment"># Ultimate fallback: Embedded content</span>
+    <span class="keyword">if not</span> <span class="variable">video_list</span> <span class="keyword">and</span> <span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span class="string">'embed'</span>, <span class="string">'src'</span>)):
+        <span class="keyword">return</span> {<span class="string">'_type'</span>: <span class="string">'url_transparent'</span>, <span class="string">'url'</span>: <span class="variable">data</span>[<span class="string">'embed'</span>][<span class="string">'src'</span>]}
         </div>
 
         <h3>📊 Comprehensive Metadata Extraction</h3>
         <div class="code-block">
-            # Rich metadata extraction from Pinterest API
-            info = {
-            'title': strip_or_none(traverse_obj(data, 'title', 'grid_title', default='')),
-            'description': traverse_obj(data, 'seo_description', 'description'),
-            'timestamp': unified_timestamp(data.get('created_at')),
-            'uploader': traverse_obj(data, ('closeup_attribution', 'full_name')),
-            'uploader_id': str_or_none(traverse_obj(data, ('closeup_attribution', 'id'))),
-            'repost_count': int_or_none(data.get('repin_count')),
-            'comment_count': int_or_none(data.get('comment_count')),
-            'categories': traverse_obj(data, ('pin_join', 'visual_annotation'), expected_type=list),
-            'tags': traverse_obj(data, 'hashtags', expected_type=list),
-            }
+<span class="comment"># Rich metadata extraction from Pinterest API</span>
+<span class="variable">info</span> = {
+    <span class="string">'title'</span>: <span class="function">strip_or_none</span>(<span class="function">traverse_obj</span>(<span class="variable">data</span>, <span class="string">'title'</span>, <span class="string">'grid_title'</span>, <span class="variable">default</span>=<span class="string">''</span>)),
+    <span class="string">'description'</span>: <span class="function">traverse_obj</span>(<span class="variable">data</span>, <span class="string">'seo_description'</span>, <span class="string">'description'</span>),
+    <span class="string">'timestamp'</span>: <span class="function">unified_timestamp</span>(<span class="variable">data</span>.<span class="function">get</span>(<span class="string">'created_at'</span>)),
+    <span class="string">'uploader'</span>: <span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span class="string">'closeup_attribution'</span>, <span class="string">'full_name'</span>)),
+    <span class="string">'uploader_id'</span>: <span class="function">str_or_none</span>(<span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span class="string">'closeup_attribution'</span>, <span class="string">'id'</span>))),
+    <span class="string">'repost_count'</span>: <span class="function">int_or_none</span>(<span class="variable">data</span>.<span class="function">get</span>(<span class="string">'repin_count'</span>)),
+    <span class="string">'comment_count'</span>: <span class="function">int_or_none</span>(<span class="variable">data</span>.<span class="function">get</span>(<span class="string">'comment_count'</span>)),
+    <span class="string">'categories'</span>: <span class="function">traverse_obj</span>(<span class="variable">data</span>, (<span class="string">'pin_join'</span>, <span class="string">'visual_annotation'</span>), <span class="variable">expected_type</span>=<span class="class">list</span>),
+    <span class="string">'tags'</span>: <span class="function">traverse_obj</span>(<span class="variable">data</span>, <span class="string">'hashtags'</span>, <span class="variable">expected_type</span>=<span class="class">list</span>),
+}
         </div>
     </div>
 

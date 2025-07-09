@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Analytics 事件跟踪测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background: #0056b3;
+        }
+
+        .button.analyze {
+            background: #6f42c1;
+        }
+
+        .button.download {
+            background: #28a745;
+        }
+
+        .event-log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 3px;
+            font-size: 12px;
+            border-left: 4px solid #007bff;
+        }
+
+        .platform-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+    </style>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1FGK5KKNVX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-1FGK5KKNVX');
+
+        // 事件日志数组
+        let eventLog = [];
+
+        // 重写gtag函数来捕获事件
+        const originalGtag = window.gtag;
+        window.gtag = function (command, eventName, parameters) {
+            // 调用原始函数
+            originalGtag.apply(this, arguments);
+
+            // 记录事件
+            if (command === 'event') {
+                eventLog.push({
+                    eventName,
+                    parameters,
+                    timestamp: new Date().toLocaleTimeString()
+                });
+                updateEventLog();
+            }
+        };
+
+        // 模拟analytics函数
+        const trackAnalyzeClick = (platform, url) => {
+            gtag('event', 'analyze_button_click', {
+                platform: platform,
+                url_domain: new URL(url).hostname,
+                event_category: 'engagement',
+                event_label: 'analyze_media',
+                custom_parameter_platform: platform
+            });
+        };
+
+        const trackDownloadClick = (platform, mediaType, format, isPlaylist = false) => {
+            gtag('event', 'download_button_click', {
+                platform: platform,
+                media_type: mediaType,
+                format: format,
+                is_playlist: isPlaylist,
+                event_category: 'conversion',
+                event_label: 'start_download',
+                custom_parameter_platform: platform,
+                custom_parameter_media_type: mediaType
+            });
+        };
+
+        const trackDownloadComplete = (platform, mediaType, format, success, fileCount = 1) => {
+            gtag('event', 'download_complete', {
+                platform: platform,
+                media_type: mediaType,
+                format: format,
+                success: success,
+                file_count: fileCount,
+                event_category: 'conversion',
+                event_label: success ? 'download_success' : 'download_failure',
+                custom_parameter_platform: platform,
+                custom_parameter_media_type: mediaType
+            });
+        };
+
+        const getPlatformFromUrl = (url) => {
+            try {
+                const hostname = new URL(url).hostname.toLowerCase();
+                if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YouTube';
+                if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'Twitter/X';
+                if (hostname.includes('instagram.com')) return 'Instagram';
+                if (hostname.includes('tiktok.com')) return 'TikTok';
+                if (hostname.includes('bilibili.com')) return 'Bilibili';
+                return hostname.split('.')[1] || 'Other';
+            } catch {
+                return 'Unknown';
+            }
+        };
+
+        // 更新事件日志显示
+        const updateEventLog = () => {
+            const logContainer = document.getElementById('eventLog');
+            if (logContainer) {
+                logContainer.innerHTML = eventLog.slice(-10).reverse().map(event => `
+                    <div class="event-item">
+                        <strong>${event.eventName}</strong> (${event.timestamp})<br>
+                        Platform: ${event.parameters.platform || 'N/A'}, 
+                        Type: ${event.parameters.media_type || event.parameters.action || 'N/A'}
+                        ${event.parameters.format ? ', Format: ' + event.parameters.format : ''}
+                    </div>
+                `).join('');
+            }
+        };
+
+        // 测试函数
+        const testAnalyze = (platform, url) => {
+            trackAnalyzeClick(platform, url);
+            console.log(`Analytics: Analyze clicked for ${platform}`);
+        };
+
+        const testDownload = (platform, mediaType, format, isPlaylist = false) => {
+            trackDownloadClick(platform, mediaType, format, isPlaylist);
+            console.log(`Analytics: Download clicked for ${platform} (${mediaType})`);
+        };
+
+        const testDownloadComplete = (platform, mediaType, success) => {
+            trackDownloadComplete(platform, mediaType, 'test-format', success, success ? Math.floor(Math.random() * 3) + 1 : 0);
+            console.log(`Analytics: Download completed for ${platform} (${success ? 'success' : 'failed'})`);
+        };
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>📊 Google Analytics 事件跟踪测试</h1>
+        <p>这个页面演示了MediaGet应用中集成的Google Analytics事件跟踪功能。点击下面的按钮来模拟用户操作并查看Analytics事件。</p>
+
+        <h2>🔍 分析按钮测试</h2>
+        <div class="platform-buttons">
+            <button class="button analyze" onclick="testAnalyze('YouTube', 'https://youtube.com/watch?v=test')">分析
+                YouTube</button>
+            <button class="button analyze" onclick="testAnalyze('TikTok', 'https://tiktok.com/@user/video/123')">分析
+                TikTok</button>
+            <button class="button analyze" onclick="testAnalyze('Instagram', 'https://instagram.com/p/test/')">分析
+                Instagram</button>
+            <button class="button analyze" onclick="testAnalyze('Twitter/X', 'https://twitter.com/user/status/123')">分析
+                Twitter/X</button>
+            <button class="button analyze" onclick="testAnalyze('Bilibili', 'https://bilibili.com/video/BV123')">分析
+                Bilibili</button>
+        </div>
+
+        <h2>📥 下载按钮测试</h2>
+        <div class="platform-buttons">
+            <button class="button download" onclick="testDownload('YouTube', 'video', 'mp4-1080p')">下载 YouTube
+                视频</button>
+            <button class="button download" onclick="testDownload('Spotify', 'audio', 'mp3-320')">下载 Spotify 音频</button>
+            <button class="button download" onclick="testDownload('Instagram', 'image', 'jpg')">下载 Instagram 图片</button>
+            <button class="button download" onclick="testDownload('YouTube', 'video', 'playlist', true)">下载 YouTube
+                播放列表</button>
+            <button class="button download" onclick="testDownload('TikTok', 'video', 'mp4-720p')">下载 TikTok 视频</button>
+        </div>
+
+        <h2>✅ 下载完成测试</h2>
+        <div class="platform-buttons">
+            <button class="button" onclick="testDownloadComplete('YouTube', 'video', true)">YouTube 下载成功</button>
+            <button class="button" onclick="testDownloadComplete('TikTok', 'video', false)">TikTok 下载失败</button>
+            <button class="button" onclick="testDownloadComplete('Spotify', 'audio', true)">Spotify 下载成功</button>
+        </div>
+
+        <h2>📋 事件日志 (最近10条)</h2>
+        <div id="eventLog" class="event-log">
+            <p>点击上面的按钮来生成Analytics事件...</p>
+        </div>
+
+        <h2>📈 查看实时数据</h2>
+        <p>
+            <strong>Google Analytics 实时报告：</strong><br>
+            1. 访问 <a href="https://analytics.google.com" target="_blank">Google Analytics</a><br>
+            2. 选择您的媒体属性<br>
+            3. 在左侧菜单中点击 "实时" → "概览"<br>
+            4. 点击上面的按钮，事件应该会在实时报告中显示
+        </p>
+
+        <h2>🎯 支持的事件类型</h2>
+        <ul>
+            <li><strong>analyze_button_click</strong> - 用户点击分析按钮</li>
+            <li><strong>download_button_click</strong> - 用户点击下载按钮</li>
+            <li><strong>download_complete</strong> - 下载完成(成功或失败)</li>
+            <li><strong>platform_usage</strong> - 平台使用统计</li>
+        </ul>
+
+        <h2>📊 自定义维度</h2>
+        <ul>
+            <li><strong>platform</strong> - 媒体平台(YouTube, TikTok, Instagram等)</li>
+            <li><strong>media_type</strong> - 媒体类型(video, audio, image)</li>
+            <li><strong>format</strong> - 下载格式</li>
+            <li><strong>is_playlist</strong> - 是否为播放列表</li>
+            <li><strong>success</strong> - 下载是否成功</li>
+            <li><strong>file_count</strong> - 文件数量</li>
+        </ul>
+    </div>
+</body>
+
+</html>

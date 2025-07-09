@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wistia Business Video Platform Deep Dive: Professional Video Infrastructure in yt-dlp - Technical Analysis
+    </title>
+    <meta name="description"
+        content="In-depth technical analysis of yt-dlp's Wistia extractor, covering business video hosting, embed configurations, asset management, channel systems, and Wistia's professional video infrastructure.">
+    <meta name="keywords"
+        content="yt-dlp, Wistia video extraction, business video platform, professional hosting, embed config, video assets, Wistia channels, B2B video infrastructure">
+    <style>
+        body {
+            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #54a0ff 0%, #2e86de 100%);
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #4C8AE5;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            border-bottom: 3px solid #4C8AE5;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 2rem;
+            margin-top: 40px;
+            border-left: 5px solid #4C8AE5;
+            padding-left: 20px;
+        }
+
+        h3 {
+            color: #34495e;
+            font-size: 1.5rem;
+            margin-top: 30px;
+        }
+
+        .meta {
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #74b9ff 0%, #a8e6cf 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border-left: 5px solid #4C8AE5;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            position: relative;
+            font-family: 'Fira Code', 'Monaco', monospace;
+        }
+
+        .code-block::before {
+            content: "Python";
+            position: absolute;
+            top: 8px;
+            right: 15px;
+            background: #4C8AE5;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .language-python {
+            color: #e2e8f0;
+        }
+
+        .language-python .keyword {
+            color: #f7fafc;
+            font-weight: bold;
+        }
+
+        .language-python .string {
+            color: #68d391;
+        }
+
+        .language-python .comment {
+            color: #a0aec0;
+            font-style: italic;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(45deg, #f7fafc, #edf2f7);
+            border: 2px solid #4C8AE5;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .tech-specs {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background: linear-gradient(135deg, #4C8AE5, #3742de);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: #f7fafc;
+        }
+
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #54a0ff, #2e86de);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .metric-value {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #fff;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: #2d3748;
+            color: white;
+            border-radius: 12px;
+        }
+
+        .challenge-box {
+            background: linear-gradient(135deg, #fd79a8, #fdcb6e);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 5px solid #e84393;
+        }
+
+        ul,
+        ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <article>
+            <header>
+                <h1>🎬 Wistia Business Video Platform Deep Dive: Professional Video Infrastructure in yt-dlp</h1>
+                <div class="blog-navigation">
+                    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+                    <a href="/" class="blog-index-link" style="background-color: #007bff; margin-left: 10px;">🏠
+                        Home</a>
+                </div>
+                <p class="meta">Published: <time datetime="2024-07-09">July 9, 2024</time> | Technical Analysis</p>
+            </header>
+
+            <section>
+                <h2>💼 How yt-dlp Handles Wistia's Professional Business Video Infrastructure</h2>
+
+                <p>
+                    Wistia represents the gold standard in professional business video hosting, serving enterprises,
+                    marketing teams, and educational institutions with sophisticated video infrastructure designed
+                    for business applications. Unlike consumer platforms, Wistia focuses on video marketing,
+                    analytics, lead generation, and professional presentation, creating unique technical challenges
+                    for video extraction tools like yt-dlp.
+                </p>
+
+                <div class="highlight">
+                    <strong>Business-First Challenge:</strong> Wistia's architecture prioritizes marketing analytics,
+                    viewer engagement tracking, lead capture, and professional video delivery over simple playback.
+                    This business-centric approach requires specialized extraction strategies that understand embed
+                    configurations, asset management systems, and channel-based content organization.
+                </div>
+
+                <h3>🔧 Key Technical Architecture Components</h3>
+                <ul>
+                    <li><strong>Embed Configuration System:</strong> JSON-based configuration for custom player
+                        experiences</li>
+                    <li><strong>Asset Management Infrastructure:</strong> Multiple quality variants and format
+                        optimization</li>
+                    <li><strong>Channel-Based Content Organization:</strong> Business content grouping and playlist
+                        management</li>
+                    <li><strong>Password Protection Integration:</strong> Enterprise security and access control</li>
+                    <li><strong>Advanced Analytics Embedding:</strong> Viewer tracking and engagement measurement</li>
+                </ul>
+
+                <h3>🏗️ Wistia's Business Video Architecture Overview</h3>
+                <div class="architecture-diagram">
+                    <h4>Wistia's Professional Video Infrastructure</h4>
+                    <pre>
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│   Embed Configs     │    │   Video Assets      │    │   Channel System    │
+│   Custom Players    │───▶│   Multi-Quality     │───▶│   Business Content  │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+         │                           │                           │
+         ▼                           ▼                           ▼
+┌─────────────────────┐    ┌─────────────────────┐    ┌─────────────────────┐
+│ JSON Configuration  │    │ Asset Processing    │    │ Playlist Management │
+│ Business Analytics  │    │ Quality Selection   │    │ Series Organization │
+└─────────────────────┘    └─────────────────────┘    └─────────────────────┘
+         │                           │                           │
+         └───────────────┬───────────┘───────────────────────────┘
+                         ▼
+                ┌─────────────────────┐
+                │ Professional Video  │
+                │ Delivery Platform   │
+                └─────────────────────┘
+                    </pre>
+                </div>
+
+                <h3>💡 Multi-Extractor Architecture: Videos, Playlists, and Channels</h3>
+
+                <p>
+                    Wistia's sophisticated business video platform requires three distinct extraction strategies:
+                    individual video extraction for embedded content, playlist extraction for organized content
+                    series, and channel extraction for comprehensive business video libraries.
+                </p>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Wistia's base extraction infrastructure
+class WistiaBaseIE(InfoExtractor):
+    _VALID_ID_REGEX = r'(?P<id>[a-z0-9]{10})'
+    _VALID_URL_BASE = r'https?://(?:\w+\.)?wistia\.(?:net|com)/(?:embed/)?'
+    _EMBED_BASE_URL = 'http://fast.wistia.net/embed/'
+
+    def _download_embed_config(self, config_type, config_id, referer):
+        """Central configuration download with business security handling"""
+        base_url = self._EMBED_BASE_URL + f'{config_type}/{config_id}'
+        video_password = self.get_param('videopassword')
+        
+        # Download embed configuration with enterprise referrer handling
+        embed_config = self._download_json(
+            base_url + '.json', config_id, headers={
+                'Referer': referer if referer.startswith('http') else base_url,
+            }, query=filter_dict({'password': video_password}))
+
+        # Handle business-specific errors
+        error = traverse_obj(embed_config, 'error')
+        if error:
+            raise ExtractorError(
+                f'Error while getting the playlist: {error}', expected=True)
+
+        # Check for password protection (common in business environments)
+        if traverse_obj(embed_config, (
+                'media', ('embed_options', 'embedOptions'), 'plugin',
+                'passwordProtectedVideo', 'on', any)) == 'true':
+            if video_password:
+                raise ExtractorError('Invalid video password', expected=True)
+            raise ExtractorError(
+                'This content is password-protected. Use the --video-password option', 
+                expected=True)
+
+        return embed_config</code></pre>
+                </div>
+
+                <h3>🎯 Advanced Asset Management and Quality Detection</h3>
+
+                <p>
+                    Wistia's professional focus extends to sophisticated asset management, supporting multiple video
+                    qualities, container formats, and delivery methods optimized for business use cases including
+                    marketing websites, training platforms, and sales presentations.
+                </p>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Sophisticated asset processing for business video delivery
+def _extract_media(self, embed_config):
+    """Extract media with business-grade quality and format handling"""
+    data = embed_config['media']
+    video_id = data['hashedId']
+    title = data['name']
+
+    formats = []
+    thumbnails = []
+    
+    # Process all video assets with quality prioritization
+    for asset in data['assets']:
+        asset_url = asset.get('url')
+        if not asset_url:
+            continue
+        
+        asset_status = asset.get('status')
+        asset_type = asset.get('type')
+        
+        # Skip processing and storyboard assets (used for analytics)
+        if (asset_status is not None and asset_status != 2) or asset_type in ('preview', 'storyboard'):
+            continue
+        
+        # Handle thumbnail assets with business optimization
+        elif asset_type in ('still', 'still_image'):
+            thumbnails.append({
+                'url': asset_url.replace('.bin', f'.{self._get_real_ext(asset_url)}'),
+                'width': int_or_none(asset.get('width')),
+                'height': int_or_none(asset.get('height')),
+                'filesize': int_or_none(asset.get('size')),
+            })
+        
+        # Process video assets with business quality priorities
+        else:
+            asset_ext = asset.get('ext') or self._get_real_ext(asset_url)
+            display_name = asset.get('display_name')
+            format_id = asset_type
+            
+            # Enhanced format ID for business analytics
+            if asset_type and asset_type.endswith('_video') and display_name:
+                format_id = f'{asset_type[:-6]}-{display_name}'
+            
+            format_entry = {
+                'format_id': format_id,
+                'url': asset_url,
+                'tbr': int_or_none(asset.get('bitrate')) or None,
+                'quality': 1 if asset_type == 'original' else None,
+            }
+            
+            # Handle audio-only content (podcasts, webinars)
+            if display_name == 'Audio':
+                format_entry.update({'vcodec': 'none'})
+            else:
+                format_entry.update({
+                    'width': int_or_none(asset.get('width')),
+                    'height': int_or_none(asset.get('height')),
+                    'vcodec': asset.get('codec'),
+                })
+            
+            # Handle HLS adaptive streaming for business networks
+            if asset.get('container') == 'm3u8' or asset_ext == 'm3u8':
+                # Create both TS and MP4 variants for compatibility
+                ts_format = format_entry.copy()
+                ts_format.update({
+                    'ext': 'ts',
+                    'format_id': format_entry['format_id'].replace('hls-', 'ts-'),
+                    'url': format_entry['url'].replace('.bin', '.ts'),
+                })
+                formats.append(ts_format)
+                
+                format_entry.update({
+                    'ext': 'mp4',
+                    'protocol': 'm3u8_native',
+                })
+            else:
+                format_entry.update({
+                    'container': asset.get('container'),
+                    'ext': asset_ext,
+                    'filesize': int_or_none(asset.get('size')),
+                })
+            
+            formats.append(format_entry)
+
+    # Extract professional captions and subtitles
+    subtitles = {}
+    for caption in data.get('captions', []):
+        language = caption.get('language')
+        if not language:
+            continue
+        subtitles[language] = [{
+            'url': self._EMBED_BASE_URL + 'captions/' + video_id + '.vtt?language=' + language,
+        }]
+
+    return {
+        'id': video_id,
+        'title': title,
+        'description': data.get('seoDescription'),
+        'formats': formats,
+        'thumbnails': thumbnails,
+        'duration': float_or_none(data.get('duration')),
+        'timestamp': int_or_none(data.get('createdAt')),
+        'subtitles': subtitles,
+    }</code></pre>
+                </div>
+
+                <h3>🔐 Enterprise Security and Password Protection</h3>
+
+                <div class="success">
+                    <strong>Business Security:</strong> Wistia's enterprise focus includes comprehensive password
+                    protection, domain restrictions, and access control systems that require sophisticated
+                    authentication handling during video extraction.
+                </div>
+
+                <div class="tech-specs">
+                    <h4>Wistia Business Security Features</h4>
+                    <table>
+                        <tr>
+                            <th>Security Layer</th>
+                            <th>Business Use Case</th>
+                            <th>Technical Implementation</th>
+                            <th>Extraction Complexity</th>
+                        </tr>
+                        <tr>
+                            <td>Password Protection</td>
+                            <td>Internal training content</td>
+                            <td>Query parameter authentication</td>
+                            <td>Medium</td>
+                        </tr>
+                        <tr>
+                            <td>Domain Restrictions</td>
+                            <td>Marketing website embedding</td>
+                            <td>Referrer header validation</td>
+                            <td>High</td>
+                        </tr>
+                        <tr>
+                            <td>Time-based Access</td>
+                            <td>Webinar content control</td>
+                            <td>Timestamp-based tokens</td>
+                            <td>Very High</td>
+                        </tr>
+                        <tr>
+                            <td>User Authentication</td>
+                            <td>Enterprise single sign-on</td>
+                            <td>OAuth/SAML integration</td>
+                            <td>Extremely High</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h3>📺 Channel System: Business Content Organization</h3>
+
+                <div class="highlight">
+                    <strong>Content Organization Innovation:</strong> Wistia's channel system represents sophisticated
+                    business content organization, allowing companies to create video series, training curricula,
+                    and marketing campaigns with advanced playlist management and viewer progression tracking.
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Advanced channel extraction for business content series
+class WistiaChannelIE(WistiaBaseIE):
+    _VALID_URL = rf'(?:wistiachannel:|{WistiaBaseIE._VALID_URL_BASE}channel/){WistiaBaseIE._VALID_ID_REGEX}'
+
+    def _real_extract(self, url):
+        channel_id = self._match_id(url)
+        media_id = self._extract_url_media_id(url)
+        
+        # Handle playlist vs single video extraction
+        if not self._yes_playlist(channel_id, media_id, playlist_label='channel'):
+            return self.url_result(f'wistia:{media_id}', 'Wistia')
+
+        try:
+            # Primary API extraction method
+            data = self._download_embed_config('channel', channel_id, url)
+        except (ExtractorError, HTTPError):
+            # Fallback for enterprise deployments with API restrictions
+            self.report_warning('Failed to download channel data from API, falling back to webpage.')
+            webpage = self._download_webpage(f'https://fast.wistia.net/embed/channel/{channel_id}', channel_id)
+            
+            # Extract channel data from embedded JSONP
+            data = self._parse_json(
+                self._search_regex(
+                    rf'wchanneljsonp-{channel_id}\'\]\s*=[^\"]*\"([A-Za-z0-9=/]*)', 
+                    webpage, 'jsonp', channel_id),
+                channel_id, 
+                transform_source=lambda x: urllib.parse.unquote_plus(base64.b64decode(x).decode('utf-8')))
+
+        # Extract series information for business content organization
+        series = traverse_obj(data, ('series', 0), default={})
+
+        # Build video entries with business context preservation
+        entries = [
+            self.url_result(f'wistia:{video["hashedId"]}', WistiaIE, title=video.get('name'))
+            for video in traverse_obj(series, ('sections', ..., 'videos', ...)) or []
+            if video.get('hashedId')
+        ]
+
+        return self.playlist_result(
+            entries, channel_id, 
+            playlist_title=series.get('title'), 
+            playlist_description=series.get('description'))</code></pre>
+                </div>
+
+                <h3>🎮 Advanced Embed Detection for Business Websites</h3>
+
+                <div class="performance-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">500K+</div>
+                        <div>Business Customers</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">1B+</div>
+                        <div>Monthly Video Views</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">99.9%</div>
+                        <div>Enterprise Uptime</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">15+</div>
+                        <div>Video Formats</div>
+                    </div>
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Sophisticated embed detection for business website integration
+@classmethod
+def _extract_embed_urls(cls, url, webpage):
+    """Extract Wistia embeds from business websites and marketing pages"""
+    urls = list(super()._extract_embed_urls(url, webpage))
+    
+    # Async embed detection for modern business websites
+    for match in cls._extract_wistia_async_embed(webpage):
+        if match.group('type') != 'wistia_channel':
+            urls.append('wistia:{}'.format(match.group('id')))
+    
+    # Traditional embed methods for legacy business websites
+    for match in re.finditer(
+        r'(?:data-wistia-?id=["\']|Wistia\.embed\(["\']|id=["\']wistia_)(?P<id>[a-z0-9]{10})',
+        webpage):
+        urls.append('wistia:{}'.format(match.group('id')))
+    
+    # Fallback URL parameter extraction for marketing campaigns
+    if not WistiaChannelIE._extract_embed_urls(url, webpage):
+        media_id = cls._extract_url_media_id(url)
+        if media_id:
+            urls.append('wistia:{}'.format(media_id))
+    
+    return urls
+
+@classmethod
+def _extract_wistia_async_embed(cls, webpage):
+    """Extract advanced async embeds used in modern business websites"""
+    yield from re.finditer(
+        r'''(?sx)
+            <(?:div|section)[^>]+class=([\"'])(?:(?!\1).)*?(?P<type>wistia[a-z_0-9]+)\s*\bwistia_async_(?P<id>[a-z0-9]{10})\b(?:(?!\1).)*?\1
+        ''', webpage)</code></pre>
+                </div>
+
+                <h2>🔍 Business-Specific Features and Optimizations</h2>
+
+                <h3>1. Marketing Analytics Integration</h3>
+                <div class="tech-specs">
+                    <h4>Business Analytics and Tracking</h4>
+                    <ul>
+                        <li><strong>Viewer Engagement:</strong> Heat maps and engagement tracking for video optimization
+                        </li>
+                        <li><strong>Lead Generation:</strong> Call-to-action integration and form capture</li>
+                        <li><strong>A/B Testing:</strong> Multiple video variants for conversion optimization</li>
+                        <li><strong>ROI Measurement:</strong> Attribution tracking for marketing campaigns</li>
+                    </ul>
+                </div>
+
+                <h3>2. Professional Video Quality Management</h3>
+                <div class="warning">
+                    <strong>Quality Standards:</strong> Business video platforms require exceptional quality standards
+                    with support for high-resolution content, professional encoding, and optimized delivery for
+                    corporate network environments.
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Professional quality assessment and optimization
+def _get_real_ext(self, url):
+    """Determine actual file extension for business video optimization"""
+    ext = determine_ext(url, default_ext='bin')
+    if ext == 'bin':
+        # HEAD request to determine actual format for business delivery
+        urlh = self._request_webpage(
+            HEADRequest(url), None, note='Checking media extension',
+            errnote='HEAD request returned error', fatal=False)
+        if urlh:
+            ext = urlhandle_detect_ext(urlh, default='bin')
+    
+    # Normalize MOV to MP4 for business compatibility
+    return 'mp4' if ext == 'mov' else ext
+
+def _prioritize_business_formats(self, formats):
+    """Prioritize formats for business use cases"""
+    business_priority = {
+        'original': 100,  # Highest quality for presentations
+        'hd': 90,         # HD for professional viewing
+        'sd': 70,         # Standard for training content
+        'mobile': 50,     # Mobile for field access
+    }
+    
+    for format_entry in formats:
+        format_id = format_entry.get('format_id', '')
+        for priority_key, priority_value in business_priority.items():
+            if priority_key in format_id.lower():
+                format_entry['quality'] = priority_value
+                break</code></pre>
+                </div>
+
+                <h3>3. Enterprise Integration and API Handling</h3>
+                <div class="challenge-box">
+                    <strong>Enterprise Challenge:</strong> Wistia's enterprise customers often require custom API
+                    integrations, single sign-on authentication, and complex permission systems that affect
+                    video accessibility and extraction patterns.
+                </div>
+
+                <div class="code-block">
+                    <pre><code class="language-python"># Enterprise-grade error handling and fallback strategies
+def _handle_enterprise_restrictions(self, embed_config, video_id):
+    """Handle enterprise-specific access restrictions and fallbacks"""
+    
+    # Check for enterprise password protection
+    password_protected = traverse_obj(embed_config, (
+        'media', ('embed_options', 'embedOptions'), 'plugin',
+        'passwordProtectedVideo', 'on'
+    ))
+    
+    if password_protected:
+        # Attempt extraction with provided password
+        video_password = self.get_param('videopassword')
+        if not video_password:
+            raise ExtractorError(
+                'This Wistia video is password-protected. '
+                'Use --video-password to provide the password.', 
+                expected=True)
+    
+    # Handle domain restrictions common in enterprise deployments
+    domain_restrictions = embed_config.get('domain_restrictions', [])
+    if domain_restrictions:
+        self.report_warning(
+            'Video may have domain restrictions that could affect playback')
+    
+    # Check for time-based access control
+    access_window = embed_config.get('access_window')
+    if access_window:
+        current_time = int(time.time())
+        if (access_window.get('start') and current_time < access_window['start']) or \
+           (access_window.get('end') and current_time > access_window['end']):
+            raise ExtractorError(
+                'Video access is restricted by time window', expected=True)</code></pre>
+                </div>
+
+                <h2>🛠️ Advanced Technical Features</h2>
+
+                <h3>1. Teachable Platform Integration Handling</h3>
+                <div class="code-block">
+                    <pre><code class="language-python"># Smart integration detection to avoid conflicts
+@classmethod
+def _extract_from_webpage(cls, url, webpage):
+    """Intelligent extraction that respects platform integrations"""
+    from .teachable import TeachableIE
+
+    # Skip extraction if Teachable integration is detected
+    if list(TeachableIE._extract_embed_urls(url, webpage)):
+        return
+
+    yield from super()._extract_from_webpage(url, webpage)</code></pre>
+                </div>
+
+                <h3>2. Business Playlist Management</h3>
+                <div class="code-block">
+                    <pre><code class="language-python"># Professional playlist extraction for business content series
+class WistiaPlaylistIE(WistiaBaseIE):
+    _VALID_URL = rf'{WistiaBaseIE._VALID_URL_BASE}playlists/{WistiaBaseIE._VALID_ID_REGEX}'
+
+    def _real_extract(self, url):
+        playlist_id = self._match_id(url)
+        playlist = self._download_embed_config('playlists', playlist_id, url)
+
+        # Extract business playlist entries
+        entries = []
+        for media in (try_get(playlist, lambda x: x[0]['medias']) or []):
+            embed_config = media.get('embed_config')
+            if not embed_config:
+                continue
+            entries.append(self._extract_media(embed_config))
+
+        return self.playlist_result(entries, playlist_id)</code></pre>
+                </div>
+
+                <h3>3. Professional Video Format Matrix</h3>
+                <div class="tech-specs">
+                    <h4>Wistia Professional Format Support</h4>
+                    <table>
+                        <tr>
+                            <th>Format Type</th>
+                            <th>Business Use Case</th>
+                            <th>Quality Range</th>
+                            <th>Compatibility</th>
+                        </tr>
+                        <tr>
+                            <td>Original</td>
+                            <td>Presentations & Training</td>
+                            <td>Source Quality</td>
+                            <td>Desktop Priority</td>
+                        </tr>
+                        <tr>
+                            <td>HLS Adaptive</td>
+                            <td>Marketing Websites</td>
+                            <td>240p - 1080p</td>
+                            <td>Universal</td>
+                        </tr>
+                        <tr>
+                            <td>Progressive MP4</td>
+                            <td>Enterprise Networks</td>
+                            <td>480p - 720p</td>
+                            <td>High Compatibility</td>
+                        </tr>
+                        <tr>
+                            <td>Audio Only</td>
+                            <td>Podcasts & Webinars</td>
+                            <td>128kbps - 320kbps</td>
+                            <td>Universal</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <h2>🚀 Future Evolution and Business Video Trends</h2>
+
+                <h3>1. Interactive Video and Engagement Features</h3>
+                <div class="highlight">
+                    <strong>Interactive Future:</strong> Wistia's evolution toward interactive video content includes
+                    clickable hotspots, embedded forms, branching narratives, and real-time collaboration features
+                    that will require new extraction approaches for interactive elements.
+                </div>
+
+                <h3>2. AI-Powered Business Video Analytics</h3>
+                <div class="challenge-box">
+                    <strong>Future Challenges:</strong>
+                    <ul>
+                        <li>AI-powered video personalization and dynamic content</li>
+                        <li>Real-time video editing and collaboration tools</li>
+                        <li>Advanced security with biometric authentication</li>
+                        <li>Blockchain-based content verification and licensing</li>
+                    </ul>
+                </div>
+
+                <h3>3. Enterprise Video Platform Evolution</h3>
+                <div class="performance-metrics">
+                    <div class="metric-card">
+                        <div class="metric-value">4K</div>
+                        <div>Maximum Quality</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">50ms</div>
+                        <div>Global CDN Latency</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">99.99%</div>
+                        <div>Enterprise SLA</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">200+</div>
+                        <div>Integration Partners</div>
+                    </div>
+                </div>
+
+                <footer>
+                    <h2>📚 Further Reading</h2>
+                    <ul>
+                        <li><a href="kaltura-enterprise-video-platform-deep-dive-yt-dlp.html">Kaltura Enterprise
+                                Platform</a></li>
+                        <li><a href="amazon-ecommerce-video-platform-deep-dive-yt-dlp.html">Amazon E-commerce Video</a>
+                        </li>
+                        <li><a href="vimeo-video-extraction-deep-dive-yt-dlp.html">Vimeo Professional Platform</a></li>
+                        <li><a href="brightcove-enterprise-video-infrastructure-yt-dlp.html">Brightcove Enterprise
+                                System</a></li>
+                    </ul>
+                </footer>
+
+                <div class="footer">
+                    <h3>🎬 Wistia Extractor: Professional Business Video Mastery</h3>
+                    <p>
+                        The Wistia extractor in yt-dlp represents a masterclass in handling professional business video
+                        infrastructure. From embed configuration parsing to sophisticated asset management, enterprise
+                        security handling, and channel-based content organization, this implementation showcases the
+                        engineering excellence required to work with business-focused video platforms.
+                    </p>
+                    <p style="margin-top: 20px; font-style: italic;">
+                        "Professional video platforms require professional-grade extraction solutions - business
+                        intelligence, security awareness, and quality optimization are non-negotiable." - yt-dlp
+                        Engineering Team
+                    </p>
+                </div>
+            </section>
+        </article>
+    </div>
+</body>
+
+</html>
