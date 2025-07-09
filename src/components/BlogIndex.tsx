@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const blogs = [
     { path: '/blogs/amazon-ecommerce-video-platform-deep-dive-yt-dlp.html', title: 'Amazon Video Infrastructure Deep Dive: E-commerce Integrated Media Platform in yt-dlp - Technical Analysis' },
@@ -54,6 +55,7 @@ const blogs = [
 ];
 
 const BlogIndex: React.FC = () => {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredBlogs = blogs.filter(blog =>
@@ -66,11 +68,11 @@ const BlogIndex: React.FC = () => {
                 <header className="text-center mb-12">
                     <h1 className="text-5xl font-extrabold text-gray-900 leading-tight">
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600">
-                            Technical Blogs
+                            {t('blogs.title')}
                         </span>
                     </h1>
                     <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                        Deep dives into video extraction, reverse engineering, and platform architecture.
+                        {t('blogs.subtitle')}
                     </p>
                 </header>
 
@@ -78,7 +80,7 @@ const BlogIndex: React.FC = () => {
                     <div className="relative">
                         <input
                             type="text"
-                            placeholder="Search articles by title..."
+                            placeholder={t('blogs.searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full px-5 py-3 text-lg border border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300"
@@ -103,7 +105,7 @@ const BlogIndex: React.FC = () => {
                                     {blog.title}
                                 </h2>
                                 <p className="mt-4 text-blue-600 font-semibold text-sm">
-                                    Read more
+                                    {t('blogs.readMore')}
                                     <span className="inline-block transform group-hover:translate-x-1 transition-transform duration-300">
                                         →
                                     </span>

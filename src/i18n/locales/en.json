@@ -47,6 +47,7 @@
     "nav": {
       "home": "Home",
       "dashboard": "Dashboard",
+      "blogs": "Blogs",
       "about": "About"
     },
     "auth": {
@@ -316,5 +317,11 @@
         "description": "Read our terms of service and understand the conditions for using MediaGet media downloader."
       }
     }
+  },
+  "blogs": {
+    "title": "Technical Blogs",
+    "subtitle": "Deep dives into video extraction, reverse engineering, and platform architecture.",
+    "searchPlaceholder": "Search articles by title...",
+    "readMore": "Read more"
   }
 }
