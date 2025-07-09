@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vevo Music Platform Deep Dive: yt-dlp's Engineering for Premium Music Video Extraction</title>
+    <meta name="description"
+        content="Technical analysis of yt-dlp's Vevo extractor implementation for premium music video platforms, covering OAuth authentication, multi-CDN delivery, and artist metadata processing.">
+    <meta name="keywords"
+        content="Vevo, yt-dlp, music videos, OAuth, CDN, streaming, artist metadata, music platform, video extraction">
+    <meta property="og:title" content="Vevo Music Platform Deep Dive: yt-dlp Engineering Analysis">
+    <meta property="og:description"
+        content="Technical deep dive into yt-dlp's Vevo extractor for premium music video platforms">
+    <meta property="og:type" content="article">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: none;
+            margin: -30px -30px 30px -30px;
+        }
+
+        pre {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border-left: 4px solid #4299e1;
+        }
+
+        code {
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #1e293b;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .cdn-visualization {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #3498db;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -37px;
+            top: 25px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3498db;
+        }
+
+        .related-links {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .related-links ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .related-links li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .related-links li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎵 Vevo Music Platform Deep Dive: yt-dlp's Engineering for Premium Music Video Extraction</h1>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+            <a href="/#home" class="blog-index-link" style="background-color: #007bff; margin-left: 10px;">🏠 Home</a>
+        </div>
+
+        <div class="info-box">
+            <strong>Technical Overview:</strong> This analysis explores yt-dlp's sophisticated Vevo extractor
+            implementation,
+            covering premium music video platform challenges including OAuth authentication, multi-CDN delivery systems,
+            artist metadata processing, age restrictions, and geo-blocking for enterprise music distribution.
+        </div>
+
+        <h2>🏗️ Architecture Overview</h2>
+
+        <div class="architecture-diagram">
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Vevo Extraction Pipeline │
+            ├─────────────────────────────────────────────────────────────────┤
+            │ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ URL Parser │→ │ OAuth Token │→ │ API Client │ │
+            │ │ - Standard │ │ Retrieval │ │ - Video Info │ │
+            │ │ - Embed │ │ - Anonymous │ │ - Streams │ │
+            │ │ - TV Format │ │ - Legacy │ │ - Metadata │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │ │ │ │
+            │ ▼ ▼ ▼ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ Geo Check │ │ Artist │ │ CDN Selection │ │
+            │ │ - Region │ │ Processing │ │ - Level3 │ │
+            │ │ - Blocking │ │ - Primary │ │ - Akamai │ │
+            │ │ - Fallback │ │ - Featured │ │ - Amazon │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │ │ │ │
+            │ ▼ ▼ ▼ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ Format │ │ Age Limit │ │ Metadata │ │
+            │ │ Processing │ │ Detection │ │ Assembly │ │
+            │ │ - HLS/DASH │ │ - Explicit │ │ - Title Build │ │
+            │ │ - Progressive│ │ - Content │ │ - Thumbnails │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │
+            └─────────────────────────────────────────────────────────────────┘
+        </div>
+
+        <h2>🔐 OAuth Authentication System</h2>
+
+        <h3>Anonymous Token Acquisition</h3>
+        <pre><code class="python">def _initialize_api(self, video_id):
+    webpage = self._download_webpage(
+        'https://accounts.vevo.com/token', None,
+        note='Retrieving oauth token',
+        errnote='Unable to retrieve oauth token',
+        data=json.dumps({
+            'client_id': 'SPupX1tvqFEopQ1YS6SS',
+            'grant_type': 'urn:vevo:params:oauth:grant-type:anonymous',
+        }).encode(),
+        headers={
+            'Content-Type': 'application/json',
+        })
+
+    # Geo-blocking detection
+    if re.search(r'(?i)THIS PAGE IS CURRENTLY UNAVAILABLE IN YOUR REGION', webpage):
+        self.raise_geo_restricted(
+            f'{self.IE_NAME} said: This page is currently unavailable in your region')
+
+    auth_info = self._parse_json(webpage, video_id)
+    self._api_url_template = self.http_scheme() + '//apiv2.vevo.com/%s?token=' + auth_info['legacy_token']</code></pre>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🔑 OAuth Features</h4>
+                <ul>
+                    <li>Anonymous authentication</li>
+                    <li>Legacy token support</li>
+                    <li>Client ID management</li>
+                    <li>JSON-based requests</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🌍 Geo-Protection</h4>
+                <ul>
+                    <li>Region availability checks</li>
+                    <li>Graceful geo-blocking</li>
+                    <li>Error message extraction</li>
+                    <li>Fallback mechanisms</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>API Error Handling</h3>
+        <pre><code class="python">def _call_api(self, path, *args, **kwargs):
+    try:
+        data = self._download_json(self._api_url_template % path, *args, **kwargs)
+    except ExtractorError as e:
+        if isinstance(e.cause, HTTPError):
+            errors = self._parse_json(e.cause.response.read().decode(), None)['errors']
+            error_message = ', '.join([error['message'] for error in errors])
+            raise ExtractorError(f'{self.IE_NAME} said: {error_message}', expected=True)
+        raise
+    return data</code></pre>
+
+        <h2>🎨 Artist & Metadata Processing</h2>
+
+        <h3>Complex Artist Handling</h3>
+        <pre><code class="python">uploader = None
+artist = None
+featured_artist = None
+artists = video_info.get('artists')
+
+for curr_artist in artists:
+    if curr_artist.get('role') == 'Featured':
+        featured_artist = curr_artist['name']
+    else:
+        artist = uploader = curr_artist['name']
+
+# Smart title construction
+track = video_info['title']
+if featured_artist:
+    artist = f'{artist} ft. {featured_artist}'
+title = f'{artist} - {track}' if artist else track</code></pre>
+
+        <h3>Genre & Content Classification</h3>
+        <pre><code class="python"># Genre extraction with fallbacks
+genres = video_info.get('genres')
+genre = (
+    genres[0] if genres and isinstance(genres, list)
+    and isinstance(genres[0], str) else None)
+
+# Age limit determination
+is_explicit = video_info.get('isExplicit')
+if is_explicit is True:
+    age_limit = 18
+elif is_explicit is False:
+    age_limit = 0
+else:
+    age_limit = None</code></pre>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <h4>1. OAuth Token Acquisition</h4>
+                <p>Obtain anonymous access token for API authentication</p>
+            </div>
+            <div class="timeline-item">
+                <h4>2. Video Information Retrieval</h4>
+                <p>Fetch comprehensive video metadata via authenticated API</p>
+            </div>
+            <div class="timeline-item">
+                <h4>3. Stream Discovery</h4>
+                <p>Query available video streams across multiple CDNs</p>
+            </div>
+            <div class="timeline-item">
+                <h4>4. Fallback Processing</h4>
+                <p>Handle webpage-only content when API fails</p>
+            </div>
+            <div class="timeline-item">
+                <h4>5. Format Processing</h4>
+                <p>Extract and optimize video formats from CDN sources</p>
+            </div>
+        </div>
+
+        <h2>🌐 Multi-CDN Delivery System</h2>
+
+        <h3>CDN Version Management</h3>
+        <pre><code class="python">_VERSIONS = {
+    0: 'youtube',  # only in AuthenticateVideo videoVersions
+    1: 'level3',
+    2: 'akamai',
+    3: 'level3',
+    4: 'amazon',
+}</code></pre>
+
+        <div class="cdn-visualization">
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Vevo CDN Infrastructure │
+            ├─────────────────────────────────────────────────────────────────┤
+            │ │
+            │ Level3 CDN (Primary) Akamai CDN (Secondary) │
+            │ ┌─────────────────────┐ ┌─────────────────────┐ │
+            │ │ 🌐 Global Network │ │ 🚀 Edge Caching │ │
+            │ │ 📊 Load Balancing │ │ 🛡️ DDoS Protection │ │
+            │ │ 🔄 Content Routing │ │ 📈 Analytics │ │
+            │ └─────────────────────┘ └─────────────────────┘ │
+            │ │ │ │
+            │ ▼ ▼ │
+            │ Amazon CDN (Backup) YouTube Integration │
+            │ ┌─────────────────────┐ ┌─────────────────────┐ │
+            │ │ ☁️ AWS CloudFront │ │ 📺 Fallback Delivery│ │
+            │ │ 🔧 Auto-scaling │ │ 🎯 Targeted Content │ │
+            │ │ 💾 S3 Integration │ │ 📱 Mobile Optimize │ │
+            │ └─────────────────────┘ └─────────────────────┘ │
+            │ │
+            │ Format Support Matrix: │
+            │ • HLS (.m3u8) - Adaptive streaming │
+            │ • DASH (.mpd) - Dynamic adaptive streaming │
+            │ • Progressive MP4 - Direct download │
+            │ • ISM (.ism) - Microsoft Smooth Streaming (skipped) │
+            │ │
+            └─────────────────────────────────────────────────────────────────┘
+        </div>
+
+        <h3>Format Processing Pipeline</h3>
+        <pre><code class="python">formats = []
+for video_version in video_versions:
+    version = self._VERSIONS.get(video_version.get('version'), 'generic')
+    version_url = video_version.get('url')
+    if not version_url:
+        continue
+
+    # Skip unsupported ISM format
+    if '.ism' in version_url:
+        continue
+    
+    # DASH processing
+    elif '.mpd' in version_url:
+        formats.extend(self._extract_mpd_formats(
+            version_url, video_id, mpd_id=f'dash-{version}',
+            note=f'Downloading {version} MPD information',
+            errnote=f'Failed to download {version} MPD information',
+            fatal=False))
+    
+    # HLS processing
+    elif '.m3u8' in version_url:
+        formats.extend(self._extract_m3u8_formats(
+            version_url, video_id, 'mp4', 'm3u8_native',
+            m3u8_id=f'hls-{version}',
+            note=f'Downloading {version} m3u8 information',
+            errnote=f'Failed to download {version} m3u8 information',
+            fatal=False))
+    
+    # Progressive MP4 processing
+    else:
+        m = re.search(r'''(?xi)
+            _(?P<quality>[a-z0-9]+)
+            _(?P<width>[0-9]+)x(?P<height>[0-9]+)
+            _(?P<vcodec>[a-z0-9]+)
+            _(?P<vbr>[0-9]+)
+            _(?P<acodec>[a-z0-9]+)
+            _(?P<abr>[0-9]+)
+            \.(?P<ext>[a-z0-9]+)''', version_url)
+        
+        if not m:
+            continue
+
+        formats.append({
+            'url': version_url,
+            'format_id': f'http-{version}-{video_version.get("quality") or m.group("quality")}',
+            'vcodec': m.group('vcodec'),
+            'acodec': m.group('acodec'),
+            'vbr': int(m.group('vbr')),
+            'abr': int(m.group('abr')),
+            'ext': m.group('ext'),
+            'width': int(m.group('width')),
+            'height': int(m.group('height')),
+        })</code></pre>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>CDN Provider</th>
+                    <th>Version ID</th>
+                    <th>Strengths</th>
+                    <th>Use Cases</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Level3</td>
+                    <td>1, 3</td>
+                    <td>Global reach, high performance</td>
+                    <td>Primary content delivery</td>
+                </tr>
+                <tr>
+                    <td>Akamai</td>
+                    <td>2</td>
+                    <td>Edge caching, DDoS protection</td>
+                    <td>High-traffic scenarios</td>
+                </tr>
+                <tr>
+                    <td>Amazon CloudFront</td>
+                    <td>4</td>
+                    <td>AWS integration, auto-scaling</td>
+                    <td>Backup delivery, cost optimization</td>
+                </tr>
+                <tr>
+                    <td>YouTube</td>
+                    <td>0</td>
+                    <td>Mobile optimization, reach</td>
+                    <td>AuthenticateVideo fallback</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🎯 Fallback Mechanisms</h2>
+
+        <h3>Webpage-Based Extraction</h3>
+        <pre><code class="python"># API failure fallback to webpage scraping
+if not video_versions:
+    webpage = self._download_webpage(url, video_id)
+    json_data = self._extract_json(webpage, video_id)
+    
+    if 'streams' in json_data.get('default', {}):
+        video_versions = json_data['default']['streams'][video_id][0]
+    else:
+        video_versions = [
+            value
+            for key, value in json_data['apollo']['data'].items()
+            if key.startswith(f'{video_id}.streams')]</code></pre>
+
+        <h3>Progressive JSON Extraction</h3>
+        <pre><code class="python">class VevoBaseIE(InfoExtractor):
+    def _extract_json(self, webpage, video_id):
+        return self._parse_json(
+            self._search_regex(
+                r'window\.__INITIAL_STORE__\s*=\s*({.+?});\s*</script>',
+                webpage, 'initial store'),
+            video_id)</code></pre>
+
+        <div class="warning-box">
+            <strong>Resilience Strategy:</strong>
+            <ul>
+                <li><strong>API First:</strong> Primary extraction via authenticated API</li>
+                <li><strong>Webpage Fallback:</strong> Client-side data extraction when API fails</li>
+                <li><strong>Multiple Data Sources:</strong> Apollo GraphQL and legacy streams support</li>
+                <li><strong>Graceful Degradation:</strong> Continue with available formats when some fail</li>
+            </ul>
+        </div>
+
+        <h2>🎵 Music-Specific Features</h2>
+
+        <h3>Rich Metadata Extraction</h3>
+        <pre><code class="python">return {
+    'id': video_id,
+    'title': title,
+    'formats': formats,
+    'thumbnail': video_info.get('imageUrl') or video_info.get('thumbnailUrl'),
+    'timestamp': parse_iso8601(video_info.get('releaseDate')),
+    'uploader': uploader,
+    'duration': int_or_none(video_info.get('duration')),
+    'view_count': int_or_none(video_info.get('views', {}).get('total')),
+    'age_limit': age_limit,
+    'track': track,
+    'artist': uploader,
+    'genre': genre,
+}</code></pre>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🎼 Music Metadata</h4>
+                <ul>
+                    <li>Artist information</li>
+                    <li>Track titles</li>
+                    <li>Genre classification</li>
+                    <li>Release dates</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>👥 Collaboration Support</h4>
+                <ul>
+                    <li>Featured artist detection</li>
+                    <li>Primary artist identification</li>
+                    <li>Smart title formatting</li>
+                    <li>Role-based processing</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🔞 Content Control</h4>
+                <ul>
+                    <li>Explicit content flagging</li>
+                    <li>Age limit enforcement</li>
+                    <li>Parental controls</li>
+                    <li>Content warnings</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>📊 Analytics Integration</h4>
+                <ul>
+                    <li>View count tracking</li>
+                    <li>Popularity metrics</li>
+                    <li>Chart performance</li>
+                    <li>Engagement data</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>📺 Playlist & Collection Support</h2>
+
+        <h3>Genre & Playlist Extraction</h3>
+        <pre><code class="python">class VevoPlaylistIE(VevoBaseIE):
+    _VALID_URL = r'https?://(?:www\.)?vevo\.com/watch/(?P<kind>playlist|genre)/(?P<id>[^/?#&]+)'
+    
+    def _real_extract(self, url):
+        mobj = self._match_valid_url(url)
+        playlist_id = mobj.group('id')
+        playlist_kind = mobj.group('kind')
+
+        webpage = self._download_webpage(url, playlist_id)
+
+        # Handle indexed playlists
+        qs = parse_qs(url)
+        index = qs.get('index', [None])[0]
+
+        if index:
+            video_id = self._search_regex(
+                r'<meta[^>]+content=(["\'])vevo://video/(?P<id>.+?)\1[^>]*>',
+                webpage, 'video id', default=None, group='id')
+            if video_id:
+                return self.url_result(f'vevo:{video_id}', VevoIE.ie_key())
+
+        playlists = self._extract_json(webpage, playlist_id)['default'][f'{playlist_kind}s']
+
+        playlist = (next(iter(playlists.values()))
+                    if playlist_kind == 'playlist' else playlists[playlist_id])
+
+        entries = [
+            self.url_result(f'vevo:{src}', VevoIE.ie_key())
+            for src in playlist['isrcs']]
+
+        return self.playlist_result(
+            entries, playlist.get('playlistId') or playlist_id,
+            playlist.get('name'), playlist.get('description'))</code></pre>
+
+        <h2>🔧 URL Format Support</h2>
+
+        <h3>Comprehensive URL Pattern Matching</h3>
+        <pre><code class="python">_VALID_URL = r'''(?x)
+    (?:https?://(?:www\.)?vevo\.com/watch/(?!playlist|genre)(?:[^/]+/(?:[^/]+/)?)?|
+       https?://cache\.vevo\.com/m/html/embed\.html\?video=|
+       https?://videoplayer\.vevo\.com/embed/embedded\?videoId=|
+       https?://embed\.vevo\.com/.*?[?&]isrc=|
+       https?://tv\.vevo\.com/watch/artist/(?:[^/]+)/|
+       vevo:)
+    (?P<id>[^&?#]+)'''
+
+_EMBED_REGEX = [r'<iframe[^>]+?src=(["\'])(?P<url>(?:https?:)?//(?:cache\.)?vevo\.com/.+?)\1']</code></pre>
+
+        <div class="info-box">
+            <h4>🔗 Supported URL Formats</h4>
+            <ul>
+                <li><code>https://www.vevo.com/watch/hurts/somebody-to-die-for/GB1101300280</code></li>
+                <li><code>https://cache.vevo.com/m/html/embed.html?video=USUV71302923</code></li>
+                <li><code>https://videoplayer.vevo.com/embed/embedded?videoId=USRV81300282</code></li>
+                <li><code>https://embed.vevo.com/?isrc=USH5V1923499&partnerId=...</code></li>
+                <li><code>https://tv.vevo.com/watch/artist/janet-jackson/US0450100550</code></li>
+                <li><code>vevo:GB1101300280</code> (internal format for MTV/MySpace)</li>
+            </ul>
+        </div>
+
+        <h2>🚀 Performance Optimizations</h2>
+
+        <h3>Efficient CDN Selection</h3>
+        <pre><code class="python"># Intelligent format processing order
+# 1. Skip unsupported formats early
+if '.ism' in version_url:
+    continue
+
+# 2. Process adaptive formats first (better quality)
+elif '.mpd' in version_url:
+    formats.extend(self._extract_mpd_formats(...))
+elif '.m3u8' in version_url:
+    formats.extend(self._extract_m3u8_formats(...))
+
+# 3. Fallback to progressive downloads
+else:
+    # Detailed URL parsing for quality information</code></pre>
+
+        <h3>Error Recovery Mechanisms</h3>
+        <ul>
+            <li><strong>Non-Fatal Processing:</strong> Continue extraction even if some CDNs fail</li>
+            <li><strong>Multiple Data Sources:</strong> API + webpage extraction for reliability</li>
+            <li><strong>Quality Fallbacks:</strong> Progressive quality degradation when needed</li>
+            <li><strong>Format Prioritization:</strong> Prefer adaptive streaming over progressive</li>
+        </ul>
+
+        <h2>🎯 Testing & Quality Assurance</h2>
+
+        <pre><code class="python"># Comprehensive test scenarios
+_TESTS = [{
+    'url': 'http://www.vevo.com/watch/hurts/somebody-to-die-for/GB1101300280',
+    'md5': '95ee28ee45e70130e3ab02b0f579ae23',
+    'info_dict': {
+        'id': 'GB1101300280',
+        'ext': 'mp4',
+        'title': 'Hurts - Somebody to Die For',
+        'timestamp': 1372057200,
+        'upload_date': '20130624',
+        'uploader': 'Hurts',
+        'track': 'Somebody to Die For',
+        'artist': 'Hurts',
+        'genre': 'Pop',
+    },
+    'expected_warnings': ['Unable to download SMIL file', 'Unable to download info'],
+}, {
+    'note': 'Age-limited video',
+    'url': 'https://www.vevo.com/watch/justin-timberlake/tunnel-vision-explicit/USRV81300282',
+    'info_dict': {
+        'id': 'USRV81300282',
+        'ext': 'mp4',
+        'title': 'Justin Timberlake - Tunnel Vision (Explicit)',
+        'age_limit': 18,
+        'timestamp': 1372888800,
+        'upload_date': '20130703',
+        'uploader': 'Justin Timberlake',
+        'track': 'Tunnel Vision (Explicit)',
+        'artist': 'Justin Timberlake',
+        'genre': 'Pop',
+    },
+    'expected_warnings': ['Unable to download SMIL file', 'Unable to download info'],
+}, {
+    'note': 'Featured test',
+    'url': 'https://www.vevo.com/watch/lemaitre/Wait/USUV71402190',
+    'md5': 'd28675e5e8805035d949dc5cf161071d',
+    'info_dict': {
+        'id': 'USUV71402190',
+        'ext': 'mp4',
+        'title': 'Lemaitre ft. LoLo - Wait',
+        'age_limit': 0,
+        'timestamp': 1413432000,
+        'upload_date': '20141016',
+        'uploader': 'Lemaitre',
+        'track': 'Wait',
+        'artist': 'Lemaitre',
+        'genre': 'Electronic',
+    },
+    'expected_warnings': ['Unable to download SMIL file', 'Unable to download info'],
+}]</code></pre>
+
+        <h2>🌟 Key Engineering Insights</h2>
+
+        <div class="info-box">
+            <h4>🎵 Premium Music Platform Challenges</h4>
+            <p>The Vevo extractor showcases sophisticated handling of premium music platform challenges:</p>
+            <ul>
+                <li><strong>OAuth Authentication:</strong> Anonymous token-based API access</li>
+                <li><strong>Multi-CDN Architecture:</strong> Level3, Akamai, Amazon CloudFront support</li>
+                <li><strong>Artist Metadata:</strong> Complex artist relationship processing</li>
+                <li><strong>Content Protection:</strong> Age restrictions and explicit content handling</li>
+                <li><strong>Global Distribution:</strong> Geo-blocking and regional availability</li>
+            </ul>
+        </div>
+
+        <h2>📊 Implementation Statistics</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Technology</th>
+                    <th>Purpose</th>
+                    <th>Music Platform Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Authentication</td>
+                    <td>OAuth 2.0 (Anonymous)</td>
+                    <td>API access control</td>
+                    <td>Content licensing compliance</td>
+                </tr>
+                <tr>
+                    <td>CDN Infrastructure</td>
+                    <td>Multi-provider delivery</td>
+                    <td>Global content distribution</td>
+                    <td>High-quality music video streaming</td>
+                </tr>
+                <tr>
+                    <td>Format Support</td>
+                    <td>HLS, DASH, Progressive MP4</td>
+                    <td>Adaptive streaming</td>
+                    <td>Quality optimization for music</td>
+                </tr>
+                <tr>
+                    <td>Metadata System</td>
+                    <td>Rich music metadata API</td>
+                    <td>Artist & track information</td>
+                    <td>Music library integration</td>
+                </tr>
+                <tr>
+                    <td>Content Control</td>
+                    <td>Age verification & explicit flags</td>
+                    <td>Content compliance</td>
+                    <td>Parental controls, rating system</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🔗 Integration Examples</h2>
+
+        <h3>Basic Music Video Extraction</h3>
+        <pre><code class="bash"># Extract music video with metadata
+yt-dlp "https://www.vevo.com/watch/hurts/somebody-to-die-for/GB1101300280"
+
+# Extract with specific quality preference
+yt-dlp -f "best[height<=720]" "https://www.vevo.com/watch/artist/video/ID"
+
+# Extract playlist or genre collection
+yt-dlp "https://www.vevo.com/watch/genre/rock"
+
+# Get video information without downloading
+yt-dlp -j "https://www.vevo.com/watch/artist/track/ID"</code></pre>
+
+        <h3>Advanced Music Platform Integration</h3>
+        <pre><code class="python"># Custom music video processor
+import subprocess
+import json
+
+def extract_vevo_music_info(video_url):
+    """Extract rich music metadata from Vevo videos"""
+    cmd = ['yt-dlp', '-j', video_url]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    
+    if result.returncode == 0:
+        info = json.loads(result.stdout)
+        return {
+            'artist': info.get('artist'),
+            'track': info.get('track'),
+            'genre': info.get('genre'),
+            'duration': info.get('duration'),
+            'release_date': info.get('upload_date'),
+            'view_count': info.get('view_count'),
+            'age_limit': info.get('age_limit'),
+            'formats_available': len(info.get('formats', [])),
+        }
+    return None
+
+# Handle CDN selection for optimal quality
+def get_best_vevo_format(video_url, preferred_cdn='level3'):
+    """Select best format from preferred CDN"""
+    cmd = ['yt-dlp', '-F', video_url]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    
+    formats = []
+    for line in result.stdout.split('\n'):
+        if preferred_cdn in line.lower():
+            formats.append(line.strip())
+    
+    return formats</code></pre>
+
+        <h3>Music Collection Processing</h3>
+        <pre><code class="bash"># Download entire artist catalog
+yt-dlp "https://www.vevo.com/watch/artist/[ARTIST_NAME]/"
+
+# Extract specific genre with quality controls
+yt-dlp -f "best[height<=1080]" --write-info-json "https://www.vevo.com/watch/genre/electronic"
+
+# Batch process with metadata extraction
+yt-dlp --write-description --write-info-json --extract-flat "https://www.vevo.com/watch/playlist/[PLAYLIST_ID]"</code></pre>
+
+        <div class="related-links">
+            <h3>🔗 Related Technical Resources</h3>
+            <ul>
+                <li><a href="youtube-video-extraction-deep-dive-yt-dlp.html">YouTube Music Video Platform</a></li>
+                <li><a href="soundcloud-audio-extraction-engineering-yt-dlp-deep-dive.html">SoundCloud Audio
+                        Platform</a></li>
+                <li><a href="spotify-podcast-graphql-api-engineering.html">Spotify Podcast GraphQL API</a></li>
+                <li><a href="brightcove-enterprise-video-infrastructure-yt-dlp.html">Brightcove Video Infrastructure</a>
+                </li>
+                <li><a href="kaltura-enterprise-video-platform-deep-dive-yt-dlp.html">Kaltura Enterprise Platform</a>
+                </li>
+                <li><a href="dailymotion-video-extraction-graphql-api-yt-dlp-engineering.html">Dailymotion GraphQL
+                        API</a></li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <strong>Next:</strong> Explore more music and media platform implementations to understand
+            advanced video extraction techniques for premium content distribution networks.
+        </div>
+    </div>
+</body>
+
+</html>

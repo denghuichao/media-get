@@ -60,7 +60,7 @@ export default function Header() {
                 aria-label="Go to blogs"
               >
                 <BookText className="h-4 w-4 group-hover:scale-110 transition-transform" aria-hidden="true" />
-                <span>{t('header.nav.blogs', 'Blogs')}</span>
+                <span>{t('header.nav.blogs')}</span>
               </a>
               <a
                 href="/#about"

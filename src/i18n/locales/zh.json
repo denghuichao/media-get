@@ -45,6 +45,7 @@
     "nav": {
       "home": "首页",
       "dashboard": "仪表板",
+      "blogs": "技术博客",
       "about": "关于"
     },
     "auth": {
@@ -285,5 +286,11 @@
         "description": "阅读我们的服务条款，了解使用MediaGet媒体下载器的使用条件。"
       }
     }
+  },
+  "blogs": {
+    "title": "技术博客",
+    "subtitle": "深入探讨视频提取、逆向工程和平台架构的技术文章。",
+    "searchPlaceholder": "按标题搜索文章...",
+    "readMore": "阅读更多"
   }
 }

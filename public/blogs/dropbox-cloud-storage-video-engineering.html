@@ -74,6 +74,47 @@
             line-height: 1.5;
         }
 
+        /* Syntax Highlighting for Python code */
+        .code-block .keyword {
+            color: #569cd6;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .function {
+            color: #dcdcaa;
+        }
+
+        .code-block .variable {
+            color: #9cdcfe;
+        }
+
+        .code-block .number {
+            color: #b5cea8;
+        }
+
+        .code-block .constant {
+            color: #4fc1ff;
+        }
+
+        .code-block .class {
+            color: #4ec9b0;
+        }
+
+        .code-block .property {
+            color: #9cdcfe;
+        }
+
+        .code-block .operator {
+            color: #d4d4d4;
+        }
+
         .architecture-diagram {
             background: linear-gradient(45deg, #f0f6ff, #e6f0ff);
             padding: 30px;
@@ -201,35 +242,35 @@
             margin: 25px 0;
             border: 2px solid #dc3545;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
 </head>
 
 <body>
     <div class="header">
         <h1>☁️ Dropbox Cloud Storage Video Engineering</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
         <p>Deep Dive into yt-dlp's Advanced Base64 Decoding & Password Protection Bypass</p>
     </div>
@@ -312,15 +353,15 @@
             # Comprehensive Dropbox URL pattern support
             _VALID_URL = r'https?://(?:www\.)?dropbox\.com/(?:(?:e/)?scl/fi|sh?)/(?P<id>\w+)'
 
-            # Supported URL patterns:
-            # https://www.dropbox.com/s/{file_id} - Simple share
-            # https://www.dropbox.com/sh/{folder_id} - Shared folder
-            # https://www.dropbox.com/scl/fi/{file_id} - Secure sharing link
-            # https://www.dropbox.com/e/scl/fi/{file_id} - Enhanced secure link
+                # Supported URL patterns:
+                # https://www.dropbox.com/s/{file_id} - Simple share
+                # https://www.dropbox.com/sh/{folder_id} - Shared folder
+                # https://www.dropbox.com/scl/fi/{file_id} - Secure sharing link
+                # https://www.dropbox.com/e/scl/fi/{file_id} - Enhanced secure link
 
-            # File name extraction from URL
-            fn = urllib.parse.unquote(url_basename(url))
-            title = os.path.splitext(fn)[0] # Remove extension for title
+                # File name extraction from URL
+                fn = urllib.parse.unquote(url_basename(url))
+                title = os.path.splitext(fn)[0] # Remove extension for title
         </div>
 
         <h3>🔓 Advanced Base64 Content Decoding</h3>
@@ -355,23 +396,23 @@
                 if not password:
                 raise ExtractorError(
                 'Password protected video, use --video-password <password>',
-                expected=True)
+                    expected=True)
 
-                # Authenticate with Dropbox
-                response = self._download_json(
-                'https://www.dropbox.com/sm/auth', video_id,
-                'POSTing video password',
-                data=urlencode_postdata({
-                'is_xhr': 'true',
-                't': self._get_cookies('https://www.dropbox.com')['t'].value,
-                'content_id': content_id,
-                'password': password,
-                'url': update_url(url, scheme='', netloc=''),
-                }))
+                    # Authenticate with Dropbox
+                    response = self._download_json(
+                    'https://www.dropbox.com/sm/auth', video_id,
+                    'POSTing video password',
+                    data=urlencode_postdata({
+                    'is_xhr': 'true',
+                    't': self._get_cookies('https://www.dropbox.com')['t'].value,
+                    'content_id': content_id,
+                    'password': password,
+                    'url': update_url(url, scheme='', netloc=''),
+                    }))
 
-                # Verify authentication success
-                if response.get('status') != 'authed':
-                raise ExtractorError('Invalid password', expected=True)
+                    # Verify authentication success
+                    if response.get('status') != 'authed':
+                    raise ExtractorError('Invalid password', expected=True)
             </div>
         </div>
 
@@ -701,19 +742,19 @@
             self.report_warning(
             'Password protected content detected. '
             'Use --video-password <password> to access.')
-            return None
+                return None
 
-            elif 'Invalid password' in str(e):
-            self.report_warning('Authentication failed. Check password.')
-            return None
+                elif 'Invalid password' in str(e):
+                self.report_warning('Authentication failed. Check password.')
+                return None
 
-            elif 'No video could be found' in str(e):
-            self.report_warning(
-            'Content may be deleted or access restricted.')
-            return None
+                elif 'No video could be found' in str(e):
+                self.report_warning(
+                'Content may be deleted or access restricted.')
+                return None
 
-            else:
-            raise # Re-raise unexpected errors
+                else:
+                raise # Re-raise unexpected errors
         </div>
     </div>
 

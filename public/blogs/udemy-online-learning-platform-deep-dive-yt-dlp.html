@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Udemy Video Extraction Deep Dive: yt-dlp's Engineering for Online Learning Platforms</title>
+    <meta name="description"
+        content="Technical deep dive into yt-dlp's Udemy extractor implementation, covering authentication, DRM protection, multi-format handling, and course-level extraction for online learning platforms.">
+    <meta name="keywords"
+        content="Udemy, yt-dlp, video extraction, online learning, e-learning, course download, authentication, DRM, streaming">
+    <meta property="og:title" content="Udemy Video Extraction Deep Dive: yt-dlp Engineering Analysis">
+    <meta property="og:description"
+        content="Technical analysis of yt-dlp's Udemy extractor implementation for online learning platforms">
+    <meta property="og:type" content="article">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: none;
+            margin: -30px -30px 30px -30px;
+        }
+
+        pre {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border-left: 4px solid #4299e1;
+        }
+
+        code {
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #1e293b;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .code-section {
+            margin: 20px 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #3498db;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -37px;
+            top: 25px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3498db;
+        }
+
+        .related-links {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .related-links ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .related-links li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .related-links li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎓 Udemy Video Extraction Deep Dive: yt-dlp's Engineering for Online Learning Platforms</h1>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
+
+        <div class="info-box">
+            <strong>Technical Overview:</strong> This analysis covers yt-dlp's sophisticated Udemy extractor
+            implementation,
+            focusing on authentication mechanisms, course enrollment automation, DRM protection handling,
+            multi-format video extraction, and subtitle processing for enterprise e-learning platforms.
+        </div>
+
+        <h2>🏗️ Architecture Overview</h2>
+
+        <div class="architecture-diagram">
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Udemy Extraction Pipeline │
+            ├─────────────────────────────────────────────────────────────────┤
+            │ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ URL Parser │→ │ Auth System │→ │ Course Detector │ │
+            │ │ - Lecture │ │ - Login │ │ - Individual │ │
+            │ │ - Course │ │ - Sessions │ │ - Full Course │ │
+            │ │ - Legacy │ │ - Cookies │ │ - Enrollment │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │ │ │ │
+            │ ▼ ▼ ▼ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ API Client │ │ Asset │ │ Format │ │
+            │ │ - Bearer │ │ Processing │ │ Extraction │ │
+            │ │ - Headers │ │ - Video │ │ - HLS/MP4 │ │
+            │ │ - Errors │ │ - Metadata │ │ - Multi-bitrate │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │ │ │ │
+            │ ▼ ▼ ▼ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ DRM │ │ Subtitle │ │ Output │ │
+            │ │ Detection │ │ Processing │ │ Generation │ │
+            │ │ - Course │ │ - Captions │ │ - Video Info │ │
+            │ │ - Content │ │ - Auto │ │ - Playlist │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │
+            └─────────────────────────────────────────────────────────────────┘
+        </div>
+
+        <h2>🔐 Authentication & Session Management</h2>
+
+        <h3>Login System Implementation</h3>
+        <pre><code class="python">def _perform_login(self, username, password):
+    login_popup = self._download_webpage(
+        self._LOGIN_URL, None, 'Downloading login popup')
+
+    def is_logged(webpage):
+        return any(re.search(p, webpage) for p in (
+            r'href=["\'](?:https://www\.udemy\.com)?/user/logout/',
+            r'>Logout<'))
+
+    # Check if already authenticated
+    if is_logged(login_popup):
+        return
+
+    login_form = self._form_hidden_inputs('login-form', login_popup)
+    login_form.update({
+        'email': username,
+        'password': password,
+    })
+
+    response = self._download_webpage(
+        self._LOGIN_URL, None, 'Logging in',
+        data=urlencode_postdata(login_form),
+        headers={
+            'Referer': self._ORIGIN_URL,
+            'Origin': self._ORIGIN_URL,
+        })</code></pre>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🔑 Authentication Flow</h4>
+                <ul>
+                    <li>Popup-based login form</li>
+                    <li>CSRF token extraction</li>
+                    <li>Session persistence</li>
+                    <li>Multi-domain support</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🍪 Session Management</h4>
+                <ul>
+                    <li>Cookie-based auth</li>
+                    <li>Bearer token handling</li>
+                    <li>Automatic re-auth</li>
+                    <li>Cross-request persistence</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>API Request Handling</h3>
+        <pre><code class="python">def _download_lecture(self, course_id, lecture_id):
+    return self._download_json(
+        f'https://www.udemy.com/api-2.0/users/me/subscribed-courses/{course_id}/lectures/{lecture_id}',
+        lecture_id, 'Downloading lecture JSON', query={
+            'fields[lecture]': 'title,description,view_html,asset',
+            'fields[asset]': 'title,filename,asset_type,status,time_estimation,is_external',
+        })
+
+def _download_json(self, url_or_request, *args, **kwargs):
+    headers = {
+        'X-Udemy-Snail-Case': 'true',
+        'X-Requested-With': 'XMLHttpRequest',
+    }
+    
+    # Extract auth tokens from cookies
+    for cookie in self._get_cookies(self._ORIGIN_URL):
+        if cookie.name == 'client_id':
+            headers['X-Udemy-Client-Id'] = cookie.value
+        elif cookie.name == 'access_token':
+            headers['X-Udemy-Bearer-Token'] = cookie.value
+            headers['X-Udemy-Authorization'] = f'Bearer {cookie.value}'</code></pre>
+
+        <h2>📚 Course Detection & Enrollment</h2>
+
+        <h3>Automatic Course Enrollment</h3>
+        <pre><code class="python">def _enroll_course(self, base_url, webpage, course_id):
+    def combine_url(base_url, url):
+        return urllib.parse.urljoin(base_url, url) if not url.startswith('http') else url
+
+    # Check for paid content
+    checkout_url = unescapeHTML(self._search_regex(
+        r'href=(["\'])(?P<url>(?:https?://(?:www\.)?udemy\.com)?/(?:payment|cart)/checkout/.+?)\1',
+        webpage, 'checkout url', group='url', default=None))
+    if checkout_url:
+        raise ExtractorError(
+            f'Course {course_id} is not free. You have to pay for it before you can download. '
+            f'Use this URL to confirm purchase: {combine_url(base_url, checkout_url)}',
+            expected=True)
+
+    # Auto-enroll in free courses
+    enroll_url = unescapeHTML(self._search_regex(
+        r'href=(["\'])(?P<url>(?:https?://(?:www\.)?udemy\.com)?/course/subscribe/.+?)\1',
+        webpage, 'enroll url', group='url', default=None))
+    if enroll_url:
+        webpage = self._download_webpage(
+            combine_url(base_url, enroll_url),
+            course_id, 'Enrolling in the course',
+            headers={'Referer': base_url})</code></pre>
+
+        <h3>Course Information Extraction</h3>
+        <pre><code class="python">def _extract_course_info(self, webpage, video_id):
+    course = self._parse_json(
+        unescapeHTML(self._search_regex(
+            r'ng-init=["\'].*\bcourse=({.+?})[;"\']',
+            webpage, 'course', default='{}')),
+        video_id, fatal=False) or {}
+    
+    course_id = course.get('id') or self._search_regex(
+        [
+            r'data-course-id=["\'](\d+)',
+            r'&quot;courseId&quot;\s*:\s*(\d+)',
+        ], webpage, 'course id')
+    return course_id, course.get('title')</code></pre>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <h4>1. URL Analysis</h4>
+                <p>Parse different URL formats: lecture, course, legacy paths</p>
+            </div>
+            <div class="timeline-item">
+                <h4>2. Authentication Check</h4>
+                <p>Verify login status, perform authentication if needed</p>
+            </div>
+            <div class="timeline-item">
+                <h4>3. Course Detection</h4>
+                <p>Extract course ID, check enrollment status</p>
+            </div>
+            <div class="timeline-item">
+                <h4>4. Auto-enrollment</h4>
+                <p>Enroll in free courses, handle paid content gracefully</p>
+            </div>
+            <div class="timeline-item">
+                <h4>5. Content Extraction</h4>
+                <p>Fetch lecture data, process video assets</p>
+            </div>
+        </div>
+
+        <h2>🎥 Video Format Processing</h2>
+
+        <h3>Multi-Source Format Extraction</h3>
+        <pre><code class="python">def extract_output_format(src, f_id):
+    return {
+        'url': src.get('url'),
+        'format_id': '%sp' % (src.get('height') or f_id),
+        'width': int_or_none(src.get('width')),
+        'height': int_or_none(src.get('height')),
+        'vbr': int_or_none(src.get('video_bitrate_in_kbps')),
+        'vcodec': src.get('video_codec'),
+        'fps': int_or_none(src.get('frame_rate')),
+        'abr': int_or_none(src.get('audio_bitrate_in_kbps')),
+        'acodec': src.get('audio_codec'),
+        'asr': int_or_none(src.get('audio_sample_rate')),
+        'tbr': int_or_none(src.get('total_bitrate_in_kbps')),
+        'filesize': int_or_none(src.get('file_size_in_bytes')),
+    }
+
+def extract_formats(source_list):
+    if not isinstance(source_list, list):
+        return
+    for source in source_list:
+        video_url = url_or_none(source.get('file') or source.get('src'))
+        if not video_url:
+            continue
+        if source.get('type') == 'application/x-mpegURL' or determine_ext(video_url) == 'm3u8':
+            formats.extend(self._extract_m3u8_formats(
+                video_url, video_id, 'mp4', entry_protocol='m3u8_native',
+                m3u8_id='hls', fatal=False))
+            continue
+        format_id = source.get('label')
+        f = {
+            'url': video_url,
+            'format_id': f'{format_id}p',
+            'height': int_or_none(format_id),
+        }</code></pre>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Format Type</th>
+                    <th>Source</th>
+                    <th>Quality Options</th>
+                    <th>Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>HLS Streams</td>
+                    <td>download_urls.Video</td>
+                    <td>Multiple bitrates</td>
+                    <td>Adaptive streaming</td>
+                </tr>
+                <tr>
+                    <td>Direct MP4</td>
+                    <td>stream_urls.Video</td>
+                    <td>Fixed resolutions</td>
+                    <td>Direct download</td>
+                </tr>
+                <tr>
+                    <td>React Player</td>
+                    <td>videojs-setup-data</td>
+                    <td>Progressive formats</td>
+                    <td>Modern interface</td>
+                </tr>
+                <tr>
+                    <td>Legacy Sources</td>
+                    <td>view_html extraction</td>
+                    <td>Fallback options</td>
+                    <td>Compatibility</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>HLS Stream Processing</h3>
+        <pre><code class="python"># HLS stream processing with quality detection
+if attributes.get('type') == 'application/x-mpegURL' or determine_ext(src) == 'm3u8':
+    m3u8_formats = self._extract_m3u8_formats(
+        src, video_id, 'mp4', entry_protocol='m3u8_native',
+        m3u8_id='hls', fatal=False)
+    
+    # Enhanced quality detection from URL patterns
+    for f in m3u8_formats:
+        m = re.search(r'/hls_(?P<height>\d{3,4})_(?P<tbr>\d{2,})/', f['url'])
+        if m:
+            if not f.get('height'):
+                f['height'] = int(m.group('height'))
+            if not f.get('tbr'):
+                f['tbr'] = int(m.group('tbr'))
+    formats.extend(m3u8_formats)</code></pre>
+
+        <h2>📋 Subtitle & Caption Processing</h2>
+
+        <h3>Multi-Language Subtitle Extraction</h3>
+        <pre><code class="python">def extract_subtitles(track_list):
+    if not isinstance(track_list, list):
+        return
+    for track in track_list:
+        if not isinstance(track, dict):
+            continue
+        if track.get('kind') != 'captions':
+            continue
+        src = url_or_none(track.get('src'))
+        if not src:
+            continue
+        lang = track.get('language') or track.get(
+            'srclang') or track.get('label')
+        sub_dict = automatic_captions if track.get(
+            'autogenerated') is True else subtitles
+        sub_dict.setdefault(lang, []).append({
+            'url': src,
+        })
+
+# Process Udemy's caption API
+captions = asset.get('captions')
+if isinstance(captions, list):
+    for cc in captions:
+        if not isinstance(cc, dict):
+            continue
+        cc_url = url_or_none(cc.get('url'))
+        if not cc_url:
+            continue
+        lang = try_get(cc, lambda x: x['locale']['locale'], str)
+        sub_dict = (automatic_captions if cc.get('source') == 'auto'
+                    else subtitles)
+        sub_dict.setdefault(lang or 'en', []).append({
+            'url': cc_url,
+        })</code></pre>
+
+        <h2>🛡️ DRM Protection Handling</h2>
+
+        <div class="warning-box">
+            <strong>DRM Detection:</strong> Udemy implements course-level DRM protection for premium content.
+            The extractor gracefully detects and reports DRM-protected content that cannot be downloaded.
+        </div>
+
+        <pre><code class="python"># DRM detection and reporting
+if not formats and asset.get('course_is_drmed'):
+    self.report_drm(video_id)
+
+# Asset type validation
+asset_type = asset.get('asset_type') or asset.get('assetType')
+if asset_type != 'Video':
+    raise ExtractorError(
+        f'Lecture {lecture_id} is not a video', expected=True)
+
+# YouTube redirect handling for embedded content
+stream_url = asset.get('stream_url') or asset.get('streamUrl')
+if stream_url:
+    youtube_url = self._search_regex(
+        r'(https?://www\.youtube\.com/watch\?v=.*)', stream_url, 
+        'youtube URL', default=None)
+    if youtube_url:
+        return self.url_result(youtube_url, 'Youtube')</code></pre>
+
+        <h2>🎓 Course-Level Extraction</h2>
+
+        <h3>Full Course Processing</h3>
+        <pre><code class="python">class UdemyCourseIE(UdemyIE):
+    IE_NAME = 'udemy:course'
+    _VALID_URL = r'https?://(?:[^/]+\.)?udemy\.com/(?P<id>[^/?#&]+)'
+    
+    def _real_extract(self, url):
+        course_path = self._match_id(url)
+        webpage = self._download_webpage(url, course_path)
+        course_id, title = self._extract_course_info(webpage, course_path)
+        
+        self._enroll_course(url, webpage, course_id)
+        
+        # Fetch complete course curriculum
+        response = self._download_json(
+            f'https://www.udemy.com/api-2.0/courses/{course_id}/cached-subscriber-curriculum-items',
+            course_id, 'Downloading course curriculum', query={
+                'fields[chapter]': 'title,object_index',
+                'fields[lecture]': 'title,asset',
+                'page_size': '1000',
+            })
+        
+        entries = []
+        chapter, chapter_number = [None] * 2
+        for entry in response['results']:
+            clazz = entry.get('_class')
+            if clazz == 'lecture':
+                asset = entry.get('asset')
+                if isinstance(asset, dict):
+                    asset_type = asset.get('asset_type') or asset.get('assetType')
+                    if asset_type != 'Video':
+                        continue
+                    
+                lecture_id = entry.get('id')
+                if lecture_id:
+                    entry = {
+                        '_type': 'url_transparent',
+                        'url': smuggle_url(
+                            f'https://www.udemy.com/{course_path}/learn/v4/t/lecture/{entry["id"]}',
+                            {'course_id': course_id}),
+                        'title': entry.get('title'),
+                        'ie_key': UdemyIE.ie_key(),
+                    }
+                    if chapter_number:
+                        entry['chapter_number'] = chapter_number
+                    if chapter:
+                        entry['chapter'] = chapter
+                    entries.append(entry)
+            elif clazz == 'chapter':
+                chapter_number = entry.get('object_index')
+                chapter = entry.get('title')
+        
+        return self.playlist_result(entries, course_id, title)</code></pre>
+
+        <h2>🔧 Advanced Features</h2>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🔄 Error Recovery</h4>
+                <ul>
+                    <li>403 error handling</li>
+                    <li>Auto-enrollment retry</li>
+                    <li>Session refresh</li>
+                    <li>Graceful degradation</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🌐 Multi-Domain Support</h4>
+                <ul>
+                    <li>Enterprise subdomains</li>
+                    <li>Regional variations</li>
+                    <li>Custom installations</li>
+                    <li>Corporate instances</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>📊 Metadata Extraction</h4>
+                <ul>
+                    <li>Course information</li>
+                    <li>Chapter organization</li>
+                    <li>Duration tracking</li>
+                    <li>Instructor details</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🔍 Content Discovery</h4>
+                <ul>
+                    <li>Curriculum parsing</li>
+                    <li>Asset enumeration</li>
+                    <li>Type filtering</li>
+                    <li>Playlist generation</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>📊 Technical Implementation Details</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Technology</th>
+                    <th>Purpose</th>
+                    <th>Implementation Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Authentication</td>
+                    <td>Cookie-based + Bearer tokens</td>
+                    <td>User session management</td>
+                    <td>CSRF protection, secure headers</td>
+                </tr>
+                <tr>
+                    <td>Course API</td>
+                    <td>REST API v2.0</td>
+                    <td>Course & lecture metadata</td>
+                    <td>JSON responses, field selection</td>
+                </tr>
+                <tr>
+                    <td>Video Streaming</td>
+                    <td>HLS + Progressive MP4</td>
+                    <td>Adaptive video delivery</td>
+                    <td>Multiple quality options</td>
+                </tr>
+                <tr>
+                    <td>Content Protection</td>
+                    <td>Course-level DRM</td>
+                    <td>Premium content security</td>
+                    <td>Detection and graceful handling</td>
+                </tr>
+                <tr>
+                    <td>Subtitle System</td>
+                    <td>VTT captions</td>
+                    <td>Accessibility support</td>
+                    <td>Multi-language, auto-generated</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🚀 Performance Optimizations</h2>
+
+        <h3>Efficient Course Processing</h3>
+        <pre><code class="python"># Optimized curriculum fetching
+response = self._download_json(
+    f'https://www.udemy.com/api-2.0/courses/{course_id}/cached-subscriber-curriculum-items',
+    course_id, 'Downloading course curriculum', query={
+        'fields[chapter]': 'title,object_index',           # Minimal chapter data
+        'fields[lecture]': 'title,asset',                  # Essential lecture info
+        'page_size': '1000',                               # Bulk fetch
+    })
+
+# Smart asset filtering
+for entry in response['results']:
+    clazz = entry.get('_class')
+    if clazz == 'lecture':
+        asset = entry.get('asset')
+        if isinstance(asset, dict):
+            asset_type = asset.get('asset_type') or asset.get('assetType')
+            if asset_type != 'Video':               # Skip non-video content
+                continue</code></pre>
+
+        <h3>Caching & Optimization Strategies</h3>
+        <ul>
+            <li><strong>Session Persistence:</strong> Maintains authentication across requests</li>
+            <li><strong>Bulk API Calls:</strong> Fetches course curriculum in single request</li>
+            <li><strong>Smart Filtering:</strong> Processes only video content</li>
+            <li><strong>Cached Endpoints:</strong> Uses Udemy's cached curriculum API</li>
+            <li><strong>Minimal Field Selection:</strong> Requests only required data fields</li>
+        </ul>
+
+        <h2>🎯 Testing & Validation</h2>
+
+        <pre><code class="python"># Comprehensive test coverage
+_TESTS = [{
+    'url': 'https://www.udemy.com/java-tutorial/#/lecture/172757',
+    'md5': '98eda5b657e752cf945d8445e261b5c5',
+    'info_dict': {
+        'id': '160614',
+        'ext': 'mp4',
+        'title': 'Introduction and Installation',
+        'description': 'md5:c0d51f6f21ef4ec65f091055a5eef876',
+        'duration': 579.29,
+    },
+    'skip': 'Requires udemy account credentials',
+}, {
+    # New URL schema testing
+    'url': 'https://www.udemy.com/electric-bass-right-from-the-start/learn/v4/t/lecture/4580906',
+    'only_matching': True,
+}, {
+    # Enterprise subdomain support
+    'url': 'https://wipro.udemy.com/java-tutorial/#/lecture/172757',
+    'only_matching': True,
+}]</code></pre>
+
+        <h2>🌟 Key Engineering Insights</h2>
+
+        <div class="info-box">
+            <h4>🎓 E-Learning Platform Challenges</h4>
+            <p>The Udemy extractor demonstrates sophisticated handling of modern e-learning platform challenges:</p>
+            <ul>
+                <li><strong>Authentication Complexity:</strong> Multi-step login with CSRF protection</li>
+                <li><strong>Course Structure:</strong> Hierarchical content organization</li>
+                <li><strong>Content Protection:</strong> DRM-protected premium content</li>
+                <li><strong>Format Diversity:</strong> Multiple video sources and quality options</li>
+                <li><strong>Auto-Enrollment:</strong> Seamless access to free courses</li>
+            </ul>
+        </div>
+
+        <h2>🔗 Integration Examples</h2>
+
+        <h3>Basic Lecture Extraction</h3>
+        <pre><code class="bash"># Extract individual lecture
+yt-dlp "https://www.udemy.com/course/java-tutorial/learn/lecture/172757"
+
+# Extract with authentication
+yt-dlp -u username -p password "https://www.udemy.com/course/java-tutorial/"
+
+# Extract course with subtitle preferences
+yt-dlp --write-subs --sub-langs "en,es" "https://www.udemy.com/course/python-course/"</code></pre>
+
+        <h3>Advanced Course Processing</h3>
+        <pre><code class="python"># Custom extraction with course organization
+extractor = UdemyCourseIE()
+result = extractor.extract("https://www.udemy.com/course/complete-python-course/")
+
+# Process course structure
+for entry in result['entries']:
+    print(f"Chapter {entry.get('chapter_number', 'N/A')}: {entry.get('chapter', 'N/A')}")
+    print(f"Lecture: {entry['title']}")
+    
+# Handle DRM detection
+try:
+    video_info = extractor.extract(lecture_url)
+except ExtractorError as e:
+    if 'DRM' in str(e):
+        print("Content is DRM-protected and cannot be downloaded")</code></pre>
+
+        <div class="related-links">
+            <h3>🔗 Related Technical Resources</h3>
+            <ul>
+                <li><a href="brightcove-enterprise-video-infrastructure-yt-dlp.html">Brightcove Enterprise Video
+                        Platform</a></li>
+                <li><a href="kaltura-enterprise-video-platform-deep-dive-yt-dlp.html">Kaltura Educational Technology</a>
+                </li>
+                <li><a href="vimeo-video-extraction-deep-dive-yt-dlp.html">Vimeo Professional Platform</a></li>
+                <li><a href="wistia-business-video-platform-deep-dive-yt-dlp.html">Wistia Business Video Solutions</a>
+                </li>
+                <li><a href="zoom-video-conferencing-deep-dive-yt-dlp.html">Zoom Video Conferencing Platform</a></li>
+                <li><a href="youtube-video-extraction-deep-dive-yt-dlp.html">YouTube Technical Implementation</a></li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <strong>Next:</strong> Explore <a href="zoom-video-conferencing-deep-dive-yt-dlp.html">Zoom Video
+                Conferencing Deep Dive</a>
+            to understand enterprise video conferencing platform extraction techniques and recorded meeting processing.
+        </div>
+    </div>
+</body>
+
+</html>

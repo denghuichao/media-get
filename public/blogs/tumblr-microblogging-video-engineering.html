@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tumblr Microblogging Video Engineering - yt-dlp Deep Dive</title>
+    <title>VKontakte (VK) Russian Social Network Video Engineering - yt-dlp Deep Dive</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -201,62 +201,63 @@
             margin: 25px 0;
             border: 2px solid #ff9500;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
 </head>
 
 <body>
     <div class="header">
-        <h1>🎨 Tumblr Microblogging Video Engineering</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
+        <h1>VKontakte (VK) Russian Social Network Video Engineering</h1>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
         <p>Deep Dive into yt-dlp's Multi-Provider Content Extraction & OAuth2 Authentication</p>
     </div>
 
     <div class="content-section">
         <h2>🎯 Executive Summary</h2>
-        <p>Tumblr presents one of the most complex video extraction challenges in social media, supporting both native
+        <p>VKontakte (VK) presents one of the most complex video extraction challenges in social media, supporting both
+            native
             video hosting and embedded content from multiple external providers. This analysis explores yt-dlp's
-            sophisticated approach to handling Tumblr's diverse content ecosystem, including OAuth2 authentication,
+            sophisticated approach to handling VK's diverse content ecosystem, including OAuth2 authentication,
             multi-provider detection, dashboard-only posts, and comprehensive metadata extraction.</p>
 
         <div class="highlight">
-            <strong>Key Engineering Insights:</strong> Tumblr's extractor implements a dual-strategy approach with
+            <strong>Key Engineering Insights:</strong> VK's extractor implements a dual-strategy approach with
             API-based authenticated access for dashboard content and webpage scraping for public posts, combined with
             intelligent provider detection for embedded content.
         </div>
     </div>
 
     <div class="content-section">
-        <h2>🏗️ Tumblr Platform Architecture</h2>
+        <h2>🏗️ VK Platform Architecture</h2>
 
         <div class="architecture-diagram">
-            <h3>Tumblr Multi-Provider Extraction Flow</h3>
+            <h3>VK Multi-Provider Extraction Flow</h3>
             <div class="flow-step">
                 <strong>1. URL Analysis</strong><br>
                 Blog & Post ID Extraction<br>
-                <code>{blog}.tumblr.com/post/{id}</code>
+                <code>vk.com/video-12345_67890</code>
             </div>
             <div class="flow-step">
                 <strong>2. Access Strategy</strong><br>
@@ -308,110 +309,97 @@
         <h2>💻 Core Implementation Analysis</h2>
 
         <h3>🎯 URL Pattern Recognition & Blog Detection</h3>
-        <div class="code-block">
-            # Complex URL pattern for multiple Tumblr formats
-            _VALID_URL =
-            r'https?://(?P<blog_name_1>[^/?#&]+)\.tumblr\.com/(?:post|video|(?P<blog_name_2>[a-zA-Z\d-]+))/(?P<id>[0-9]+)(?:$|[/?#])'
+        <pre><code class="language-python">
+# Complex URL pattern for multiple VK formats
+_VALID_URL = r'https?://(?:(?:www\.)?vk\.com/video|m\.vk\.com/video|vk\.com/clip)(?P<id>-\d+_\d+)'
 
-            # Support for new URL scheme
-            # https://www.tumblr.com/{blog}/{id}?source=share
+# Support for new URL scheme
+# https://vk.com/video-12345_67890
 
-            # Blog name extraction with fallback
-            blog_1, blog_2, video_id = self._match_valid_url(url).groups()
-            blog = blog_2 or blog_1
-        </div>
+# video id extraction
+video_id = self._match_id(url)
+        </code></pre>
 
         <h3>🔐 OAuth2 Authentication Implementation</h3>
         <div class="auth-flow">
             <h4>Advanced Authentication Flow</h4>
-            <div class="code-block">
-                def _perform_login(self, username, password):
-                data = {
-                'password': password,
-                'grant_type': 'password',
-                'username': username,
-                }
+            <pre><code class="language-python">
+def _perform_login(self, username, password):
+    data = {
+        'password': password,
+        'grant_type': 'password',
+        'username': username,
+    }
 
-                # Two-factor authentication support
-                if self.get_param('twofactor'):
-                data['tfa_token'] = self.get_param('twofactor')
+    # Two-factor authentication support
+    if self.get_param('twofactor'):
+        data['tfa_token'] = self.get_param('twofactor')
 
-                response = self._download_json(
-                self._OAUTH_URL, None, 'Logging in',
-                data=urlencode_postdata(data),
-                headers={
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': f'Bearer {self._ACCESS_TOKEN}',
-                })
+    response = self._download_json(
+        self._OAUTH_URL, None, 'Logging in',
+        data=urlencode_postdata(data),
+        headers={
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': f'Bearer {self._ACCESS_TOKEN}',
+        })
 
-                # Handle 2FA requirement
-                if traverse_obj(response, 'error') == 'tfa_required':
-                data['tfa_token'] = self._get_tfa_info()
-                response = _call_login()
-            </div>
+    # Handle 2FA requirement
+    if traverse_obj(response, 'error') == 'tfa_required':
+        data['tfa_token'] = self._get_tfa_info()
+        response = _call_login()
+            </code></pre>
         </div>
 
         <h3>🎥 Multi-Provider Content Detection</h3>
-        <div class="code-block">
-            # Comprehensive provider mapping
-            _providers = {
-            'instagram': 'Instagram',
-            'vimeo': 'Vimeo',
-            'youtube': 'Youtube',
-            'dailymotion': 'Dailymotion',
-            'tiktok': 'TikTok',
-            'twitch_live': 'TwitchStream',
-            'bandcamp': None,
-            'soundcloud': None,
-            }
+        <pre><code class="language-python">
+# Comprehensive provider mapping
+_providers = {
+    'youtube': 'Youtube',
+    'vimeo': 'Vimeo',
+    'rutube': 'RuTube',
+    'pladform': 'Pladform',
+}
 
-            # Provider-based content extraction
-            for video_json in traverse_obj(content_json, lambda _, v: v['type'] in ('video', 'audio')):
-            provider = video_json.get('provider')
+# Provider-based content extraction
+for video_json in traverse_obj(content_json, lambda _, v: v['type'] in ('video', 'audio')):
+    player_url = video_json.get('player')
 
-            if provider in ('tumblr', None):
-            # Native Tumblr video processing
-            fallback_format = {
-            'url': media_json.get('url') or video_url,
-            'width': int_or_none(media_json.get('width')),
-            'height': int_or_none(media_json.get('height')),
-            }
-            elif provider in self._providers:
-            # External provider delegation
-            entries.append(self.url_result(
-            video_json['url'], self._providers.get(provider)))
-        </div>
+    if 'youtube.com' in player_url:
+        # External provider delegation
+        entries.append(self.url_result(player_url, 'Youtube'))
+    else:
+        # Native VK video processing
+        formats.extend(self._extract_mpd_formats(player_url, video_id))
+        </code></pre>
 
         <h3>🔧 Iframe & Quality Detection</h3>
-        <div class="code-block">
-            # Advanced iframe processing for quality variants
-            iframe_url = self._search_regex(
-            fr'src=\'(https?://www\.tumblr\.com/video/{blog}/{video_id}/[^\']+)\'',
-            webpage, 'iframe url', default=None)
+        <pre><code class="language-python">
+# Advanced iframe processing for quality variants
+iframe_url = self._search_regex(
+    r'src="((?:https?:)?//vk\.com/video_ext\.php\?[^"]+)"',
+    webpage, 'iframe url', default=None)
 
-            if iframe_url:
-            options = self._parse_json(
-            self._search_regex(
-            r'data-crt-options=(["\'])(?P<options>.+?)\1', iframe,
-            'hd video url', default='', group='options'))
+if iframe_url:
+    iframe = self._download_webpage(
+        iframe_url, video_id, 'Downloading iframe page')
 
-            if options:
-            duration = int_or_none(options.get('duration'))
-            hd_url = options.get('hdUrl')
-
-            # Multiple quality extraction
-            sources = []
-            sd_url = self._search_regex(
-            r'<source[^>]+src=(["\'])(?P<url>.+?)\1', iframe,
-            'sd video url', default=None, group='url')
-            if sd_url:
-            sources.append((sd_url, 'sd'))
-            sources.append((hd_url, 'hd'))
-        </div>
+    # Multiple quality extraction from player parameters
+    mv_data = self._search_json(
+        r'var\s+mvData\s*=\s*({.+?});', iframe,
+        'mv data', video_id, fatal=False)
+    if mv_data:
+        for quality, url in mv_data.get('player', {}).get('params', {}).get('data', {}).items():
+            if quality.startswith('url'):
+                formats.append({
+                    'url': url,
+                    'format_id': quality,
+                    'height': int_or_none(quality[3:]),
+                })
+        </code></pre>
     </div>
 
     <div class="content-section">
-        <h2>📊 Tumblr API Data Structure</h2>
+        <h2>📊 VK API Data Structure</h2>
 
         <table class="api-table">
             <thead>
@@ -424,33 +412,33 @@
             </thead>
             <tbody>
                 <tr>
-                    <td><code>/api/v2/blog/{blog}/posts/{id}/permalink</code></td>
+                    <td><code>/method/video.get</code></td>
                     <td>Post Data</td>
                     <td>Complete post metadata and content</td>
                     <td>Bearer Token Required</td>
                 </tr>
                 <tr>
-                    <td><code>response.timeline.elements[0]</code></td>
+                    <td><code>response.items[0]</code></td>
                     <td>Post Object</td>
                     <td>Main post content structure</td>
                     <td>Authenticated Access</td>
                 </tr>
                 <tr>
-                    <td><code>trail[0].content</code></td>
+                    <td><code>player</code></td>
                     <td>Content Array</td>
-                    <td>Original post content blocks</td>
+                    <td>Video player URL</td>
                     <td>API Access</td>
                 </tr>
                 <tr>
-                    <td><code>content[].type</code></td>
+                    <td><code>files</code></td>
                     <td>Content Type</td>
-                    <td>video, audio, text content types</td>
+                    <td>direct mp4, hls, dash links</td>
                     <td>API Access</td>
                 </tr>
                 <tr>
-                    <td><code>content[].provider</code></td>
+                    <td><code>provider</code></td>
                     <td>Video Provider</td>
-                    <td>tumblr, youtube, vimeo, etc.</td>
+                    <td>vk, youtube, vimeo, etc.</td>
                     <td>API Access</td>
                 </tr>
             </tbody>
@@ -469,9 +457,9 @@
             <tbody>
                 <tr>
                     <td>Native Video</td>
-                    <td>tumblr/null</td>
+                    <td>vk/null</td>
                     <td>Direct URL + Iframe</td>
-                    <td>SD/HD variants</td>
+                    <td>SD/HD/UHD variants</td>
                 </tr>
                 <tr>
                     <td>YouTube Embed</td>
@@ -486,31 +474,31 @@
                     <td>Vimeo quality options</td>
                 </tr>
                 <tr>
-                    <td>TikTok Embed</td>
-                    <td>tiktok</td>
+                    <td>RuTube Embed</td>
+                    <td>rutube</td>
                     <td>url_transparent delegation</td>
-                    <td>TikTok standard quality</td>
+                    <td>RuTube standard quality</td>
                 </tr>
                 <tr>
-                    <td>Instagram Video</td>
-                    <td>instagram</td>
+                    <td>Pladform Video</td>
+                    <td>pladform</td>
                     <td>url_transparent delegation</td>
-                    <td>Instagram formats</td>
+                    <td>Pladform formats</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
     <div class="content-section">
-        <h2>🔧 Advanced Tumblr Engineering Features</h2>
+        <h2>🔧 Advanced VK Engineering Features</h2>
 
         <div class="provider-grid">
             <div class="provider-card">
-                <h4>🎬 Native Tumblr Videos</h4>
-                <p><strong>Direct Hosting:</strong> Tumblr's own video infrastructure</p>
-                <p><strong>Quality Detection:</strong> SD/HD iframe parsing</p>
-                <p><strong>Format Support:</strong> MP4 progressive download</p>
-                <code>iframe: data-crt-options with hdUrl</code>
+                <h4>🎬 Native VK Videos</h4>
+                <p><strong>Direct Hosting:</strong> VK's own video infrastructure</p>
+                <p><strong>Quality Detection:</strong> API and iframe parsing</p>
+                <p><strong>Format Support:</strong> MP4, HLS, DASH</p>
+                <code>API: video.get, Iframe: video_ext.php</code>
             </div>
 
             <div class="provider-card">
@@ -543,57 +531,56 @@
         <h2>🛡️ Anti-Detection & Access Control</h2>
 
         <div class="challenge-box">
-            <h4>⚠️ Tumblr Platform Challenges</h4>
+            <h4>⚠️ VK Platform Challenges</h4>
             <ul>
-                <li><strong>Dashboard-Only Posts:</strong> Requires OAuth2 authentication for private/sensitive content
+                <li><strong>Private Videos/Groups:</strong> Requires OAuth2 authentication for private/sensitive content
                 </li>
-                <li><strong>NSFW Content Filtering:</strong> Age gating and content restrictions</li>
+                <li><strong>Regional Content Filtering:</strong> Age gating and content restrictions</li>
                 <li><strong>Multi-Provider Complexity:</strong> Different extraction strategies per embed type</li>
                 <li><strong>API Rate Limiting:</strong> OAuth token management and request throttling</li>
             </ul>
         </div>
 
         <h3>🔐 Authentication Bypass Techniques</h3>
-        <div class="code-block">
-            # WhatsApp User-Agent for public content bypass
-            headers = {'User-Agent': 'WhatsApp/2.0'} # bypasses certain restrictions
+        <pre><code class="language-python">
+# Mobile User-Agent for public content bypass
+headers = {'User-Agent': 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Mobile Safari/537.36'} # bypasses certain restrictions
 
-            # API token extraction from login page
-            login_page = self._download_webpage(self._LOGIN_URL, None)
-            self._ACCESS_TOKEN = self._search_regex(
-            r'"API_TOKEN":\s*"(\w+)"', login_page, 'API access token')
+# API token extraction from login page
+login_page = self._download_webpage(self._LOGIN_URL, None)
+self._ACCESS_TOKEN = self._search_regex(
+    r'"access_token":\s*"([a-f0-9]+)"', login_page, 'API access token')
 
-            # Dashboard-only detection
-            api_only = bool(self._search_regex(
-            r'(tumblr.com|^)/(safe-mode|login_required|blog/view)',
-            redirect_url, 'redirect', default=None))
-        </div>
+# Private video detection
+if 'Video is private' in webpage:
+    self.raise_login_required()
+        </code></pre>
 
         <h3>🔄 Robust Error Handling</h3>
-        <div class="code-block">
-            # Provider-specific error handling
-            ignored_providers = set()
-            unknown_providers = set()
+        <pre><code class="language-python">
+# Provider-specific error handling
+ignored_providers = set()
+unknown_providers = set()
 
-            for video_json in content_json:
-            provider = video_json.get('provider')
+for video_json in content_json:
+    provider = video_json.get('provider')
 
-            if provider in self._unsupported_providers:
-            ignored_providers.add(provider)
-            continue
-            elif provider and provider not in self._providers:
-            unknown_providers.add(provider)
+    if provider in self._unsupported_providers:
+        ignored_providers.add(provider)
+        continue
+    elif provider and provider not in self._providers:
+        unknown_providers.add(provider)
 
-            # Comprehensive error reporting
-            if ignored_providers:
-            self.report_warning(f'Skipped embeds from unsupported providers: {", ".join(ignored_providers)}')
-            if unknown_providers:
-            self.report_warning(f'Unrecognized providers, please report: {", ".join(unknown_providers)}')
-        </div>
+# Comprehensive error reporting
+if ignored_providers:
+    self.report_warning(f'Skipped embeds from unsupported providers: {", ".join(ignored_providers)}')
+if unknown_providers:
+    self.report_warning(f'Unrecognized providers, please report: {", ".join(unknown_providers)}')
+        </code></pre>
     </div>
 
     <div class="content-section">
-        <h2>📈 Tumblr Extraction Metrics</h2>
+        <h2>📈 VK Extraction Metrics</h2>
 
         <div
             style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0;">
@@ -627,9 +614,9 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Native Tumblr</td>
+                    <td>Native VK</td>
                     <td>95%+</td>
-                    <td>Dashboard-only content</td>
+                    <td>Private/deleted videos</td>
                     <td>OAuth2 authentication</td>
                 </tr>
                 <tr>
@@ -675,59 +662,57 @@
         </div>
 
         <h3>🔄 Content Type Processing Pipeline</h3>
-        <div class="code-block">
-            # Comprehensive content processing
-            entries = []
-            formats = []
+        <pre><code class="language-python">
+# Comprehensive content processing
+entries = []
+formats = []
 
-            # Process each content block
-            for video_json in traverse_obj(content_json, lambda _, v: v['type'] in ('video', 'audio')):
-            provider = video_json.get('provider')
+# Process each content block
+for video_json in traverse_obj(content_json, lambda _, v: v['type'] in ('video', 'audio')):
+    provider = video_json.get('provider')
 
-            if provider in ('tumblr', None):
-            # Native content processing
-            media_json = video_json.get('media') or {}
-            fallback_format = {
-            'url': media_json.get('url') or video_url,
-            'width': int_or_none(media_json.get('width')),
-            'height': int_or_none(media_json.get('height')),
-            }
-            formats.append(fallback_format)
+    if provider in ('vk', None):
+        # Native content processing
+        for format_id, url in video_json.get('files', {}).items():
+            formats.append({
+                'url': url,
+                'format_id': format_id,
+            })
 
-            elif provider in self._providers:
-            # External provider delegation
-            entries.append(self.url_result(
-            video_json['url'], self._providers.get(provider)))
-        </div>
+    elif provider in self._providers:
+        # External provider delegation
+        entries.append(self.url_result(
+            video_json['player'], self._providers.get(provider)))
+        </code></pre>
 
         <h3>📊 Metadata Enrichment Strategy</h3>
-        <div class="code-block">
-            # Rich metadata extraction from API and webpage
-            info_dict = {
-            'id': video_id,
-            'title': post_json.get('summary') or self._html_search_regex(
-            r'(?s)<title>(?P<title>.*?)(?: \| Tumblr)?</title>', webpage),
-            'description': description,
-            'uploader_id': traverse_obj(post_json, 'reblogged_root_name', 'blog_name'),
-            'uploader_url': f'https://{uploader_id}.tumblr.com/',
-            'like_count': traverse_obj(post_json, ('like_count', {int_or_none})),
-            'repost_count': traverse_obj(post_json, ('reblog_count', {int_or_none})),
-            'tags': traverse_obj(post_json, ('tags', ..., {str})),
-            'age_limit': {True: 18, False: 0}.get(post_json.get('is_nsfw')),
-            }
-        </div>
+        <pre><code class="language-python">
+# Rich metadata extraction from API and webpage
+info_dict = {
+    'id': video_id,
+    'title': post_json.get('title') or self._html_search_meta(
+        'title', webpage, default=None),
+    'description': post_json.get('description'),
+    'uploader_id': post_json.get('owner_id'),
+    'uploader': traverse_obj(post_json, 'owner.name'),
+    'like_count': traverse_obj(post_json, ('likes', 'count')),
+    'view_count': traverse_obj(post_json, 'views'),
+    'tags': traverse_obj(post_json, ('tags', ..., 'name')),
+    'age_limit': 18 if post_json.get('adult') else 0,
+}
+        </code></pre>
     </div>
 
     <div class="content-section">
-        <h2>🔮 Future Tumblr Extraction Enhancements</h2>
+        <h2>🔮 Future VK Extraction Enhancements</h2>
 
         <div class="highlight">
             <h4>🚀 Upcoming Developments</h4>
             <ul>
-                <li><strong>Live Streaming Support:</strong> Tumblr Live video extraction capabilities</li>
-                <li><strong>Community Posts:</strong> Enhanced community content extraction</li>
-                <li><strong>Advanced Media Types:</strong> GIF sets and photo carousels with videos</li>
-                <li><strong>Tumblr TV Integration:</strong> Long-form video content support</li>
+                <li><strong>Live Streaming Support:</strong> VK Live video extraction capabilities</li>
+                <li><strong>Clips Support:</strong> Enhanced VK Clips (short video) extraction</li>
+                <li><strong>Advanced Media Types:</strong> Playlists and video albums</li>
+                <li><strong>VK Video Integration:</strong> Long-form video content support</li>
                 <li><strong>Creator Studio Access:</strong> Professional creator content extraction</li>
             </ul>
         </div>
@@ -744,28 +729,28 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>Tumblr Live Streams</td>
+                    <td>VK Live Streams</td>
                     <td>Real-time content detection</td>
                     <td>WebSocket integration for live content</td>
                     <td>High</td>
                 </tr>
                 <tr>
-                    <td>Multi-Media Posts</td>
-                    <td>Complex nested content</td>
-                    <td>Enhanced content traversal algorithms</td>
-                    <td>Medium</td>
+                    <td>VK Clips</td>
+                    <td>Short video format specifics</td>
+                    <td>Dedicated Clip API endpoint integration</td>
+                    <td>High</td>
                 </tr>
                 <tr>
-                    <td>Community Features</td>
+                    <td>Playlists/Albums</td>
                     <td>Group content access</td>
-                    <td>Community API endpoints integration</td>
-                    <td>Low</td>
+                    <td>Playlist API endpoints integration</td>
+                    <td>Medium</td>
                 </tr>
                 <tr>
                     <td>Creator Analytics</td>
                     <td>Private creator data</td>
                     <td>Enhanced authentication scopes</td>
-                    <td>Medium</td>
+                    <td>Low</td>
                 </tr>
             </tbody>
         </table>
@@ -773,18 +758,18 @@
 
     <div class="content-section">
         <h2>🎯 Conclusion</h2>
-        <p>Tumblr's video extraction implementation in yt-dlp represents one of the most sophisticated multi-provider
+        <p>VK's video extraction implementation in yt-dlp represents one of the most sophisticated multi-provider
             content extraction systems in modern video downloading. The combination of OAuth2 authentication,
-            intelligent provider detection, and robust fallback mechanisms creates a comprehensive solution for Tumblr's
+            intelligent provider detection, and robust fallback mechanisms creates a comprehensive solution for VK's
             diverse content ecosystem.</p>
 
-        <p>The architecture's ability to handle both native Tumblr videos and embedded content from 8+ external
-            providers, while managing dashboard-only content through API authentication, showcases advanced content
+        <p>The architecture's ability to handle both native VK videos and embedded content from external
+            providers, while managing private content through API authentication, showcases advanced content
             detection and extraction capabilities. The implementation effectively balances public content accessibility
             with authenticated access for private posts.</p>
 
         <div class="highlight">
-            <strong>Key Takeaway:</strong> Tumblr's implementation demonstrates how modern extractors must handle
+            <strong>Key Takeaway:</strong> VK's implementation demonstrates how modern extractors must handle
             complex multi-provider environments while maintaining security through proper authentication flows and
             graceful error handling for unsupported content types.
         </div>

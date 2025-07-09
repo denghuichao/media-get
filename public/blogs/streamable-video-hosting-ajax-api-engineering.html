@@ -55,6 +55,49 @@
             margin: 15px 0;
             overflow-x: auto;
             border-left: 4px solid #667eea;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            line-height: 1.5;
+        }
+
+        /* Syntax Highlighting for Python code */
+        .code-block .keyword {
+            color: #569cd6;
+        }
+
+        .code-block .string {
+            color: #ce9178;
+        }
+
+        .code-block .comment {
+            color: #6a9955;
+        }
+
+        .code-block .function {
+            color: #dcdcaa;
+        }
+
+        .code-block .variable {
+            color: #9cdcfe;
+        }
+
+        .code-block .number {
+            color: #b5cea8;
+        }
+
+        .code-block .constant {
+            color: #4fc1ff;
+        }
+
+        .code-block .class {
+            color: #4ec9b0;
+        }
+
+        .code-block .property {
+            color: #9cdcfe;
+        }
+
+        .code-block .operator {
+            color: #d4d4d4;
         }
 
         .highlight {
@@ -168,35 +211,35 @@
             display: inline-block;
             margin: 5px;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <h1>🎬 Streamable Video Hosting Engineering: Ajax API Integration & Multi-Format Processing</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
 
         <div class="highlight">
@@ -238,14 +281,18 @@
         </p>
 
         <div class="code-block">
-            def _real_extract(self, url):
-            video_id = self._match_id(url)
+            <span class="keyword">def</span> <span class="function">_real_extract</span>(<span
+                class="variable">self</span>, <span class="variable">url</span>):
+            <span class="variable">video_id</span> = <span class="variable">self</span>.<span
+                class="function">_match_id</span>(<span class="variable">url</span>)
 
-            # Note: Using the ajax API, as the public Streamable API doesn't seem
-            # to return video info like the title properly sometimes, and doesn't
-            # include info like the video duration
-            video = self._download_json(
-            f'https://ajax.streamable.com/videos/{video_id}', video_id)
+            <span class="comment"># Note: Using the ajax API, as the public Streamable API doesn't seem</span>
+            <span class="comment"># to return video info like the title properly sometimes, and doesn't</span>
+            <span class="comment"># include info like the video duration</span>
+            <span class="variable">video</span> = <span class="variable">self</span>.<span
+                class="function">_download_json</span>(
+            <span class="string">f'https://ajax.streamable.com/videos/{video_id}'</span>, <span
+                class="variable">video_id</span>)
         </div>
 
         <div class="info-box">
@@ -257,16 +304,17 @@
         <p>Streamable implements a sophisticated status system to handle video processing states:</p>
 
         <div class="code-block">
-            # Format IDs:
-            # 0 The video is being uploaded
-            # 1 The video is being processed
-            # 2 The video has at least one file ready
-            # 3 The video is unavailable due to an error
-            status = video.get('status')
-            if status != 2:
-            raise ExtractorError(
-            'This video is currently unavailable. It may still be uploading or processing.',
-            expected=True)
+            <span class="comment"># Format IDs:</span>
+            <span class="comment"># 0 The video is being uploaded</span>
+            <span class="comment"># 1 The video is being processed</span>
+            <span class="comment"># 2 The video has at least one file ready</span>
+            <span class="comment"># 3 The video is unavailable due to an error</span>
+            <span class="variable">status</span> = <span class="variable">video</span>.<span
+                class="function">get</span>(<span class="string">'status'</span>)
+            <span class="keyword">if</span> <span class="variable">status</span> != <span class="number">2</span>:
+            <span class="keyword">raise</span> <span class="function">ExtractorError</span>(
+            <span class="string">'This video is currently unavailable. It may still be uploading or processing.'</span>,
+            <span class="variable">expected</span>=<span class="constant">True</span>)
         </div>
 
         <table>
@@ -310,20 +358,40 @@
         <p>Streamable provides multiple format variants with detailed technical metadata:</p>
 
         <div class="code-block">
-            formats = []
-            for key, info in video['files'].items():
-            if not info.get('url'):
-            continue
-            formats.append({
-            'format_id': key,
-            'url': self._proto_relative_url(info['url']),
-            'width': int_or_none(info.get('width')),
-            'height': int_or_none(info.get('height')),
-            'filesize': int_or_none(info.get('size')),
-            'fps': int_or_none(info.get('framerate')),
-            'vbr': float_or_none(info.get('bitrate'), 1000),
-            'vcodec': parse_codecs(try_get(info, lambda x: x['input_metadata']['video_codec_name'])).get('vcodec'),
-            'acodec': parse_codecs(try_get(info, lambda x: x['input_metadata']['audio_codec_name'])).get('acodec'),
+            <span class="variable">formats</span> = []
+            <span class="keyword">for</span> <span class="variable">key</span>, <span class="variable">info</span> <span
+                class="keyword">in</span> <span class="variable">video</span>[<span class="string">'files'</span>].<span
+                class="function">items</span>():
+            <span class="keyword">if not</span> <span class="variable">info</span>.<span
+                class="function">get</span>(<span class="string">'url'</span>):
+            <span class="keyword">continue</span>
+            <span class="variable">formats</span>.<span class="function">append</span>({
+            <span class="string">'format_id'</span>: <span class="variable">key</span>,
+            <span class="string">'url'</span>: <span class="variable">self</span>.<span
+                class="function">_proto_relative_url</span>(<span class="variable">info</span>[<span
+                class="string">'url'</span>]),
+            <span class="string">'width'</span>: <span class="function">int_or_none</span>(<span
+                class="variable">info</span>.<span class="function">get</span>(<span class="string">'width'</span>)),
+            <span class="string">'height'</span>: <span class="function">int_or_none</span>(<span
+                class="variable">info</span>.<span class="function">get</span>(<span class="string">'height'</span>)),
+            <span class="string">'filesize'</span>: <span class="function">int_or_none</span>(<span
+                class="variable">info</span>.<span class="function">get</span>(<span class="string">'size'</span>)),
+            <span class="string">'fps'</span>: <span class="function">int_or_none</span>(<span
+                class="variable">info</span>.<span class="function">get</span>(<span
+                class="string">'framerate'</span>)),
+            <span class="string">'vbr'</span>: <span class="function">float_or_none</span>(<span
+                class="variable">info</span>.<span class="function">get</span>(<span class="string">'bitrate'</span>),
+            <span class="number">1000</span>),
+            <span class="string">'vcodec'</span>: <span class="function">parse_codecs</span>(<span
+                class="function">try_get</span>(<span class="variable">info</span>, <span class="keyword">lambda</span>
+            <span class="variable">x</span>: <span class="variable">x</span>[<span
+                class="string">'input_metadata'</span>][<span class="string">'video_codec_name'</span>])).<span
+                class="function">get</span>(<span class="string">'vcodec'</span>),
+            <span class="string">'acodec'</span>: <span class="function">parse_codecs</span>(<span
+                class="function">try_get</span>(<span class="variable">info</span>, <span class="keyword">lambda</span>
+            <span class="variable">x</span>: <span class="variable">x</span>[<span
+                class="string">'input_metadata'</span>][<span class="string">'audio_codec_name'</span>])).<span
+                class="function">get</span>(<span class="string">'acodec'</span>),
             })
         </div>
 
@@ -394,8 +462,8 @@
 
         <div class="code-block">
             _VALID_URL = r'https?://streamable\.com/(?:[es]/)?(?P<id>\w+)'
-            _EMBED_REGEX =
-            [r'<iframe[^>]+\bsrc=(?P<q1>[\'"])(?P<url>(?:https?:)?//streamable\.com/.+?)(?P=q1)']
+                _EMBED_REGEX =
+                [r'<iframe[^>]+\bsrc=(?P<q1>[\'"])(?P<url>(?:https?:)?//streamable\.com/.+?)(?P=q1)']
         </div>
 
         <h2>🎬 Metadata Processing Excellence</h2>

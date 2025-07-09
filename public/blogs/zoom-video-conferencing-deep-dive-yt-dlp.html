@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zoom Video Conferencing Deep Dive: yt-dlp's Engineering for Enterprise Recording Extraction</title>
+    <meta name="description"
+        content="Technical analysis of yt-dlp's Zoom extractor implementation for enterprise video conferencing platforms, covering authentication, multi-stream handling, and recording access patterns.">
+    <meta name="keywords"
+        content="Zoom, yt-dlp, video conferencing, enterprise, recording extraction, multi-stream, authentication, meeting recordings">
+    <meta property="og:title" content="Zoom Video Conferencing Deep Dive: yt-dlp Engineering Analysis">
+    <meta property="og:description"
+        content="Technical deep dive into yt-dlp's Zoom extractor for enterprise video conferencing platforms">
+    <meta property="og:type" content="article">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            border: none;
+            margin: -30px -30px 30px -30px;
+        }
+
+        pre {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            border-left: 4px solid #4299e1;
+        }
+
+        code {
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #1e293b;
+        }
+
+        .architecture-diagram {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .feature-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #3498db;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -37px;
+            top: 25px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #3498db;
+        }
+
+        .stream-visualization {
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .related-links {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .related-links ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .related-links li {
+            margin: 10px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .related-links li::before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🎥 Zoom Video Conferencing Deep Dive: yt-dlp's Engineering for Enterprise Recording Extraction</h1>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+            <a href="/#home" class="blog-index-link" style="background-color: #007bff; margin-left: 10px;">🏠 Home</a>
+        </div>
+
+        <div class="info-box">
+            <strong>Technical Overview:</strong> This analysis explores yt-dlp's sophisticated Zoom extractor
+            implementation,
+            covering enterprise video conferencing recording extraction, multi-stream processing,
+            password protection handling, and advanced format detection for business communications.
+        </div>
+
+        <h2>🏗️ Architecture Overview</h2>
+
+        <div class="architecture-diagram">
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Zoom Recording Extraction │
+            ├─────────────────────────────────────────────────────────────────┤
+            │ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ URL Parser │→ │ Auth System │→ │ Recording Type │ │
+            │ │ - Play URL │ │ - Password │ │ - Play/Share │ │
+            │ │ - Share URL │ │ - Meeting │ │ - Protected │ │
+            │ │ - Legacy │ │ - File Auth │ │ - Public │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │ │ │ │
+            │ ▼ ▼ ▼ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ Share Info │ │ Page Data │ │ API Client │ │
+            │ │ Resolver │ │ Extraction │ │ - Meeting ID │ │
+            │ │ - Redirect │ │ - File ID │ │ - File Info │ │
+            │ │ - Meeting │ │ - Window │ │ - JSON Data │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │ │ │ │
+            │ ▼ ▼ ▼ │
+            │ ┌─────────────┐ ┌─────────────┐ ┌─────────────────┐ │
+            │ │ Multi- │ │ Subtitle │ │ Format │ │
+            │ │ Stream │ │ Processing │ │ Selection │ │
+            │ │ - Camera │ │ - Transcript│ │ - Camera View │ │
+            │ │ - Screen │ │ - CC │ │ - Screen Share │ │
+            │ │ - Combined │ │ - Chapters │ │ - Combined │ │
+            │ └─────────────┘ └─────────────┘ └─────────────────┘ │
+            │ │
+            └─────────────────────────────────────────────────────────────────┘
+        </div>
+
+        <h2>🔐 Authentication & Access Control</h2>
+
+        <h3>Password Protection System</h3>
+        <pre><code class="python">def _get_real_webpage(self, url, base_url, video_id, url_type):
+    webpage = self._download_webpage(url, video_id, note=f'Downloading {url_type} webpage')
+    try:
+        form = self._form_hidden_inputs('password_form', webpage)
+    except ExtractorError:
+        return webpage
+
+    password = self.get_param('videopassword')
+    if not password:
+        raise ExtractorError(
+            'This video is protected by a passcode, use the --video-password option', expected=True)
+    
+    # Determine authentication type (meeting vs file password)
+    is_meeting = form.get('useWhichPasswd') == 'meeting'
+    validation = self._download_json(
+        base_url + 'rec/validate%s_passwd' % ('_meet' if is_meeting else ''),
+        video_id, 'Validating passcode', 'Wrong passcode', data=urlencode_postdata({
+            'id': form[('meet' if is_meeting else 'file') + 'Id'],
+            'passwd': password,
+            'action': form.get('action'),
+        }))
+    
+    if not validation.get('status'):
+        raise ExtractorError(validation['errorMessage'], expected=True)
+    return self._download_webpage(url, video_id, note=f'Re-downloading {url_type} webpage')</code></pre>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>🔑 Access Types</h4>
+                <ul>
+                    <li>Meeting password</li>
+                    <li>File-specific password</li>
+                    <li>Public recordings</li>
+                    <li>Domain restrictions</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🛡️ Security Features</h4>
+                <ul>
+                    <li>Password validation API</li>
+                    <li>Form token extraction</li>
+                    <li>CSRF protection</li>
+                    <li>Session management</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Share URL Resolution</h3>
+        <pre><code class="python">def _real_extract(self, url):
+    base_url, url_type, video_id = self._match_valid_url(url).group('base_url', 'type', 'id')
+    query = {}
+
+    if url_type == 'share':
+        webpage = self._get_real_webpage(url, base_url, video_id, 'share')
+        meeting_id = self._get_page_data(webpage, video_id)['meetingId']
+        redirect_path = self._download_json(
+            f'{base_url}nws/recording/1.0/play/share-info/{meeting_id}',
+            video_id, note='Downloading share info JSON')['result']['redirectUrl']
+        url = urljoin(base_url, redirect_path)
+        query['continueMode'] = 'true'
+
+    webpage = self._get_real_webpage(url, base_url, video_id, 'play')
+    file_id = self._get_page_data(webpage, video_id)['fileId']
+    if not file_id:
+        raise ExtractorError('Unable to extract file ID')</code></pre>
+
+        <h2>📊 Data Extraction Pipeline</h2>
+
+        <h3>Page Data Processing</h3>
+        <pre><code class="python">def _get_page_data(self, webpage, video_id):
+    return self._search_json(
+        r'window\.__data__\s*=', webpage, 'data', video_id, transform_source=js_to_json)
+
+# Extract recording information via API
+data = self._download_json(
+    f'{base_url}nws/recording/1.0/play/info/{file_id}', video_id, query=query,
+    note='Downloading play info JSON')['result']</code></pre>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <h4>1. URL Analysis</h4>
+                <p>Parse recording URL format: play vs share URLs</p>
+            </div>
+            <div class="timeline-item">
+                <h4>2. Authentication</h4>
+                <p>Handle password protection if required</p>
+            </div>
+            <div class="timeline-item">
+                <h4>3. Share Resolution</h4>
+                <p>Convert share URLs to direct play URLs</p>
+            </div>
+            <div class="timeline-item">
+                <h4>4. Data Extraction</h4>
+                <p>Extract file ID and fetch recording metadata</p>
+            </div>
+            <div class="timeline-item">
+                <h4>5. Stream Processing</h4>
+                <p>Process multiple video streams and subtitles</p>
+            </div>
+        </div>
+
+        <h2>🎬 Multi-Stream Video Processing</h2>
+
+        <h3>Camera, Screen Share & Combined Streams</h3>
+        <pre><code class="python">formats = []
+
+# Camera stream processing
+if data.get('viewMp4Url'):
+    formats.append({
+        'format_note': 'Camera stream',
+        'url': data['viewMp4Url'],
+        'width': int_or_none(traverse_obj(data, ('viewResolvtions', 0))),
+        'height': int_or_none(traverse_obj(data, ('viewResolvtions', 1))),
+        'format_id': 'view',
+        'ext': 'mp4',
+        'filesize_approx': parse_filesize(str_or_none(traverse_obj(data, ('recording', 'fileSizeInMB')))),
+        'preference': 0,
+    })
+
+# Screen share stream processing
+if data.get('shareMp4Url'):
+    formats.append({
+        'format_note': 'Screen share stream',
+        'url': data['shareMp4Url'],
+        'width': int_or_none(traverse_obj(data, ('shareResolvtions', 0))),
+        'height': int_or_none(traverse_obj(data, ('shareResolvtions', 1))),
+        'format_id': 'share',
+        'ext': 'mp4',
+        'preference': -1,
+    })
+
+# Combined view processing (premium feature)
+view_with_share_url = data.get('viewMp4WithshareUrl')
+if view_with_share_url:
+    formats.append({
+        **parse_resolution(self._search_regex(
+            r'_(\d+x\d+)\.mp4', url_basename(view_with_share_url), 'resolution', default=None)),
+        'format_note': 'Screen share with camera',
+        'url': view_with_share_url,
+        'format_id': 'view_with_share',
+        'ext': 'mp4',
+        'preference': 1,
+    })</code></pre>
+
+        <div class="stream-visualization">
+            ┌─────────────────────────────────────────────────────────────────┐
+            │ Zoom Stream Types │
+            ├─────────────────────────────────────────────────────────────────┤
+            │ │
+            │ Camera Stream (viewMp4Url) │
+            │ ┌─────────────────────────────────┐ │
+            │ │ 👤 Speaker Video │ • Primary participant view│
+            │ │ 📹 Active Speaker Focus │ • Dynamic speaker switching│
+            │ │ 🔄 Gallery/Active Views │ • HD quality options │
+            │ └─────────────────────────────────┘ │
+            │ │
+            │ Screen Share Stream (shareMp4Url) │
+            │ ┌─────────────────────────────────┐ │
+            │ │ 💻 Desktop/App Sharing │ • Full screen capture │
+            │ │ 📊 Presentation Content │ • High resolution │
+            │ │ 🖱️ Mouse/Cursor Activity │ • Optimized compression │
+            │ └─────────────────────────────────┘ │
+            │ │
+            │ Combined Stream (viewMp4WithshareUrl) │
+            │ ┌─────────────────────────────────┐ │
+            │ │ 📹 + 💻 Picture-in-Picture │ • Premium feature │
+            │ │ 🔄 Dynamic Layout Management │ • Best viewing experience │
+            │ │ ⚖️ Optimal Space Utilization │ • Preferred format │
+            │ └─────────────────────────────────┘ │
+            │ │
+            └─────────────────────────────────────────────────────────────────┘
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Stream Type</th>
+                    <th>Format ID</th>
+                    <th>Content</th>
+                    <th>Quality Features</th>
+                    <th>Preference</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Camera View</td>
+                    <td>view</td>
+                    <td>Participant video, active speaker</td>
+                    <td>Dynamic resolution, speaker focus</td>
+                    <td>0 (neutral)</td>
+                </tr>
+                <tr>
+                    <td>Screen Share</td>
+                    <td>share</td>
+                    <td>Desktop/application sharing</td>
+                    <td>High resolution, optimized text</td>
+                    <td>-1 (lower)</td>
+                </tr>
+                <tr>
+                    <td>Combined</td>
+                    <td>view_with_share</td>
+                    <td>Picture-in-picture layout</td>
+                    <td>Optimized composition, best UX</td>
+                    <td>1 (preferred)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>📋 Subtitle & Accessibility Features</h2>
+
+        <h3>Multi-Type Subtitle Processing</h3>
+        <pre><code class="python">subtitles = {}
+
+# Process different subtitle types
+for _type in ('transcript', 'cc', 'chapter'):
+    if data.get(f'{_type}Url'):
+        subtitles[_type] = [{
+            'url': urljoin(base_url, data[f'{_type}Url']),
+            'ext': 'vtt',
+        }]
+
+# Subtitle types explained:
+# - transcript: Full meeting transcript with timestamps
+# - cc: Closed captions for accessibility
+# - chapter: Meeting section markers for navigation</code></pre>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h4>📝 Transcript Features</h4>
+                <ul>
+                    <li>Full meeting transcription</li>
+                    <li>Speaker identification</li>
+                    <li>Timestamp accuracy</li>
+                    <li>Multi-language support</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>♿ Accessibility Support</h4>
+                <ul>
+                    <li>Closed captions (CC)</li>
+                    <li>VTT format support</li>
+                    <li>WCAG compliance</li>
+                    <li>Screen reader compatibility</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>📚 Chapter Navigation</h4>
+                <ul>
+                    <li>Meeting section markers</li>
+                    <li>Topic-based segmentation</li>
+                    <li>Quick navigation</li>
+                    <li>Structured content</li>
+                </ul>
+            </div>
+            <div class="feature-card">
+                <h4>🔍 Resolution Detection</h4>
+                <ul>
+                    <li>URL pattern analysis</li>
+                    <li>Dynamic resolution parsing</li>
+                    <li>Quality optimization</li>
+                    <li>Format selection</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>🌐 Enterprise URL Patterns</h2>
+
+        <h3>URL Format Analysis</h3>
+        <pre><code class="python">_VALID_URL = r'(?P<base_url>https?://(?:[^.]+\.)?zoom\.us/)rec(?:ording)?/(?P<type>play|share)/(?P<id>[\w.-]+)'
+
+# Supported URL patterns:
+# https://economist.zoom.us/rec/play/[ID]
+# https://us02web.zoom.us/rec/share/[ID] 
+# https://cityofdetroit.zoom.us/rec/share/[ID]
+# https://ffgolf.zoom.us/rec/play/[ID]
+
+# Enterprise subdomain examples:
+# - economist.zoom.us (The Economist)
+# - cityofdetroit.zoom.us (Detroit government)
+# - us02web.zoom.us (Regional data center)
+# - ffgolf.zoom.us (French Golf Federation)</code></pre>
+
+        <h3>Advanced Resolution Parsing</h3>
+        <pre><code class="python"># Smart resolution detection from URL patterns
+view_with_share_url = data.get('viewMp4WithshareUrl')
+if view_with_share_url:
+    formats.append({
+        **parse_resolution(self._search_regex(
+            r'_(\d+x\d+)\.mp4', url_basename(view_with_share_url), 
+            'resolution', default=None)),
+        'format_note': 'Screen share with camera',
+        'url': view_with_share_url,
+        'format_id': 'view_with_share',
+        'ext': 'mp4',
+        'preference': 1,
+    })
+
+# Example URL pattern: /recording_1920x1080.mp4
+# Extracted resolution: {'width': 1920, 'height': 1080}</code></pre>
+
+        <h2>🔧 Error Handling & Edge Cases</h2>
+
+        <h3>Robust Error Management</h3>
+        <pre><code class="python"># File ID validation
+file_id = self._get_page_data(webpage, video_id)['fileId']
+if not file_id:
+    # When things go wrong, file_id can be empty string
+    raise ExtractorError('Unable to extract file ID')
+
+# Password validation with descriptive errors
+if not validation.get('status'):
+    raise ExtractorError(validation['errorMessage'], expected=True)
+
+# Authentication requirement detection
+password = self.get_param('videopassword')
+if not password:
+    raise ExtractorError(
+        'This video is protected by a passcode, use the --video-password option', 
+        expected=True)</code></pre>
+
+        <div class="warning-box">
+            <strong>Common Issues:</strong>
+            <ul>
+                <li><strong>Expired Recordings:</strong> Zoom recordings have expiration dates</li>
+                <li><strong>Password Protection:</strong> Many enterprise recordings require authentication</li>
+                <li><strong>Domain Restrictions:</strong> Some recordings are limited to specific domains</li>
+                <li><strong>Permission Changes:</strong> Recording access can be revoked post-meeting</li>
+            </ul>
+        </div>
+
+        <h2>🚀 Performance Optimizations</h2>
+
+        <h3>Efficient Data Processing</h3>
+        <pre><code class="python"># Optimized traversal for nested data structures
+filesize_approx = parse_filesize(str_or_none(traverse_obj(data, ('recording', 'fileSizeInMB'))))
+width = int_or_none(traverse_obj(data, ('viewResolvtions', 0)))
+height = int_or_none(traverse_obj(data, ('viewResolvtions', 1)))
+
+# Safe data extraction with fallbacks
+title = str_or_none(traverse_obj(data, ('meet', 'topic')))
+duration = int_or_none(data.get('duration'))
+
+# HTTP headers for optimal delivery
+'http_headers': {
+    'Referer': base_url,
+}</code></pre>
+
+        <h3>Caching & Session Management</h3>
+        <ul>
+            <li><strong>Session Persistence:</strong> Maintains authentication across multiple recordings</li>
+            <li><strong>Base URL Extraction:</strong> Efficient subdomain handling</li>
+            <li><strong>Query Optimization:</strong> Minimal API requests for metadata</li>
+            <li><strong>Referrer Management:</strong> Proper headers for access validation</li>
+        </ul>
+
+        <h2>🎯 Testing & Validation</h2>
+
+        <pre><code class="python"># Comprehensive test scenarios
+_TESTS = [{
+    # Protected recording requiring email authentication
+    'url': 'https://economist.zoom.us/rec/play/dUk_CNBETmZ5VA2BwEl-jjakPpJ3M1pcfVYAPRsoIbEByGsLjUZtaa4yCATQuOL3der8BlTwxQePl_j0.EImBkXzTIaPvdZO5',
+    'md5': 'ab445e8c911fddc4f9adc842c2c5d434',
+    'info_dict': {
+        'id': 'dUk_CNBETmZ5VA2BwEl-jjakPpJ3M1pcfVYAPRsoIbEByGsLjUZtaa4yCATQuOL3der8BlTwxQePl_j0.EImBkXzTIaPvdZO5',
+        'ext': 'mp4',
+        'title': 'China\'s "two sessions" and the new five-year plan',
+    },
+    'skip': 'Recording requires email authentication to access',
+}, {
+    # Standard play URL
+    'url': 'https://ffgolf.zoom.us/rec/play/qhEhXbrxq1Zoucx8CMtHzq1Z_2YZRPVCqWK_K-2FkEGRsSLDeOX8Tu4P6jtjZcRry8QhIbvKZdtr4UNo.QcPn2debFskI9whJ',
+    'md5': '2c4b1c4e5213ebf9db293e88d9385bee',
+    'info_dict': {
+        'id': 'qhEhXbrxq1Zoucx8CMtHzq1Z_2YZRPVCqWK_K-2FkEGRsSLDeOX8Tu4P6jtjZcRry8QhIbvKZdtr4UNo.QcPn2debFskI9whJ',
+        'ext': 'mp4',
+        'title': 'Prépa AF2023 - Séance 5 du 11 avril - R20/VM/GO',
+    },
+}, {
+    # Share URL conversion
+    'url': 'https://us02web.zoom.us/rec/share/hkUk5Zxcga0nkyNGhVCRfzkA2gX_mzgS3LpTxEEWJz9Y_QpIQ4mZFOUx7KZRZDQA.9LGQBdqmDAYgiZ_8',
+    'md5': '90fdc7cfcaee5d52d1c817fc03c43c9b',
+    'info_dict': {
+        'id': 'hkUk5Zxcga0nkyNGhVCRfzkA2gX_mzgS3LpTxEEWJz9Y_QpIQ4mZFOUx7KZRZDQA.9LGQBdqmDAYgiZ_8',
+        'ext': 'mp4',
+        'title': 'Timea Andrea Lelik\'s Personal Meeting Room',
+    },
+    'skip': 'This recording has expired',
+}, {
+    # Multi-format with view_with_share
+    'url': 'https://cityofdetroit.zoom.us/rec/share/VjE-5kW3xmgbEYqR5KzRgZ1OFZvtMtiXk5HyRJo5kK4m5PYE6RF4rF_oiiO_9qaM.UTAg1MI7JSnF3ZjX',
+    'md5': 'bdc7867a5934c151957fb81321b3c024',
+    'info_dict': {
+        'id': 'VjE-5kW3xmgbEYqR5KzRgZ1OFZvtMtiXk5HyRJo5kK4m5PYE6RF4rF_oiiO_9qaM.UTAg1MI7JSnF3ZjX',
+        'ext': 'mp4',
+        'title': 'February 2022 Detroit Revenue Estimating Conference',
+        'duration': 7299,
+        'formats': 'mincount:3',
+    },
+}]</code></pre>
+
+        <h2>🌟 Key Engineering Insights</h2>
+
+        <div class="info-box">
+            <h4>🎥 Enterprise Video Conferencing Challenges</h4>
+            <p>The Zoom extractor showcases sophisticated handling of enterprise video conferencing challenges:</p>
+            <ul>
+                <li><strong>Multi-Stream Architecture:</strong> Camera, screen share, and combined video streams</li>
+                <li><strong>Access Control:</strong> Password protection and authentication validation</li>
+                <li><strong>Share URL Complexity:</strong> Dynamic URL resolution for shared links</li>
+                <li><strong>Enterprise Deployment:</strong> Custom subdomain and data center support</li>
+                <li><strong>Accessibility Features:</strong> Comprehensive subtitle and transcript support</li>
+            </ul>
+        </div>
+
+        <h2>📊 Implementation Statistics</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Technology</th>
+                    <th>Purpose</th>
+                    <th>Enterprise Features</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Authentication</td>
+                    <td>Form-based + API validation</td>
+                    <td>Password protection</td>
+                    <td>Meeting & file-level security</td>
+                </tr>
+                <tr>
+                    <td>Stream Processing</td>
+                    <td>Multi-source MP4</td>
+                    <td>Video content delivery</td>
+                    <td>Camera + screen + combined</td>
+                </tr>
+                <tr>
+                    <td>URL Resolution</td>
+                    <td>Share info API</td>
+                    <td>Dynamic link conversion</td>
+                    <td>Enterprise subdomain support</td>
+                </tr>
+                <tr>
+                    <td>Accessibility</td>
+                    <td>VTT subtitles</td>
+                    <td>Transcript & captions</td>
+                    <td>Chapter navigation, multi-language</td>
+                </tr>
+                <tr>
+                    <td>Quality Detection</td>
+                    <td>URL pattern analysis</td>
+                    <td>Resolution extraction</td>
+                    <td>Automatic format selection</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🔗 Integration Examples</h2>
+
+        <h3>Basic Recording Extraction</h3>
+        <pre><code class="bash"># Extract public recording
+yt-dlp "https://zoom.us/rec/play/[RECORDING_ID]"
+
+# Extract password-protected recording
+yt-dlp --video-password "meeting123" "https://zoom.us/rec/play/[RECORDING_ID]"
+
+# Extract with specific format preference
+yt-dlp -f "view_with_share" "https://zoom.us/rec/share/[SHARE_ID]"
+
+# Extract all formats including subtitles
+yt-dlp --write-subs --all-formats "https://zoom.us/rec/play/[RECORDING_ID]"</code></pre>
+
+        <h3>Enterprise Integration</h3>
+        <pre><code class="python"># Custom extraction for enterprise environments
+import subprocess
+
+def extract_zoom_recording(recording_url, password=None):
+    """Extract Zoom recording with enterprise support"""
+    cmd = ['yt-dlp']
+    
+    if password:
+        cmd.extend(['--video-password', password])
+    
+    # Prefer combined view for best experience
+    cmd.extend(['-f', 'view_with_share/best'])
+    
+    # Include accessibility features
+    cmd.extend(['--write-subs', '--write-auto-subs'])
+    
+    cmd.append(recording_url)
+    
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return result.returncode == 0, result.stdout, result.stderr
+    except Exception as e:
+        return False, None, str(e)
+
+# Handle multiple stream types
+def get_available_formats(recording_url):
+    """Get all available formats for a Zoom recording"""
+    cmd = ['yt-dlp', '-F', recording_url]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    
+    formats = []
+    for line in result.stdout.split('\n'):
+        if 'view' in line or 'share' in line:
+            formats.append(line.strip())
+    
+    return formats</code></pre>
+
+        <h3>Advanced Stream Selection</h3>
+        <pre><code class="bash"># Select specific stream types
+yt-dlp -f "view" "https://zoom.us/rec/play/[ID]"          # Camera only
+yt-dlp -f "share" "https://zoom.us/rec/play/[ID]"         # Screen share only
+yt-dlp -f "view_with_share" "https://zoom.us/rec/play/[ID]"  # Combined (preferred)
+
+# Download all streams separately
+yt-dlp -f "all" "https://zoom.us/rec/play/[ID]"
+
+# Quality selection with fallback
+yt-dlp -f "view_with_share/view/share/best" "https://zoom.us/rec/play/[ID]"</code></pre>
+
+        <div class="related-links">
+            <h3>🔗 Related Technical Resources</h3>
+            <ul>
+                <li><a href="udemy-online-learning-platform-deep-dive-yt-dlp.html">Udemy Online Learning Platform</a>
+                </li>
+                <li><a href="brightcove-enterprise-video-infrastructure-yt-dlp.html">Brightcove Enterprise Video
+                        Infrastructure</a></li>
+                <li><a href="kaltura-enterprise-video-platform-deep-dive-yt-dlp.html">Kaltura Enterprise Video
+                        Platform</a></li>
+                <li><a href="wistia-business-video-platform-deep-dive-yt-dlp.html">Wistia Business Video Platform</a>
+                </li>
+                <li><a href="vimeo-video-extraction-deep-dive-yt-dlp.html">Vimeo Professional Platform</a></li>
+                <li><a href="jwplatform-video-infrastructure-deep-dive-yt-dlp.html">JW Player Video Infrastructure</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="info-box">
+            <strong>Next:</strong> Explore more enterprise video platform implementations and learn about
+            advanced video extraction techniques for modern conferencing and collaboration tools.
+        </div>
+    </div>
+</body>
+
+</html>

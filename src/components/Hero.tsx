@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { apiService, MediaInfo, TaskStatus } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
 import { formatSmartTimestampWithUTC } from '../utils/dateUtils';
+import { trackAnalyzeClick, trackDownloadClick, trackDownloadComplete, trackPlatformUsage, getPlatformFromUrl, determineMediaTypeFromFormat } from '../utils/analytics';
 
 export default function Hero() {
   const { t } = useTranslation();
@@ -91,26 +92,6 @@ export default function Hero() {
     );
   };
 
-  // Helper function to get platform name from URL
-  const getPlatformFromUrl = (url: string): string => {
-    try {
-      const urlObj = new URL(url);
-      const hostname = urlObj.hostname.toLowerCase();
-
-      if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) return 'YouTube';
-      if (hostname.includes('bilibili.com')) return 'Bilibili';
-      if (hostname.includes('twitter.com') || hostname.includes('x.com')) return 'Twitter/X';
-      if (hostname.includes('instagram.com')) return 'Instagram';
-      if (hostname.includes('tiktok.com')) return 'TikTok';
-      if (hostname.includes('facebook.com')) return 'Facebook';
-      if (hostname.includes('vimeo.com')) return 'Vimeo';
-
-      return hostname.replace('www.', '');
-    } catch {
-      return 'the website';
-    }
-  };
-
   // Helper function to get platform login URL
   const getPlatformLoginUrl = (url: string): string => {
     try {
@@ -178,6 +159,13 @@ export default function Hero() {
 
   const handleAnalyze = async () => {
     if (!url) return;
+
+    // 获取平台信息用于分析跟踪
+    const platform = getPlatformFromUrl(url);
+
+    // 跟踪分析按钮点击事件
+    trackAnalyzeClick(platform, url);
+    trackPlatformUsage(platform, 'analyze');
 
     setIsLoading(true);
     setError('');
@@ -264,41 +252,6 @@ export default function Hero() {
     });
   };
 
-  // Helper function to determine mediaType based on selected format
-  const determineMediaTypeFromFormat = (formatId: string, mediaInfo: MediaInfo): string => {
-    if (!formatId || !mediaInfo?.formats) return 'video';
-
-    // Handle combined format ID (e.g., "137+140")
-    const formatIds = formatId.includes('+') ? formatId.split('+') : [formatId];
-    const selectedFormats = formatIds.map(id =>
-      mediaInfo.formats.find(f => f.format_id === id)
-    ).filter(Boolean);
-
-    if (selectedFormats.length === 0) return 'video';
-
-    // If any format has video codec, consider it video
-    const hasVideo = selectedFormats.some(format =>
-      format?.vcodec && format.vcodec !== 'none'
-    );
-
-    // Check if it's audio only (all formats have no video codec)
-    const isAudioOnly = selectedFormats.every(format =>
-      format?.vcodec === 'none' || format?.resolution === 'audio only'
-    );
-
-    // Check if it's image format
-    const isImage = selectedFormats.some(format => {
-      const ext = format?.ext?.toLowerCase();
-      return ext && ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
-    });
-
-    if (isImage) return 'image';
-    if (isAudioOnly) return 'audio';
-    if (hasVideo) return 'video';
-
-    return 'video'; // Default fallback
-  };
-
   const pollTaskStatus = async (taskId: string) => {
     try {
       const taskStatus = await apiService.getTaskStatus(taskId);
@@ -318,6 +271,11 @@ export default function Hero() {
           : t('success.downloadCompleted', { filename: displayName });
 
         setDownloadSuccess(message);
+
+        // 跟踪下载完成事件
+        const platform = getPlatformFromUrl(taskStatus.url || '');
+        const mediaType = taskStatus.mediaType || 'video';
+        trackDownloadComplete(platform, mediaType, 'completed', true, fileCount);
 
         // Auto-hide success message after 5 seconds
         const timer = setTimeout(() => {
@@ -377,6 +335,11 @@ export default function Hero() {
         setTaskTimer(taskHideTimer);
 
       } else if (taskStatus.status === 'failed') {
+        // 跟踪下载失败事件
+        const platform = getPlatformFromUrl(taskStatus.url || '');
+        const mediaType = taskStatus.mediaType || 'video';
+        trackDownloadComplete(platform, mediaType, 'failed', false, 0);
+
         setError(taskStatus.error || t('errors.downloadError'));
 
         // Stop polling
@@ -401,6 +364,14 @@ export default function Hero() {
   const handleDownload = async () => {
     if (!url || !selectedFormat || !userInfo) return;
 
+    // 获取平台和媒体类型信息用于下载跟踪
+    const platform = getPlatformFromUrl(url);
+    const mediaType = mediaInfo ? determineMediaTypeFromFormat(selectedFormat, mediaInfo) : 'video';
+
+    // 跟踪下载按钮点击事件
+    trackDownloadClick(platform, mediaType, selectedFormat, downloadPlaylist);
+    trackPlatformUsage(platform, 'download');
+
     setIsSubmitting(true);
     setError('');
     setDownloadSuccess('');
@@ -417,9 +388,6 @@ export default function Hero() {
     }
 
     try {
-      // Determine mediaType based on selected format
-      const mediaType = mediaInfo ? determineMediaTypeFromFormat(selectedFormat, mediaInfo) : 'video';
-
       const result = await apiService.downloadMedia(url, userInfo.id, selectedFormat, undefined, undefined, downloadPlaylist);
 
       if (result.success && result.taskId) {

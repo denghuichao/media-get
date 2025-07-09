@@ -343,35 +343,75 @@
         .operator {
             color: #d4d4d4;
         }
-    
-.blog-navigation {
-    margin: 20px 0;
-    text-align: center;
-}
 
-.blog-index-link {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #85C341;
-    color: white;
-    border-radius: 5px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+        .blog-navigation {
+            margin: 20px 0;
+            text-align: center;
+        }
 
-.blog-index-link:hover {
-    background-color: #6c9a33;
-}
-</style>
+        .blog-index-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #85C341;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+        .blog-index-link:hover {
+            background-color: #6c9a33;
+        }
+
+        .code-section .keyword {
+            color: #569cd6;
+        }
+
+        .code-section .string {
+            color: #ce9178;
+        }
+
+        .code-section .comment {
+            color: #6a9955;
+        }
+
+        .code-section .function {
+            color: #dcdcaa;
+        }
+
+        .code-section .variable {
+            color: #9cdcfe;
+        }
+
+        .code-section .number {
+            color: #b5cea8;
+        }
+
+        .code-section .constant {
+            color: #4fc1ff;
+        }
+
+        .code-section .class {
+            color: #4ec9b0;
+        }
+
+        .code-section .property {
+            color: #9cdcfe;
+        }
+
+        .code-section .operator {
+            color: #d4d4d4;
+        }
+    </style>
 </head>
 
 <body>
     <div class="header">
         <h1>🎬 Dailymotion Video Extraction Mastery</h1>
-<div class="blog-navigation">
-    <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
-</div>
+        <div class="blog-navigation">
+            <a href="/#blogs" class="blog-index-link">← Back to Blog Index</a>
+        </div>
 
         <p>Deep Dive into yt-dlp's GraphQL API Integration & Modern Streaming Architecture</p>
         <div>
@@ -499,13 +539,13 @@
             <span class="comment"># User authentication flow (Resource Owner Password Credentials)</span>
             <span class="variable">data</span>.<span class="function">update</span>({
             <span class="string">'grant_type'</span>: <span class="string">'password'</span>,
-            <span class="string">'password'</span>: <span class="variable">password</span>,
+            <span class="string>'password'</span>: <span class=" variable">password</span>,
             <span class="string">'username'</span>: <span class="variable">username</span>,
             })
             <span class="keyword">else</span>:
             <span class="comment"># Client credentials flow for anonymous access</span>
-            <span class="variable">data</span>[<span class="string">'grant_type'</span>] = <span
-                class="string">'client_credentials'</span>
+            <span class="variable">data</span>[<span class="string>'grant_type'</span>] = <span
+                class=" string">'client_credentials'</span>
         </div>
 
         <div class="api-box">

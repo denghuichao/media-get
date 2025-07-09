@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Features from './components/Features';
@@ -108,35 +107,28 @@ function App() {
   return (
     <ConfigProvider>
       <SEOHead {...getSEOProps()} />
-      <Router>
-        <div className="flex flex-col min-h-screen bg-gray-50">
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            {currentPage === 'blogs' ? (
-              <BlogIndex />
-            ) : (
-              <Routes>
-                <Route path="/" element={
-                  <>
-                    <div id="home"><Hero /></div>
-                    <div id="dashboard"><Dashboard /></div>
-                    <SystemStatus />
-                    <SupportedSites />
-                    <Features />
-                    <div id="about"><AboutAndQuality /></div>
-                    <DisclaimerAndCompliance />
-                  </>
-                } />
-                <Route path="/all-supported-sites" element={<AllSupportedSites />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-              </Routes>
-            )}
-          </main>
-          <Footer />
-          <CookieConsent />
-        </div>
-      </Router>
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header />
+        <main className="flex-grow container mx-auto px-4 py-8">
+          {currentPage === 'blogs' && <BlogIndex />}
+          {currentPage === 'dashboard' && <Dashboard />}
+          {currentPage === 'about' && <AboutAndQuality />}
+          {currentPage === 'privacy' && <PrivacyPolicy />}
+          {currentPage === 'terms' && <TermsOfService />}
+          {currentPage === 'disclaimer' && <DisclaimerAndCompliance />}
+          {currentPage === 'supported-sites' && <AllSupportedSites />}
+          {currentPage === 'home' && (
+            <>
+              <Hero />
+              <SystemStatus />
+              <SupportedSites />
+              <Features />
+            </>
+          )}
+        </main>
+        <Footer />
+        <CookieConsent />
+      </div>
     </ConfigProvider>
   );
 }
