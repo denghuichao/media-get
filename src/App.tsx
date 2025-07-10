@@ -5,7 +5,7 @@ import Features from './components/Features';
 import SupportedSites from './components/SupportedSites';
 import AllSupportedSites from './components/AllSupportedSites';
 import Footer from './components/Footer';
-import SystemStatus from './components/SystemStatus';
+// import SystemStatus from './components/SystemStatus';
 import Dashboard from './components/Dashboard';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
@@ -120,7 +120,6 @@ function App() {
           {currentPage === 'home' && (
             <>
               <Hero />
-              <SystemStatus />
               <SupportedSites />
               <Features />
             </>
