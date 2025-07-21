@@ -1,4 +1,5 @@
 import { Download, Github, Twitter, Mail, Heart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
@@ -71,29 +72,29 @@ export default function Footer() {
 
             {/* Links */}
             <nav className="flex items-center space-x-4 text-sm" role="navigation" aria-label="Footer navigation">
-              <a
-                href="#privacy"
+              <Link
+                to="/privacy"
                 className="text-gray-400 hover:text-white transition-colors"
                 aria-label="Privacy Policy"
               >
                 {t('footer.privacyPolicy')}
-              </a>
+              </Link>
               <span className="text-gray-600" aria-hidden="true">•</span>
-              <a
-                href="#terms"
+              <Link
+                to="/terms"
                 className="text-gray-400 hover:text-white transition-colors"
                 aria-label="Terms of Service"
               >
                 {t('footer.termsOfService')}
-              </a>
+              </Link>
               <span className="text-gray-600" aria-hidden="true">•</span>
-              <a
-                href="#disclaimer"
+              <Link
+                to="/disclaimer"
                 className="text-gray-400 hover:text-white transition-colors"
                 aria-label="Disclaimer"
               >
                 {t('footer.disclaimer')}
-              </a>
+              </Link>
               <span className="text-gray-600" aria-hidden="true">•</span>
               <span className="text-gray-400">{t('footer.copyright')}</span>
             </nav>

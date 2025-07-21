@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Download, Home, LayoutDashboard, Heart, Info, BookText } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -38,38 +39,38 @@ export default function Header() {
 
           <div className="flex items-center space-x-8">
             <nav className="hidden md:flex items-center space-x-8" role="navigation" aria-label="Main navigation">
-              <a
-                href="/"
+              <Link
+                to="/"
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
                 aria-label="Go to home page"
               >
                 <Home className="h-4 w-4 group-hover:scale-110 transition-transform" aria-hidden="true" />
                 <span>{t('header.nav.home')}</span>
-              </a>
-              <a
-                href="/#dashboard"
+              </Link>
+              <Link
+                to="/dashboard"
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
                 aria-label="Go to dashboard"
               >
                 <LayoutDashboard className="h-4 w-4 group-hover:scale-110 transition-transform" aria-hidden="true" />
                 <span>{t('header.nav.dashboard')}</span>
-              </a>
-              <a
-                href="/#blogs"
+              </Link>
+              <Link
+                to="/blogs"
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
                 aria-label="Go to blogs"
               >
                 <BookText className="h-4 w-4 group-hover:scale-110 transition-transform" aria-hidden="true" />
                 <span>{t('header.nav.blogs')}</span>
-              </a>
-              <a
-                href="/#about"
+              </Link>
+              <Link
+                to="/about"
                 className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors group"
                 aria-label="Go to about page"
               >
                 <Info className="h-4 w-4 group-hover:scale-110 transition-transform" aria-hidden="true" />
                 <span>{t('header.nav.about')}</span>
-              </a>
+              </Link>
             </nav>            {/* Language Switcher */}
             <LanguageSwitcher />
           </div>

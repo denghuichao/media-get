@@ -1,5 +1,6 @@
 import { ExternalLink, Video, Music, Image } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { getSiteSlug } from '../data/sites';
 
 const sites = [
   // Top 10 most popular sites
@@ -57,11 +58,9 @@ export default function SupportedSites() {
           {sites.map((site) => (
             <a
               key={site.name}
-              href={`https://${site.url}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`/download/${getSiteSlug(site.name)}`}
               className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer border border-gray-100 hover:border-gray-200 block"
-              aria-label={`Visit ${site.name} - ${site.url}`}
+              aria-label={`Download from ${site.name} - ${site.url}`}
             >
               <div className="flex items-start space-x-3 mb-3">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -93,7 +92,11 @@ export default function SupportedSites() {
                   <h3 className="font-medium text-gray-900 text-sm truncate group-hover:text-blue-600 transition-colors">{site.name}</h3>
                   <p className="text-xs text-gray-500 truncate group-hover:text-blue-500 transition-colors">{site.url}</p>
                 </div>
-                <ExternalLink className="h-3 w-3 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0" />
+                <div className="h-3 w-3 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0">
+                  <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-1">
@@ -114,7 +117,7 @@ export default function SupportedSites() {
         {/* Show All Sites Button */}
         <div className="text-center mt-8">
           <a
-            href="/#supported-sites"
+            href="/supported-sites"
             className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
             <span>{t('supportedSites.showAllSites')}</span>

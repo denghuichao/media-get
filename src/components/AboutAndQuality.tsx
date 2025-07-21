@@ -176,7 +176,7 @@ export default function AboutAndQuality() {
 
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-lg text-center">
-                                    <p className="font-medium text-gray-900">100+</p>
+                                    <p className="font-medium text-gray-900">500+</p>
                                     <p className="text-gray-600 text-sm">Supported Platforms</p>
                                 </div>
                                 <div className="bg-gradient-to-r from-green-50 to-teal-50 p-4 rounded-lg text-center">

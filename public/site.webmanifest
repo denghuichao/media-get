@@ -1,7 +1,7 @@
 {
     "name": "MediaGet - Universal Media Downloader",
     "short_name": "MediaGet",
-    "description": "Download videos, audio, and images from 100+ platforms",
+    "description": "Download videos, audio, and images from 500+ platforms",
     "start_url": "/",
     "display": "standalone",
     "theme_color": "#3B82F6",

@@ -397,7 +397,7 @@ CREATE TABLE download_tasks (
 ### Korean Platforms
 - Naver 네이버
 
-**Total: 100+ supported platforms**
+**Total: 500+ supported platforms**
 
 ## 🛠️ yt-dlp Integration
 

@@ -58,7 +58,7 @@
   "hero": {
     "title": "Download Media from",
     "titleHighlight": "Anywhere",
-    "subtitle": "Extract videos, audio, and images from 100+ popular websites with just a URL",
+    "subtitle": "Extract videos, audio, and images from 500+ popular websites with just a URL",
     "placeholder": "Paste any video, audio, or image URL here...",
     "analyze": "Analyze",
     "analyzing": "Analyzing...",
@@ -78,7 +78,7 @@
       "suffix": "- Trusted by thousands of users worldwide"
     },
     "features": [
-      "100+ supported platforms",
+      "500+ supported platforms",
       "Multiple format options",
       "Lightning fast downloads",
       "No registration required"
@@ -119,7 +119,7 @@
     "title": "Top Supported Platforms",
     "subtitle": "Download from the most popular video, audio, and image sharing platforms worldwide",
     "showAllSites": "Show All Sites",
-    "viewAllDescription": "View all 100+ supported platforms with advanced search and filtering",
+    "viewAllDescription": "View all 500+ supported platforms with advanced search and filtering",
     "types": {
       "video": "Video Downloads",
       "audio": "Audio Downloads",
@@ -137,7 +137,7 @@
   },
   "allSupportedSites": {
     "title": "All Supported Sites",
-    "subtitle": "Explore our complete list of 100+ supported platforms for downloading videos, audio, and images",
+    "subtitle": "Explore our complete list of 500+ supported platforms for downloading videos, audio, and images",
     "searchPlaceholder": "Search sites...",
     "resultsCount": "Showing {{count}} of {{total}} sites",
     "sitesCount": "sites",
@@ -297,12 +297,12 @@
   },
   "seo": {
     "defaultTitle": "MediaGet - Universal Media Downloader | Download Videos, Audio & Images",
-    "defaultDescription": "Download videos, audio, and images from 100+ platforms including YouTube, Twitter/X, Instagram, TikTok, and more. Fast, secure, and easy to use media downloader.",
+    "defaultDescription": "Download videos, audio, and images from 500+ platforms including YouTube, Twitter/X, Instagram, TikTok, and more. Fast, secure, and easy to use media downloader.",
     "defaultKeywords": "video downloader, audio downloader, image downloader, youtube downloader, twitter downloader, instagram downloader, tiktok downloader, media downloader, online downloader",
     "pages": {
       "home": {
         "title": "Home",
-        "description": "Universal media downloader supporting 100+ platforms. Download videos, audio, and images from YouTube, Instagram, TikTok, and more."
+        "description": "Universal media downloader supporting 500+ platforms. Download videos, audio, and images from YouTube, Instagram, TikTok, and more."
       },
       "dashboard": {
         "title": "Download Dashboard",
