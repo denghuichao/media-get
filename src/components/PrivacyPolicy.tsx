@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Shield, Mail, Clock, Database, Lock, Users, FileText, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -295,12 +296,12 @@ export default function PrivacyPolicy() {
 
                 {/* Back to Home */}
                 <div className="text-center mt-8">
-                    <a
-                        href="#home"
+                    <Link
+                        to="/"
                         className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 transition-all"
                     >
                         Back to Home
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>

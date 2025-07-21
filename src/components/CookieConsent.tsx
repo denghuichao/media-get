@@ -1,4 +1,5 @@
 import { Cookie, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
 export default function CookieConsent() {
@@ -35,9 +36,9 @@ export default function CookieConsent() {
                             <p className="text-gray-300 text-sm">
                                 We use cookies to enhance your experience and show personalized ads through Google AdSense.
                                 By continuing to use our site, you consent to our use of cookies.{' '}
-                                <a href="#privacy" className="text-blue-400 hover:text-blue-300 underline">
+                                <Link to="/privacy" className="text-blue-400 hover:text-blue-300 underline">
                                     Learn more
-                                </a>
+                                </Link>
                             </p>
                         </div>
                     </div>
