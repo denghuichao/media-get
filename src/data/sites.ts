@@ -217,19 +217,6 @@ export const sites: SiteInfo[] = [
     { name: 'CGTN', url: 'cgtn.com', color: 'bg-red-700', types: ['Video'], favicon: 'https://www.cgtn.com/favicon.ico', region: 'International' },
     { name: 'TRT World', url: 'trtworld.com', color: 'bg-green-700', types: ['Video'], favicon: 'https://www.trtworld.com/favicon.ico', region: 'International' },
 
-    // Adult Content Platforms (for long-tail SEO)
-    { name: 'XVideos', url: 'xvideos.com', color: 'bg-red-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Pornhub', url: 'pornhub.com', color: 'bg-yellow-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'YouPorn', url: 'youporn.com', color: 'bg-black', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Spankbang', url: 'spankbang.com', color: 'bg-pink-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'RedTube', url: 'redtube.com', color: 'bg-red-700', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Tube8', url: 'tube8.com', color: 'bg-green-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Chaturbate', url: 'chaturbate.com', color: 'bg-purple-700', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'BongaCams', url: 'bongacams.com', color: 'bg-pink-700', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'MyFreeCams', url: 'myfreecams.com', color: 'bg-purple-800', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Cam4', url: 'cam4.com', color: 'bg-blue-700', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Stripchat', url: 'stripchat.com', color: 'bg-red-800', types: ['Video'], favicon: undefined, region: 'International' },
-
     // Sports and Fitness Platforms
     { name: 'ESPN', url: 'espn.com', color: 'bg-red-600', types: ['Video'], favicon: 'https://www.espn.com/favicon.ico', region: 'International' },
     { name: 'Fox Sports', url: 'foxsports.com', color: 'bg-blue-600', types: ['Video'], favicon: 'https://www.foxsports.com/favicon.ico', region: 'International' },
@@ -372,12 +359,6 @@ export const sites: SiteInfo[] = [
     { name: 'Viu', url: 'viu.com', color: 'bg-yellow-500', types: ['Video'], favicon: 'https://www.viu.com/favicon.ico', region: 'International' },
     { name: 'VLive', url: 'vlive.tv', color: 'bg-purple-600', types: ['Video'], favicon: undefined, region: 'International' },
 
-    // Adult Content (additional major platforms)
-    { name: 'XHamster', url: 'xhamster.com', color: 'bg-orange-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'XNXX', url: 'xnxx.com', color: 'bg-blue-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'YouJizz', url: 'youjizz.com', color: 'bg-red-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Txxx', url: 'txxx.com', color: 'bg-black', types: ['Video'], favicon: undefined, region: 'International' },
-
     // International Broadcasting
     { name: 'TV5Monde', url: 'tv5monde.com', color: 'bg-blue-600', types: ['Video'], favicon: 'https://www.tv5monde.com/favicon.ico', region: 'International' },
     { name: 'TVer', url: 'tver.jp', color: 'bg-blue-500', types: ['Video'], favicon: 'https://tver.jp/favicon.ico', region: 'Japan' },
@@ -396,7 +377,6 @@ export const sites: SiteInfo[] = [
     { name: 'Whowatch', url: 'whowatch.tv', color: 'bg-blue-500', types: ['Video'], favicon: undefined, region: 'International' },
 
     // Niche Video Platforms
-    { name: 'ThisVid', url: 'thisvid.com', color: 'bg-red-600', types: ['Video'], favicon: undefined, region: 'International' },
     { name: 'Three Speak', url: 'threespeak.tv', color: 'bg-purple-600', types: ['Video'], favicon: 'https://threespeak.tv/favicon.ico', region: 'International' },
     { name: 'Toon Goggles', url: 'toongoggles.com', color: 'bg-yellow-500', types: ['Video'], favicon: 'https://www.toongoggles.com/favicon.ico', region: 'International' },
     { name: 'Toggo', url: 'toggo.de', color: 'bg-orange-500', types: ['Video'], favicon: 'https://www.toggo.de/favicon.ico', region: 'Europe' },
@@ -473,14 +453,6 @@ export const sites: SiteInfo[] = [
     { name: 'PokerGo', url: 'pokergo.com', color: 'bg-red-600', types: ['Video'], favicon: 'https://www.pokergo.com/favicon.ico', region: 'International' },
     { name: 'Polskie Radio', url: 'polskieradio.pl', color: 'bg-red-600', types: ['Audio'], favicon: 'https://www.polskieradio.pl/favicon.ico', region: 'Europe' },
 
-    // Adult Content Platforms (additional)
-    { name: 'Pornbox', url: 'pornbox.com', color: 'bg-black', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'PornerBros', url: 'pornerbros.com', color: 'bg-orange-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'PornFlip', url: 'pornflip.com', color: 'bg-blue-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Pornotube', url: 'pornotube.com', color: 'bg-red-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'PornTop', url: 'porntop.com', color: 'bg-purple-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'PornTube', url: 'porntube.com', color: 'bg-black', types: ['Video'], favicon: undefined, region: 'International' },
-
     // International Broadcasting
     { name: 'Rai', url: 'rai.it', color: 'bg-blue-600', types: ['Video'], favicon: 'https://www.rai.it/favicon.ico', region: 'Europe' },
     { name: 'RaiPlay', url: 'raiplay.it', color: 'bg-blue-700', types: ['Video'], favicon: 'https://www.raiplay.it/favicon.ico', region: 'Europe' },
@@ -491,7 +463,6 @@ export const sites: SiteInfo[] = [
     // Entertainment and Gaming
     { name: 'Red Bull TV', url: 'redbull.tv', color: 'bg-red-600', types: ['Video'], favicon: 'https://www.redbull.com/favicon.ico', region: 'International' },
     { name: 'Reddit', url: 'reddit.com', color: 'bg-orange-600', types: ['Video'], favicon: 'https://www.reddit.com/favicon.ico', region: 'International' },
-    { name: 'RedTube', url: 'redtube.com', color: 'bg-red-600', types: ['Video'], favicon: undefined, region: 'International' },
     { name: 'ReverbNation', url: 'reverbnation.com', color: 'bg-orange-500', types: ['Audio'], favicon: 'https://www.reverbnation.com/favicon.ico', region: 'International' },
     { name: 'Rinse FM', url: 'rinse.fm', color: 'bg-black', types: ['Audio'], favicon: 'https://rinse.fm/favicon.ico', region: 'International' },
     { name: 'Rooster Teeth', url: 'roosterteeth.com', color: 'bg-red-600', types: ['Video'], favicon: 'https://roosterteeth.com/favicon.ico', region: 'International' },
@@ -548,7 +519,6 @@ export const sites: SiteInfo[] = [
 
     // Entertainment Networks
     { name: 'South Park Studios', url: 'southparkstudios.com', color: 'bg-blue-600', types: ['Video'], favicon: 'https://southparkstudios.com/favicon.ico', region: 'International' },
-    { name: 'SpankBang', url: 'spankbang.com', color: 'bg-pink-600', types: ['Video'], favicon: undefined, region: 'International' },
     { name: 'Sport5', url: 'sport5.co.il', color: 'bg-blue-600', types: ['Video'], favicon: 'https://www.sport5.co.il/favicon.ico', region: 'International' },
     { name: 'SportBox', url: 'sportbox.ru', color: 'bg-green-600', types: ['Video'], favicon: 'https://news.sportbox.ru/favicon.ico', region: 'Russia' },
     { name: 'Sport Deutschland', url: 'sportdeutschland.tv', color: 'bg-red-600', types: ['Video'], favicon: 'https://sportdeutschland.tv/favicon.ico', region: 'Europe' },
@@ -561,7 +531,6 @@ export const sites: SiteInfo[] = [
     { name: 'Steam', url: 'store.steampowered.com', color: 'bg-blue-800', types: ['Video'], favicon: 'https://store.steampowered.com/favicon.ico', region: 'International' },
     { name: 'Streamable', url: 'streamable.com', color: 'bg-blue-500', types: ['Video'], favicon: 'https://streamable.com/favicon.ico', region: 'International' },
     { name: 'Streamango', url: 'streamango.com', color: 'bg-orange-500', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Stripchat', url: 'stripchat.com', color: 'bg-purple-600', types: ['Video'], favicon: undefined, region: 'International' },
     { name: 'TailorMade', url: 'taylormade.com', color: 'bg-blue-600', types: ['Video'], favicon: 'https://www.taylormade.com/favicon.ico', region: 'International' },
     { name: 'Teachertube', url: 'teachertube.com', color: 'bg-green-600', types: ['Video'], favicon: 'https://www.teachertube.com/favicon.ico', region: 'International' },
     { name: 'TED-Ed', url: 'ed.ted.com', color: 'bg-red-600', types: ['Video'], favicon: 'https://ed.ted.com/favicon.ico', region: 'International' },
@@ -667,17 +636,6 @@ export const sites: SiteInfo[] = [
     { name: 'DPlay', url: 'dplay.com', color: 'bg-blue-600', types: ['Video'], favicon: 'https://www.dplay.com/favicon.ico', region: 'International' },
     { name: 'Dropout', url: 'dropout.tv', color: 'bg-yellow-500', types: ['Video'], favicon: 'https://www.dropout.tv/favicon.ico', region: 'International' },
     { name: 'DrTalks', url: 'drtalks.com', color: 'bg-green-600', types: ['Video'], favicon: 'https://drtalks.com/favicon.ico', region: 'International' },
-    { name: 'DrTuber', url: 'drtuber.com', color: 'bg-orange-600', types: ['Video'], favicon: undefined, region: 'International' },
-
-    // Adult Content Platforms (additional)
-    { name: 'BongaCams', url: 'bongacams.com', color: 'bg-purple-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'CAM4', url: 'cam4.com', color: 'bg-red-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'CamModels', url: 'cammodels.com', color: 'bg-pink-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Camsoda', url: 'camsoda.com', color: 'bg-orange-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Chaturbate', url: 'chaturbate.com', color: 'bg-orange-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'EMPFlix', url: 'empflix.com', color: 'bg-black', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'Eporner', url: 'eporner.com', color: 'bg-blue-600', types: ['Video'], favicon: undefined, region: 'International' },
-    { name: 'HellPorno', url: 'hellporno.com', color: 'bg-red-600', types: ['Video'], favicon: undefined, region: 'International' },
 
     // European Broadcasting
     { name: 'eBaums World', url: 'ebaumsworld.com', color: 'bg-green-600', types: ['Video'], favicon: 'https://www.ebaumsworld.com/favicon.ico', region: 'International' },
