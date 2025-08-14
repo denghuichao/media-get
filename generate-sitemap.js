@@ -1,4 +1,5 @@
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
+import { join } from 'path';
 
 // Read and parse the sites.ts file manually
 const sitesFileContent = readFileSync('./src/data/sites.ts', 'utf8');
@@ -6,6 +7,12 @@ const sitesFileContent = readFileSync('./src/data/sites.ts', 'utf8');
 // Extract site names from the file
 const siteMatches = sitesFileContent.match(/name: '([^']+)'/g);
 const siteNames = siteMatches ? siteMatches.map(match => match.replace(/name: '/, '').replace(/'$/, '')) : [];
+
+// Read blog files from public/blogs directory
+const blogsDir = './public/blogs';
+const blogFiles = readdirSync(blogsDir)
+  .filter(file => file.endsWith('.html'))
+  .map(file => file.replace('.html', ''));
 
 // Helper function to generate URL slug from site name
 const getSiteSlug = (siteName) => {
@@ -90,6 +97,14 @@ ${siteNames.map(siteName => `  <url>
     <lastmod>${today}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>`).join('\n')}
+
+  <!-- Blog Articles -->
+${blogFiles.map(blogSlug => `  <url>
+    <loc>https://media-get.site/blogs/${blogSlug}</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
   </url>`).join('\n')}
 </urlset>`;
 

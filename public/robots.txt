@@ -18,6 +18,49 @@ Allow: /blogs/*
 # Static assets
 Allow: /favicon.svg
 Allow: /site.webmanifest
+Allow: /og-image.jpg
+Allow: /twitter-image.jpg
+
+# Crawl delay to be respectful
+Crawl-delay: 1
+
+# Block admin or sensitive areas if any
+Disallow: /admin/
+Disallow: /api/private/
+Disallow: /*.json$
+Disallow: /*?*utm_*
+Disallow: /*?*fbclid*
+Disallow: /*?*gclid*
+
+# Sitemap location
+Sitemap: https://media-get.site/sitemap.xml
+
+# Specific bot instructions
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+# Allow social media bots for better sharing
+User-agent: facebookexternalhit/*
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Archive bots
+User-agent: archive.org_bot
+Allow: /
+
+User-agent: ia_archiver
+Allow: /
 Allow: /_redirects
 
 # Block admin and private areas
