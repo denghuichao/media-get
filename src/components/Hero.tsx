@@ -658,19 +658,19 @@ export default function Hero() {
   const errorInfo = error ? formatErrorForDisplay(error) : null;
 
   return (
-    <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 py-20" aria-labelledby="hero-title">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <header className="text-center mb-12">
-          <h1 id="hero-title" className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+    <section className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 lg:py-20 w-full" aria-labelledby="hero-title">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <header className="text-center mb-8 lg:mb-12">
+          <h1 id="hero-title" className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
             {t('hero.title')}
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> {t('hero.titleHighlight')}</span>
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             {t('hero.subtitle')}
           </p>
         </header>
 
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-6 lg:p-8 max-w-4xl mx-auto">
           <form onSubmit={(e) => { e.preventDefault(); handleAnalyze(); }} role="search" aria-label="Media URL Analysis">
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="flex-1">
@@ -1064,8 +1064,8 @@ export default function Hero() {
           </form>
         </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-gray-600 mb-4 flex items-center justify-center space-x-1">
+        <div className="mt-6 lg:mt-8 text-center max-w-4xl mx-auto">
+          <p className="text-gray-600 mb-4 flex items-center justify-center space-x-1 text-sm lg:text-base">
             <span>{t('hero.poweredBy.prefix')}</span>
             <a
               href={toolUrl}
@@ -1079,7 +1079,7 @@ export default function Hero() {
             <span>{t('hero.poweredBy.suffix')}</span>
             <Heart className="h-4 w-4 text-red-500 fill-red-500" />
           </p>
-          <div className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm text-gray-500">
+          <div className="flex flex-wrap justify-center gap-3 md:gap-6 text-xs lg:text-sm text-gray-500">
             {(t('hero.features', { returnObjects: true }) as string[]).map((feature: string, index: number) => (
               <span key={index} className="whitespace-nowrap">✓ {feature}</span>
             ))}

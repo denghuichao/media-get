@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广告测试</title>
+    <style>
+        body {
+            margin: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        .ad-container {
+            margin: 20px 0;
+            border: 2px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        .ad-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Adsterra 广告测试</h1>
+
+    <!-- 测试广告1: 728x90 -->
+    <div class="ad-container">
+        <div class="ad-title">728x90 横幅广告</div>
+        <div id="ad-728x90" style="width: 728px; height: 90px; border: 1px solid #ddd;"></div>
+    </div>
+
+    <!-- 测试广告2: 160x300 -->
+    <div class="ad-container">
+        <div class="ad-title">160x300 侧边栏广告</div>
+        <div id="ad-160x300" style="width: 160px; height: 300px; border: 1px solid #ddd;"></div>
+    </div>
+
+    <script>
+        // 测试第一个广告
+        (function () {
+            const container = document.getElementById('ad-728x90');
+
+            const atOptions = {
+                key: '21b4e791e8fc157267b7fb8db77406e7',
+                format: 'iframe',
+                height: 90,
+                width: 728,
+                params: {}
+            };
+
+            // 设置全局配置
+            window.atOptions = atOptions;
+
+            // 加载脚本
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = '//www.highperformanceformat.com/21b4e791e8fc157267b7fb8db77406e7/invoke.js';
+
+            script.onload = () => console.log('728x90 广告脚本加载成功');
+            script.onerror = () => console.error('728x90 广告脚本加载失败');
+
+            container.appendChild(script);
+        })();
+
+        // 测试第二个广告 (延迟加载避免冲突)
+        setTimeout(() => {
+            const container = document.getElementById('ad-160x300');
+
+            const atOptions = {
+                key: 'fc2f68c052d293d18d3fc10d2689246b',
+                format: 'iframe',
+                height: 300,
+                width: 160,
+                params: {}
+            };
+
+            // 设置全局配置
+            window.atOptions = atOptions;
+
+            // 加载脚本
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.src = '//www.highperformanceformat.com/fc2f68c052d293d18d3fc10d2689246b/invoke.js';
+
+            script.onload = () => console.log('160x300 广告脚本加载成功');
+            script.onerror = () => console.error('160x300 广告脚本加载失败');
+
+            container.appendChild(script);
+        }, 3000);
+    </script>
+</body>
+
+</html>

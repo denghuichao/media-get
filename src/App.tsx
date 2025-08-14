@@ -15,20 +15,52 @@ import AboutAndQuality from './components/AboutAndQuality';
 import CookieConsent from './components/CookieConsent';
 import SEOHead from './components/SEOHead';
 import SiteDownloadPage from './components/SiteDownloadPage';
+import AdBanner from './components/AdBanner';
+import NativeAdBanner from './components/NativeAdBanner';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { useTranslation } from 'react-i18next';
 import BlogIndex from './components/BlogIndex';
 import { findSiteBySlug } from './data/sites';
+import { AD_CONFIGS } from './configs/adConfigs';
 
 // Layout component that wraps all pages
-const Layout: React.FC<{ children: React.ReactNode; seoProps?: any }> = ({ children, seoProps }) => {
+const Layout: React.FC<{ children: React.ReactNode; seoProps?: any; showSidebar?: boolean }> = ({ children, seoProps, showSidebar = false }) => {
   return (
     <>
       {seoProps && <SEOHead {...seoProps} />}
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-8">
-          {children}
+          {showSidebar ? (
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* 主内容区域 */}
+              <div className="flex-1 min-w-0 w-full">
+                {children}
+              </div>
+              {/* 侧边栏广告区域 - 仅在大屏幕显示 */}
+              <aside className="hidden lg:block lg:w-44 flex-shrink-0">
+                {/* 侧边栏广告容器 - sticky定位 */}
+                <div className="sticky top-8 space-y-4">
+                  {/* 侧边栏广告1: 160x600摩天楼广告 */}
+                  <AdBanner
+                    adKey={AD_CONFIGS.BANNER_160x600.key}
+                    width={160}
+                    height={600}
+                    responsive={false}
+                  />
+                  {/* 侧边栏广告2: 160x300中等广告 - 固定在第一个广告底部 */}
+                  <AdBanner
+                    adKey={AD_CONFIGS.BANNER_160x300.key}
+                    width={160}
+                    height={300}
+                    responsive={false}
+                  />
+                </div>
+              </aside>
+            </div>
+          ) : (
+            children
+          )}
         </main>
         <Footer />
         <CookieConsent />
@@ -47,10 +79,42 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Layout seoProps={seoProps}>
+    <Layout seoProps={seoProps} showSidebar={true}>
       <Hero />
+
+      {/* 广告1: Hero区域下方 - 728x90横幅广告 */}
+      <AdBanner
+        adKey={AD_CONFIGS.BANNER_728x90.key}
+        width={728}
+        height={90}
+        className="my-8"
+      />
+
       <SupportedSites />
+
+      {/* 广告2: SupportedSites和Features之间 - 300x250中矩形广告 */}
+      <AdBanner
+        adKey={AD_CONFIGS.BANNER_300x250.key}
+        width={300}
+        height={250}
+        className="my-8"
+      />
+
+      {/* 广告3: 原生广告嵌入在Features前 */}
+      <NativeAdBanner
+        adKey={AD_CONFIGS.NATIVE_BANNER.key}
+        className="my-8"
+      />
+
       <Features />
+
+      {/* 广告4: Features下方 - 468x60横幅广告 */}
+      <AdBanner
+        adKey={AD_CONFIGS.BANNER_468x60.key}
+        width={468}
+        height={60}
+        className="my-8"
+      />
     </Layout>
   );
 };
@@ -87,7 +151,7 @@ const SiteDownloadPageWithSEO: React.FC = () => {
   };
 
   return (
-    <Layout seoProps={seoProps}>
+    <Layout seoProps={seoProps} showSidebar={true}>
       <SiteDownloadPage siteInfo={site} />
     </Layout>
   );

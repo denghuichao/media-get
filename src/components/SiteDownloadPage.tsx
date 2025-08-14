@@ -5,6 +5,9 @@ import { apiService, MediaInfo, TaskStatus } from '../services/api';
 import { getUserDisplayInfo } from '../utils/fingerprint';
 import { formatSmartTimestampWithUTC } from '../utils/dateUtils';
 import { trackAnalyzeClick, trackDownloadClick, trackDownloadComplete, trackPlatformUsage, getPlatformFromUrl, determineMediaTypeFromFormat } from '../utils/analytics';
+import AdBanner from './AdBanner';
+import NativeAdBanner from './NativeAdBanner';
+import { AD_CONFIGS } from '../configs/adConfigs';
 
 interface SiteInfo {
     name: string;
@@ -439,6 +442,14 @@ export default function SiteDownloadPage({ siteInfo }: SiteDownloadPageProps) {
                 </p>
             </div>
 
+            {/* 广告1: 页面顶部 - 728x90横幅广告 */}
+            <AdBanner
+                adKey={AD_CONFIGS.BANNER_728x90.key}
+                width={728}
+                height={90}
+                className="mb-8"
+            />
+
             {/* Download Interface */}
             <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
                 <div className="space-y-6">
@@ -714,6 +725,14 @@ export default function SiteDownloadPage({ siteInfo }: SiteDownloadPageProps) {
                 </div>
             </div>
 
+            {/* 广告2: 下载界面后 - 300x250中矩形广告 */}
+            <AdBanner
+                adKey={AD_CONFIGS.BANNER_300x250.key}
+                width={300}
+                height={250}
+                className="mb-8"
+            />
+
             {/* How To Section */}
             <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
@@ -731,8 +750,14 @@ export default function SiteDownloadPage({ siteInfo }: SiteDownloadPageProps) {
                 </div>
             </div>
 
+            {/* 广告3: How To Section后 - 原生广告 */}
+            <NativeAdBanner
+                adKey={AD_CONFIGS.NATIVE_BANNER.key}
+                className="mb-8"
+            />
+
             {/* FAQ Section */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
                     <HelpCircle className="h-6 w-6 mr-2" />
                     Frequently Asked Questions
@@ -750,6 +775,14 @@ export default function SiteDownloadPage({ siteInfo }: SiteDownloadPageProps) {
                     ))}
                 </div>
             </div>
+
+            {/* 广告4: 页面底部 - 468x60横幅广告 */}
+            <AdBanner
+                adKey={AD_CONFIGS.BANNER_468x60.key}
+                width={468}
+                height={60}
+                className="mb-8"
+            />
         </div>
     );
 }
