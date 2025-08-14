@@ -725,7 +725,7 @@ export default function SiteDownloadPage({ siteInfo }: SiteDownloadPageProps) {
                 </div>
             </div>
 
-            {/* 广告2: 下载界面后 - 300x250中矩形广告 */}
+            {/* 广告2: 下载界面后 - 300x250中矩形广告.. */}
             <AdBanner
                 adKey={AD_CONFIGS.BANNER_300x250.key}
                 width={300}
